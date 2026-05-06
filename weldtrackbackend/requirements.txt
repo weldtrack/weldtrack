@@ -20,3 +20,4 @@ uvicorn==0.30.6
 uvloop==0.22.1
 watchfiles==1.1.1
 websockets==16.0
+sendgrid==6.11.0

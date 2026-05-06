@@ -58,7 +58,10 @@ async function resendCode() {
   isSubmittingSignup.value = true
 
   try {
-    const response = await authStore.sendVerificationCode(form.email)
+    const response = await authStore.signup({
+      email: form.email,
+      password: form.password,
+    })
     if (response.success !== true) {
       throw new Error('Request failed.')
     }
@@ -88,11 +91,12 @@ async function submitSignup() {
     const response = await authStore.signup({
       email: form.email,
       password: form.password,
-      role: 'customer',
     })
     if (response.success !== true) {
       throw new Error('Request failed.')
     }
+    
+    // Code sent successfully, move to verification step
     step.value = 2
     startCodeTimer()
   } catch (error) {
@@ -115,19 +119,21 @@ async function submitCode() {
     const response = await authStore.confirmVerificationCode({
       email: form.email,
       code: form.code,
+      password: form.password,
       action: 'createaccount',
     })
-    if (response.success !== true) {
+    
+    // If response has user data, it means account was created and we're logged in
+    if (response.user || response.access_token) {
+      authStore.setSession({
+        token: response.access_token || '',
+        email: response.user?.email || form.email,
+        role: response.user?.role || 'customer',
+      })
+      router.replace('/dashboard')
+    } else if (response.success) {
       throw new Error('Request failed.')
     }
-
-    authStore.setSession({
-      token: response.token || '',
-      email: response.email || form.email,
-      role: response.role || 'customer',
-    })
-
-    router.replace('/dashboard')
   } catch (error) {
     signupError.value = getApiErrorMessage(error, 'Unable to verify signup code.')
   } finally {

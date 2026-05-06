@@ -50,29 +50,31 @@ function clearAuthState() {
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: readAuthState()?.token || '',
-    email: readAuthState()?.email || 'maria@example.com',
+    email: readAuthState()?.email || '',
     role: readAuthState()?.role || 'customer',
     isLoggedIn: readAuthState()?.isLoggedIn || false,
   }),
   actions: {
-    async login(payload: { email: string; password: string; role?: string }) {
+    async login(payload: { email: string; password: string }) {
       const { data } = await api.post('/auth/login', {
         email: payload.email,
         password: payload.password,
-        role: payload.role,
       })
 
       this.setSession({
-        token: data.token || '',
-        email: data.email || payload.email,
-        role: data.role || payload.role,
+        token: data.access_token || '',
+        email: data.user?.email || payload.email,
+        role: data.user?.role || 'customer',
       })
 
       return data as {
         success?: boolean
-        token?: string
-        email?: string
-        role?: string
+        access_token?: string
+        user?: {
+          id?: number
+          email?: string
+          role?: string
+        }
       }
     },
 
@@ -81,14 +83,28 @@ export const useAuthStore = defineStore('auth', {
       return data as { success?: boolean }
     },
 
-    async signup(payload: { email: string; password: string; role?: string }) {
-      const { data } = await api.post('/auth/signup', payload)
+    async signup(payload: { email: string; password: string }) {
+      const { data } = await api.post('/auth/signup', {
+        email: payload.email,
+        password: payload.password,
+      })
       return data as { success?: boolean }
     },
 
-    async confirmVerificationCode(payload: { email: string; code: string; action: 'changepassword' | 'createaccount' }) {
+    async confirmVerificationCode(payload: { email: string; code: string; password?: string; action: 'changepassword' | 'createaccount' }) {
       const { data } = await verifyEmailCode(api, payload)
-      return data as { success?: boolean; token?: string; email?: string; role?: string }
+      return data as { 
+        success?: boolean
+        token?: string
+        email?: string
+        role?: string
+        access_token?: string
+        user?: {
+          id?: number
+          email?: string
+          role?: string
+        }
+      }
     },
 
     async resetPassword(payload: { email: string; code: string; password: string; password_confirmation: string }) {

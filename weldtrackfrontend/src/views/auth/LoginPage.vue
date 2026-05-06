@@ -5,7 +5,6 @@ import { useAuthStore } from '../../stores/auth'
 
 const authStore = useAuthStore()
 const router = useRouter()
-const useMock = (import.meta.env.VITE_USE_MOCK_AUTH === 'true')
 
 function getApiErrorMessage(error: unknown, fallback: string) {
   const maybeAxiosError = error as {
@@ -23,14 +22,7 @@ function getApiErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
-const roles = [
-  { id: 'admin', label: 'Admin', color: 'bg-blue-600' },
-  { id: 'staff', label: 'Staff', color: 'bg-slate-600' },
-  { id: 'customer', label: 'Customer', color: 'bg-gray-600' },
-]
-
 const loginForm = reactive({ email: '', password: '' })
-const selectedRole = ref('customer')
 const forgotPassword = ref(false)
 const resetStep = ref(1)
 const resetForm = reactive({ email: '', code: '', newPassword: '', confirmPassword: '' })
@@ -62,29 +54,10 @@ async function submitLogin() {
   loginError.value = ''
   isSubmittingLogin.value = true
 
-  if (useMock) {
-    authStore.setSession({
-      token: 'mock-token',
-      email: loginForm.email,
-      role: selectedRole.value || 'customer',
-    })
-    isSubmittingLogin.value = false
-
-    if (authStore.role === 'admin') {
-      router.replace('/dashboard/admin')
-    } else if (authStore.role === 'staff') {
-      router.replace('/dashboard/staff')
-    } else {
-      router.replace('/dashboard')
-    }
-
-    return
-  }
   try {
     await authStore.login({
       email: loginForm.email,
       password: loginForm.password,
-      role: selectedRole.value,
     })
 
     if (authStore.role === 'admin') {
@@ -296,28 +269,6 @@ onBeforeUnmount(() => {
             <div class="mt-2 text-right">
               <button type="button" class="text-sm font-medium text-blue-600 hover:underline" @click="openForgotPassword">
                 Forgot password?
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label class="mb-3 block text-sm font-semibold text-gray-700">Select Role</label>
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <button
-                v-for="role in roles.slice(0, 3)"
-                :key="role.id"
-                type="button"
-                @click="selectedRole = role.id"
-                class="rounded-2xl border-2 p-4 transition-all"
-                :class="selectedRole === role.id ? 'border-blue-600 bg-blue-50 shadow-md shadow-blue-100' : 'border-gray-200 bg-white hover:border-gray-300'"
-              >
-                <div
-                  class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white"
-                  :class="role.color"
-                >
-                  {{ role.label[0] }}
-                </div>
-                <p class="text-sm font-medium text-gray-700">{{ role.label }}</p>
               </button>
             </div>
           </div>

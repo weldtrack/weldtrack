@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
@@ -27,8 +27,6 @@ class User(Base):
 
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole),
         default=UserRole.customer,
@@ -38,4 +36,22 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now()
+    )
+    
+    # Relationships
+    email_verification = relationship(
+        "EmailVerification",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    assigned_tasks = relationship(
+        "StaffTaskAssignee",
+        back_populates="staff",
+        foreign_keys="StaffTaskAssignee.staff_id",
+    )
+    material_submissions = relationship(
+        "TaskMaterialUsage",
+        back_populates="submitted_by_staff",
+        foreign_keys="TaskMaterialUsage.submitted_by_staff_id",
     )

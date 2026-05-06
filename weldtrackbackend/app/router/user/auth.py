@@ -15,7 +15,9 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models.user import User, UserRole
+from app.models.verification_code import EmailVerificationCode, EmailVerification
 from app.schemas.user import AuthResponse, LoginRequest, SignupRequest, UserRead
+from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -137,11 +139,24 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 	return db.scalar(statement)
 
 
+def generate_verification_code() -> str:
+	"""Generate a random 6-digit verification code"""
+	return str(secrets.randbelow(1000000)).zfill(6)
+
+
 def get_current_user(
 	request: Request,
 	db: Session = Depends(get_db),
 ) -> User:
+	# First try to get token from cookies
 	token = request.cookies.get(AUTH_COOKIE_NAME)
+	
+	# If not in cookies, try Authorization header
+	if token is None:
+		auth_header = request.headers.get("Authorization")
+		if auth_header and auth_header.startswith("Bearer "):
+			token = auth_header[7:]  # Remove "Bearer " prefix
+	
 	if token is None:
 		raise HTTPException(
 			status_code=status.HTTP_401_UNAUTHORIZED,
@@ -169,27 +184,49 @@ def get_current_user(
 	return user
 
 
-@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def signup(payload: SignupRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
+@router.post("/signup", status_code=status.HTTP_200_OK)
+def signup(payload: SignupRequest, db: Session = Depends(get_db)):
+	"""Request signup - validate and send verification code (account not created yet)"""
 	existing_user = get_user_by_email(db, payload.email)
 	if existing_user is not None:
 		raise HTTPException(
 			status_code=status.HTTP_400_BAD_REQUEST,
 			detail="Email is already registered",
 		)
-
-	user = User(
-		email=payload.email,
-		name=payload.name,
-		hashed_password=hash_password(payload.password),
-		role=UserRole.customer,
+	
+	# Generate verification code
+	verification_code = generate_verification_code()
+	expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+	
+	# Store verification code temporarily
+	# Remove any existing code for this email first
+	existing_code = db.scalar(
+		select(EmailVerificationCode).where(EmailVerificationCode.email == payload.email)
 	)
-	db.add(user)
+	if existing_code:
+		db.delete(existing_code)
+	
+	verification_record = EmailVerificationCode(
+		email=payload.email,
+		code=verification_code,
+		expires_at=expires_at
+	)
+	db.add(verification_record)
 	db.commit()
-	db.refresh(user)
-	auth_response = build_auth_response(user)
-	set_auth_cookie(response, auth_response.access_token)
-	return auth_response
+	
+	# Send email with verification code
+	email_sent = send_verification_email(payload.email, verification_code)
+	
+	if not email_sent:
+		raise HTTPException(
+			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+			detail="Failed to send verification email",
+		)
+	
+	return {
+		"success": True,
+		"message": "Verification code sent to email. Code will expire in 15 minutes."
+	}
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -210,3 +247,242 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 @router.get("/me", response_model=UserRead)
 def read_current_user(current_user: User = Depends(get_current_user)) -> UserRead:
 	return get_user_response(current_user)
+
+
+# Email verification and password reset endpoints
+# These are simple implementations - consider integrating with a proper email service
+
+@router.post("/verifyemail")
+def request_verification_email(payload: dict, db: Session = Depends(get_db)):
+	"""Request email verification code for existing user (password reset)"""
+	email = payload.get("email")
+	if not email:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Email is required",
+		)
+	
+	# Check if user exists
+	user = get_user_by_email(db, email)
+	if not user:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail="Email not found",
+		)
+	
+	# Get or create email verification record
+	email_verification = user.email_verification
+	if not email_verification:
+		email_verification = EmailVerification(user_id=user.id)
+		db.add(email_verification)
+	
+	# Generate and send verification code
+	verification_code = generate_verification_code()
+	email_verification.verification_code = verification_code
+	email_verification.code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+	db.commit()
+	
+	# Send email
+	email_sent = send_verification_email(email, verification_code)
+	
+	if not email_sent:
+		raise HTTPException(
+			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+			detail="Failed to send verification email",
+		)
+	
+	return {
+		"success": True,
+		"message": "Verification code sent to email. Code will expire in 15 minutes."
+	}
+
+
+@router.post("/verifycode")
+def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)):
+	"""Verify email code for account creation or password reset"""
+	email = payload.get("email")
+	code = payload.get("code")
+	password = payload.get("password")
+	action = payload.get("action", "createaccount")
+	
+	if not email or not code:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Email and code are required",
+		)
+	
+	user = get_user_by_email(db, email)
+	
+	if action == "createaccount":
+		if user:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="Email is already registered",
+			)
+		
+		# Verify the code from EmailVerificationCode table
+		verification_record = db.scalar(
+			select(EmailVerificationCode).where(EmailVerificationCode.email == email)
+		)
+		
+		if not verification_record:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="No verification code found. Please request a new signup.",
+			)
+		
+		# Check if code has expired
+		if datetime.now(timezone.utc) > verification_record.expires_at:
+			db.delete(verification_record)
+			db.commit()
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="Verification code has expired. Please request a new signup.",
+			)
+		
+		# Check if code matches
+		if verification_record.code != code:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="Invalid verification code",
+			)
+		
+		# Email verified - now create the account
+		if not password:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="Password is required to complete signup",
+			)
+		
+		# Create user
+		user = User(
+			email=email,
+			hashed_password=hash_password(password),
+			role=UserRole.customer,
+		)
+		db.add(user)
+		db.flush()  # Get user.id before creating EmailVerification
+		
+		# Create email verification record (marked as verified)
+		email_verification = EmailVerification(
+			user_id=user.id,
+			is_verified=True
+		)
+		db.add(email_verification)
+		
+		# Delete verification code
+		db.delete(verification_record)
+		db.commit()
+		db.refresh(user)
+		
+		# Auto-login after successful signup
+		auth_response = build_auth_response(user)
+		set_auth_cookie(response, auth_response.access_token)
+		return auth_response
+	
+	elif action == "changepassword":
+		if not user:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="Email not found",
+			)
+		
+		# Verify the code from EmailVerification table
+		email_verification = user.email_verification
+		if not email_verification or not email_verification.verification_code:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="No verification code found. Please request a password reset.",
+			)
+		
+		# Check if code has expired
+		if email_verification.code_expires_at and datetime.now(timezone.utc) > email_verification.code_expires_at:
+			email_verification.verification_code = None
+			email_verification.code_expires_at = None
+			db.commit()
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="Verification code has expired. Please request a new password reset.",
+			)
+		
+		# Check if code matches
+		if email_verification.verification_code != code:
+			raise HTTPException(
+				status_code=status.HTTP_400_BAD_REQUEST,
+				detail="Invalid verification code",
+			)
+		
+		# Clear verification code
+		email_verification.verification_code = None
+		email_verification.code_expires_at = None
+		db.commit()
+		
+		return {
+			"success": True,
+			"token": create_access_token(user),
+			"email": user.email,
+			"role": user.role.value,
+		}
+	
+	return {"success": False, "message": "Invalid action"}
+
+
+@router.post("/forgot-password/reset")
+def reset_password(payload: dict, db: Session = Depends(get_db)):
+	"""Reset password with verification code"""
+	email = payload.get("email")
+	code = payload.get("code")
+	new_password = payload.get("password")
+	password_confirmation = payload.get("password_confirmation")
+	
+	if not all([email, code, new_password, password_confirmation]):
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Email, code, and passwords are required",
+		)
+	
+	if new_password != password_confirmation:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Passwords do not match",
+		)
+	
+	user = get_user_by_email(db, email)
+	if not user:
+		raise HTTPException(
+			status_code=status.HTTP_404_NOT_FOUND,
+			detail="Email not found",
+		)
+	
+	# Verify the code from EmailVerification table
+	email_verification = user.email_verification
+	if not email_verification or not email_verification.verification_code:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="No verification code found. Please request a password reset.",
+		)
+	
+	# Check if code has expired
+	if email_verification.code_expires_at and datetime.now(timezone.utc) > email_verification.code_expires_at:
+		email_verification.verification_code = None
+		email_verification.code_expires_at = None
+		db.commit()
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Verification code has expired. Please request a new password reset.",
+		)
+	
+	# Check if code matches
+	if email_verification.verification_code != code:
+		raise HTTPException(
+			status_code=status.HTTP_400_BAD_REQUEST,
+			detail="Invalid verification code",
+		)
+	
+	# Update password and clear verification code
+	user.hashed_password = hash_password(new_password)
+	email_verification.verification_code = None
+	email_verification.code_expires_at = None
+	db.commit()
+	
+	return {"success": True, "message": "Password reset successful"}

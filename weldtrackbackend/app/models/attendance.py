@@ -1,57 +1,20 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
 
-from app.models.attendance import AttendanceRecord
-from app.models.user import User, UserRole
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column
 
-
-WORK_DAY_HOURS = 8
+from app.db import Base
 
 
-def check_in(db: Session, user: User):
-    if user.role != UserRole.staff:
-        raise ValueError("Only staff can check in")
+class AttendanceRecord(Base):
+    __tablename__ = "attendance_records"
 
-    today = datetime.utcnow().date().isoformat()
-
-    record = AttendanceRecord(
-        user_id=user.id,
-        date=today,
-        check_in_at=datetime.utcnow(),
-        hours_worked=0,
-        regular_hours=0,
-        overtime_hours=0
-    )
-
-    db.add(record)
-    db.commit()
-    db.refresh(record)
-    return record
-
-
-def check_out(db: Session, user: User):
-    today = datetime.utcnow().date().isoformat()
-
-    record = (
-        db.query(AttendanceRecord)
-        .filter(
-            AttendanceRecord.user_id == user.id,
-            AttendanceRecord.date == today
-        )
-        .first()
-    )
-
-    if not record:
-        raise ValueError("No check-in found")
-
-    record.check_out_at = datetime.utcnow()
-
-    hours = (record.check_out_at - record.check_in_at).total_seconds() / 3600
-
-    record.hours_worked = round(hours, 2)
-    record.regular_hours = min(hours, WORK_DAY_HOURS)
-    record.overtime_hours = max(0, hours - WORK_DAY_HOURS)
-
-    db.commit()
-    db.refresh(record)
-    return record
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    date: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    check_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    check_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    hours_worked: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    regular_hours: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    overtime_hours: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

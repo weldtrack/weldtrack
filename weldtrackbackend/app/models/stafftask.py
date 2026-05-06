@@ -90,12 +90,12 @@ class StaffTaskAssignee(Base):
     )
 
     staff_id: Mapped[int] = mapped_column(
-        ForeignKey("staff.id", ondelete="CASCADE"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
     task = relationship("StaffTask", back_populates="assignees")
-    staff = relationship("Staff", back_populates="assigned_tasks")
+    staff = relationship("User", back_populates="assigned_tasks", foreign_keys=[staff_id])
 
 
 # =========================
@@ -114,7 +114,7 @@ class TaskMaterialUsage(Base):
     booking_id: Mapped[int | None] = mapped_column(nullable=True)
 
     submitted_by_staff_id: Mapped[int | None] = mapped_column(
-        ForeignKey("staff.id", ondelete="SET NULL"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
 
@@ -135,7 +135,7 @@ class TaskMaterialUsage(Base):
 
     # relationships
     task = relationship("StaffTask", back_populates="material_usages")
-    submitted_by_staff = relationship("Staff", back_populates="material_submissions")
+    submitted_by_staff = relationship("User", back_populates="material_submissions", foreign_keys=[submitted_by_staff_id])
 
     lines = relationship(
         "TaskMaterialUsageLine",

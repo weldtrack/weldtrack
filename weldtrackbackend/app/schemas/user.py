@@ -7,7 +7,6 @@ from app.models.user import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
-    name: str | None = None
 
 
 class SignupRequest(UserBase):
