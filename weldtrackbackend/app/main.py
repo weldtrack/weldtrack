@@ -8,9 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.api import router
+from app.db import Base, engine
+Base.metadata.create_all(bind=engine)
 
-
-app = FastAPI(title="ChikaMo API")
+app = FastAPI(title="Weldtrack")
 origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,

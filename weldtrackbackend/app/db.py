@@ -6,7 +6,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+psycopg2://postgres:postgres@localhost:5432/postgres",
+    "postgresql+psycopg2://ruzz:ruzz-2323@localhost:5432/weldtrack-db",
 )
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
