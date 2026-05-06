@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, reactive, ref, onMounted } from 'vue'
 import { useAdminSectionStore } from '../../../stores/adminSection'
 import { useAuthStore } from '../../../stores/auth'
 import { useStaffTasksStore } from '../../../stores/staffTasks'
+import api from '../../../services/api'
 import StaffAttendance from './StaffAttendance.vue'
 import StaffTasks from './StaffTasks.vue'
-import ServiceFeedback from './ServiceFeedback.vue'
 
-type StaffTab = 'attendance' | 'tasks' | 'contributions' | 'feedback'
+type StaffTab = 'attendance' | 'tasks' | 'contributions' | 'create'
 
 const adminSectionStore = useAdminSectionStore()
 
@@ -17,19 +17,62 @@ const activeTab = computed<StaffTab>({
     if (s === 'staff-attendance') return 'attendance'
     if (s === 'staff-tasks') return 'tasks'
     if (s === 'staff-contributions') return 'contributions'
-    if (s === 'staff-feedback') return 'feedback'
+    if (s === 'staff-create') return 'create'
     return 'attendance'
   },
   set(val: StaffTab) {
     if (val === 'attendance') adminSectionStore.setSection('staff-attendance')
     else if (val === 'tasks') adminSectionStore.setSection('staff-tasks')
     else if (val === 'contributions') adminSectionStore.setSection('staff-contributions')
-    else if (val === 'feedback') adminSectionStore.setSection('staff-feedback')
+    else if (val === 'create') adminSectionStore.setSection('staff-create')
   },
 })
 const authStore = useAuthStore()
 const staffTasksStore = useStaffTasksStore()
 const isAdmin = computed(() => authStore.role === 'admin')
+
+// Create staff form (admin only) — moved into its own tab
+const createStaffForm = reactive({ email: '', password: '', confirm: '' })
+const creatingStaff = ref(false)
+const createStaffError = ref('')
+const createStaffSuccess = ref('')
+
+async function submitCreateStaff() {
+  createStaffError.value = ''
+  createStaffSuccess.value = ''
+
+  if (!createStaffForm.email || !createStaffForm.password || !createStaffForm.confirm) {
+    createStaffError.value = 'Email, password, and confirmation are required.'
+    return
+  }
+
+  if (createStaffForm.password !== createStaffForm.confirm) {
+    createStaffError.value = 'Passwords do not match.'
+    return
+  }
+
+  creatingStaff.value = true
+  try {
+    // Call admin endpoint to create staff directly (no verification code)
+    const { data } = await api.post('/auth/admin/create-staff', {
+      email: createStaffForm.email,
+      password: createStaffForm.password,
+    })
+
+    if (data && data.success) {
+      createStaffSuccess.value = 'Staff account created successfully.'
+      createStaffForm.email = ''
+      createStaffForm.password = ''
+      createStaffForm.confirm = ''
+    } else {
+      createStaffError.value = data?.message || 'Unable to create staff account.'
+    }
+  } catch (err) {
+    createStaffError.value = (err as Error).message || 'Unable to create staff account.'
+  } finally {
+    creatingStaff.value = false
+  }
+}
 
 const staffNameById: Record<string, string> = {
   '1': 'Juan Cruz',
@@ -93,11 +136,21 @@ function isCurrentUserContributor(name: string) {
 }
 
 // Note: `activeTab` is computed and syncs with `adminSectionStore.section`
+
+onMounted(() => {
+  console.log('StaffWorkspace mounted — adminSection:', adminSectionStore.section)
+  console.log('StaffWorkspace mounted — activeTab:', activeTab.value, 'isAdmin:', isAdmin.value)
+})
+
+
 </script>
 
 <template>
   <section class="space-y-4">
-    <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+    <div>
+      
+
+      <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
       <button
         type="button"
         class="rounded-md px-4 py-2 text-sm font-semibold transition-colors"
@@ -123,18 +176,37 @@ function isCurrentUserContributor(name: string) {
         Contributions
       </button>
       <button
+        v-if="isAdmin"
         type="button"
         class="rounded-md px-4 py-2 text-sm font-semibold transition-colors"
-        :class="activeTab === 'feedback' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-        @click="activeTab = 'feedback'"
+        :class="activeTab === 'create' ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
+        @click="activeTab = 'create'"
       >
-        Feedback
+        Create Staff
       </button>
+      
+    </div>
     </div>
 
     <StaffAttendance v-if="activeTab === 'attendance'" />
     <StaffTasks v-else-if="activeTab === 'tasks'" />
-    <ServiceFeedback v-else-if="activeTab === 'feedback'" :is-admin="false" />
+
+    <section v-else-if="activeTab === 'create'" class="space-y-4">
+      <div class="rounded-lg border border-gray-200 bg-white p-4">
+        <h3 class="mb-2 text-lg font-semibold text-gray-900">Create Staff Account</h3>
+        <p class="mb-3 text-sm text-gray-600">Create a staff account directly (no verification required).</p>
+
+        <div v-if="createStaffError" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ createStaffError }}</div>
+        <div v-if="createStaffSuccess" class="mb-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">{{ createStaffSuccess }}</div>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <input v-model="createStaffForm.email" type="email" placeholder="staff@example.com" class="col-span-3 rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
+          <input v-model="createStaffForm.password" type="password" placeholder="Password" class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
+          <input v-model="createStaffForm.confirm" type="password" placeholder="Confirm" class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
+          <button :disabled="creatingStaff" @click="submitCreateStaff" class="col-span-3 mt-1 h-10 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60">{{ creatingStaff ? 'Creating...' : 'Create Staff' }}</button>
+        </div>
+      </div>
+    </section>
 
     <section v-else-if="activeTab === 'contributions'" class="space-y-4">
       <div>

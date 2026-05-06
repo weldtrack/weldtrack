@@ -324,6 +324,6 @@ const pieStyle = computed(() => {
     <ServiceFeedback v-else-if="currentSection === 'feedback'" :is-admin="true" />
     <Reports v-else-if="currentSection === 'reports'" />
     <StaffWorkspace
-      v-else-if="currentSection === 'staff' || currentSection === 'staff-attendance' || currentSection === 'staff-tasks' || currentSection === 'staff-contributions'" />
+      v-else-if="currentSection === 'staff' || currentSection === 'staff-attendance' || currentSection === 'staff-tasks' || currentSection === 'staff-contributions' || currentSection === 'staff-create'" />
   </Layout>
 </template>

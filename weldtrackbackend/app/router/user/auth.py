@@ -427,6 +427,40 @@ def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)
 	return {"success": False, "message": "Invalid action"}
 
 
+@router.post("/admin/create-staff")
+def admin_create_staff(payload: dict, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+	"""Admin-only: create a staff account without requiring email verification."""
+	# Ensure caller is admin
+	if current_user.role != UserRole.admin:
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
+
+	email = payload.get("email")
+	password = payload.get("password")
+
+	if not email or not password:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email and password are required")
+
+	existing = get_user_by_email(db, email)
+	if existing:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already registered")
+
+	# Create the staff user directly and mark email verified
+	user = User(
+		email=email,
+		hashed_password=hash_password(password),
+		role=UserRole.staff,
+	)
+	db.add(user)
+	db.flush()
+
+	email_verification = EmailVerification(user_id=user.id, is_verified=True)
+	db.add(email_verification)
+	db.commit()
+	db.refresh(user)
+
+	return {"success": True, "user": get_user_response(user)}
+
+
 @router.post("/forgot-password/reset")
 def reset_password(payload: dict, db: Session = Depends(get_db)):
 	"""Reset password with verification code"""

@@ -13,6 +13,7 @@ export type AdminSection =
   | 'staff-tasks'
   | 'staff-contributions'
   | 'staff-feedback'
+  | 'staff-create'
 
 export const useAdminSectionStore = defineStore('admin-section', {
   state: () => ({

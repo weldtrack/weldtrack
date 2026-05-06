@@ -83,11 +83,14 @@ export const useAuthStore = defineStore('auth', {
       return data as { success?: boolean }
     },
 
-    async signup(payload: { email: string; password: string }) {
-      const { data } = await api.post('/auth/signup', {
+    async signup(payload: { email: string; password: string; role?: string }) {
+      const body: Record<string, string> = {
         email: payload.email,
         password: payload.password,
-      })
+      }
+      if (payload.role) body.role = payload.role
+
+      const { data } = await api.post('/auth/signup', body)
       return data as { success?: boolean }
     },
 
