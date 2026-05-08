@@ -3,26 +3,11 @@ import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useModalStore } from '../../stores/modal'
+import { getUserFriendlyApiError } from '../../services/errorMessage'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const modalStore = useModalStore()
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  const maybeAxiosError = error as {
-    response?: { data?: { message?: string }; statusText?: string }
-  }
-
-  if (maybeAxiosError?.response) {
-    return maybeAxiosError.response.data?.message || maybeAxiosError.response.statusText || fallback
-  }
-
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return fallback
-}
 
 const form = reactive({ email: '', password: '', confirm: '', code: '' })
 const step = ref(1)
@@ -71,7 +56,7 @@ async function resendCode() {
     }
     startCodeTimer()
   } catch (error) {
-    signupError.value = getApiErrorMessage(error, 'Unable to resend verification code.')
+    signupError.value = getUserFriendlyApiError(error, 'Unable to resend verification code.')
   } finally {
     isSubmittingSignup.value = false
   }
@@ -104,7 +89,7 @@ async function submitSignup() {
     step.value = 2
     startCodeTimer()
   } catch (error) {
-    signupError.value = getApiErrorMessage(error, 'Unable to create account.')
+    signupError.value = getUserFriendlyApiError(error, 'Unable to create account.')
   } finally {
     isSubmittingSignup.value = false
   }
@@ -141,7 +126,7 @@ async function submitCode() {
       throw new Error('Request failed.')
     }
   } catch (error) {
-    signupError.value = getApiErrorMessage(error, 'Unable to verify signup code.')
+    signupError.value = getUserFriendlyApiError(error, 'Unable to verify signup code.')
   } finally {
     isVerifyingCode.value = false
   }

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import api from '../services/api'
 
 export interface InventoryItem {
@@ -82,21 +83,37 @@ export const useInventoryStore = defineStore('inventory', {
   }),
   actions: {
     async fetchInventory() {
-      const { data } = await api.get<BackendInventoryItem[]>('/inventory')
-      this.items = Array.isArray(data) ? data.map(toInventoryItem) : []
-      return this.items
+      try {
+        const { data } = await api.get<BackendInventoryItem[]>('/inventory')
+        this.items = Array.isArray(data) ? data.map(toInventoryItem) : []
+        return this.items
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          this.items = []
+          return this.items
+        }
+        throw error
+      }
     },
 
     async fetchMovements(params?: { bookingId?: number; taskId?: string; itemId?: string }) {
-      const { data } = await api.get<BackendStockMovement[]>('/inventory/movements/history', {
-        params: {
-          booking_id: params?.bookingId,
-          task_id: params?.taskId,
-          item_id: params?.itemId ? Number(params.itemId) : undefined,
-        },
-      })
-      this.movements = Array.isArray(data) ? data.map(toStockMovement) : []
-      return this.movements
+      try {
+        const { data } = await api.get<BackendStockMovement[]>('/inventory/movements/history', {
+          params: {
+            booking_id: params?.bookingId,
+            task_id: params?.taskId,
+            item_id: params?.itemId ? Number(params.itemId) : undefined,
+          },
+        })
+        this.movements = Array.isArray(data) ? data.map(toStockMovement) : []
+        return this.movements
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          this.movements = []
+          return this.movements
+        }
+        throw error
+      }
     },
 
     async addItem(payload: Omit<InventoryItem, 'id'>) {

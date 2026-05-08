@@ -3,26 +3,11 @@ import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useModalStore } from '../../stores/modal'
+import { getUserFriendlyApiError } from '../../services/errorMessage'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const modalStore = useModalStore()
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  const maybeAxiosError = error as {
-    response?: { data?: { message?: string }; statusText?: string }
-  }
-
-  if (maybeAxiosError?.response) {
-    return maybeAxiosError.response.data?.message || maybeAxiosError.response.statusText || fallback
-  }
-
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return fallback
-}
 
 const loginForm = reactive({ email: '', password: '' })
 const forgotPassword = ref(false)
@@ -72,7 +57,7 @@ async function submitLogin() {
       router.replace('/dashboard')
     }
   } catch (error) {
-    loginError.value = getApiErrorMessage(error, 'Unable to sign in. Please try again.')
+    loginError.value = getUserFriendlyApiError(error, 'Unable to sign in. Please try again.')
   } finally {
     isSubmittingLogin.value = false
   }
@@ -132,7 +117,7 @@ async function verifyEmail() {
     }
     startResetTimer()
   } catch (error) {
-    resetError.value = getApiErrorMessage(error, 'Unable to send reset code.')
+    resetError.value = getUserFriendlyApiError(error, 'Unable to send reset code.')
   } finally {
     isSendingResetEmail.value = false
   }
@@ -158,7 +143,7 @@ async function verifyCode() {
     }
     resetStep.value = 3
   } catch (error) {
-    resetError.value = getApiErrorMessage(error, 'Unable to verify reset code.')
+    resetError.value = getUserFriendlyApiError(error, 'Unable to verify reset code.')
   } finally {
     isVerifyingResetCode.value = false
   }
@@ -191,7 +176,7 @@ async function submitNewPassword() {
     loginForm.email = resetForm.email
     closeForgotPassword()
   } catch (error) {
-    resetError.value = getApiErrorMessage(error, 'Unable to reset password.')
+    resetError.value = getUserFriendlyApiError(error, 'Unable to reset password.')
   } finally {
     isSavingNewPassword.value = false
   }

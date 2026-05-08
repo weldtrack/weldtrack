@@ -1,17 +1,28 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useBookingsStore } from '../../../stores/bookings'
+import { getUserFriendlyApiError } from '../../../services/errorMessage'
 import HistoryCard from './HistoryCard.vue'
 
 const authStore = useAuthStore()
 const bookingsStore = useBookingsStore()
+const loadError = ref('')
 
 const currentEmail = computed(() => authStore.email || '')
 
 onMounted(() => {
-  bookingsStore.fetchBookings()
+  void loadBookings()
 })
+
+async function loadBookings() {
+  loadError.value = ''
+  try {
+    await bookingsStore.fetchBookings()
+  } catch (error) {
+    loadError.value = getUserFriendlyApiError(error)
+  }
+}
 
 const customerBookings = computed(() => {
   const bookings = Array.isArray(bookingsStore.bookings) ? bookingsStore.bookings : []
@@ -52,7 +63,18 @@ const cancelledBookings = computed(() => customerBookings.value.filter((b) => b.
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div v-if="customerBookings.length === 0" class="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center col-span-full">
+      <div v-if="loadError" class="rounded-lg border border-red-200 bg-red-50 p-8 text-center col-span-full">
+        <h3 class="text-lg font-medium text-red-800">Unable to load booking history</h3>
+        <p class="mt-1 text-sm text-red-700">{{ loadError }}</p>
+        <button
+          type="button"
+          class="mt-4 inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+          @click="loadBookings"
+        >
+          Try again
+        </button>
+      </div>
+      <div v-else-if="customerBookings.length === 0" class="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center col-span-full">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>

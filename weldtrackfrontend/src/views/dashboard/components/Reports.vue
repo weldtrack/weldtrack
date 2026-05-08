@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import html2pdf from 'html2pdf.js'
+import axios from 'axios'
 import api from '../../../services/api'
 import { useBookingsStore } from '../../../stores/bookings'
 import { useInventoryStore } from '../../../stores/inventory'
 import { useModalStore } from '../../../stores/modal'
 import { getLaborPrice } from '../../../constants/pricing'
+import { getUserFriendlyApiError } from '../../../services/errorMessage'
 
 interface AttendanceRecord {
   id: number
@@ -42,10 +44,15 @@ const fetchAttendanceData = async (startDate: string, endDate: string) => {
         })
       : []
   } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) {
+      attendanceRecords.value = []
+      return
+    }
+
     console.error('Failed to fetch attendance:', err)
     modalStore.open({
       title: 'Error',
-      message: 'Failed to fetch attendance data',
+      message: getUserFriendlyApiError(err),
       variant: 'error',
     })
   }

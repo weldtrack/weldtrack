@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import api from '../services/api'
 
 export type Feedback = {
@@ -45,11 +46,19 @@ export const useFeedbackStore = defineStore('feedback', {
   }),
   actions: {
     async fetchFeedbacks() {
-      const response = await api.get('/feedbacks')
-      this.feedbacks = Array.isArray(response.data)
-        ? (response.data as BackendFeedback[]).map(toFrontendFeedback)
-        : []
-      return this.feedbacks
+      try {
+        const response = await api.get('/feedbacks')
+        this.feedbacks = Array.isArray(response.data)
+          ? (response.data as BackendFeedback[]).map(toFrontendFeedback)
+          : []
+        return this.feedbacks
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          this.feedbacks = []
+          return this.feedbacks
+        }
+        throw error
+      }
     },
 
     async addFeedback(feedback: Omit<Feedback, 'id' | 'date'>) {

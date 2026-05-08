@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import axios from 'axios'
 import { useAdminSectionStore } from '../../../stores/adminSection'
 import { useAuthStore } from '../../../stores/auth'
 import { useStaffContributionsStore } from '../../../stores/staffContributions'
 import api from '../../../services/api'
+import { getUserFriendlyApiError } from '../../../services/errorMessage'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 import StaffAttendance from './StaffAttendance.vue'
 import StaffTasks from './StaffTasks.vue'
@@ -57,7 +59,13 @@ async function fetchStaffList() {
     const { data } = await api.get('/auth/staff')
     staffList.value = Array.isArray(data) ? data : []
   } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) {
+      staffList.value = []
+      return
+    }
+
     console.error('Failed to fetch staff list:', err)
+    createStaffError.value = getUserFriendlyApiError(err)
     staffList.value = []
   }
 }
@@ -94,7 +102,7 @@ async function submitCreateStaff() {
       createStaffError.value = data?.message || 'Unable to create staff account.'
     }
   } catch (err) {
-    createStaffError.value = (err as Error).message || 'Unable to create staff account.'
+    createStaffError.value = getUserFriendlyApiError(err, 'Unable to create staff account.')
   } finally {
     creatingStaff.value = false
   }
@@ -123,7 +131,7 @@ async function confirmDeleteStaff() {
     await fetchStaffList()
     closeDeleteModal()
   } catch (err) {
-    deleteError.value = (err as Error).message || 'Failed to delete staff member.'
+    deleteError.value = getUserFriendlyApiError(err, 'Failed to delete staff member.')
     isDeleting.value = false
   }
 }

@@ -5,6 +5,7 @@ import { useInventoryStore } from '../../../stores/inventory'
 import { useModalStore } from '../../../stores/modal'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 import { getLaborPrice } from '../../../constants/pricing'
+import { getUserFriendlyApiError } from '../../../services/errorMessage'
 
 const bookingsStore = useBookingsStore()
 const inventoryStore = useInventoryStore()
@@ -224,10 +225,24 @@ async function loadMaterialsForBooking() {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Error fetching booking:', err)
+    modalStore.open({
+      title: 'Error',
+      message: getUserFriendlyApiError(err),
+      variant: 'error',
+    })
   }
 
   // Fallback: load from stock movements
-  await inventoryStore.fetchMovements({ bookingId })
+  try {
+    await inventoryStore.fetchMovements({ bookingId })
+  } catch (err) {
+    modalStore.open({
+      title: 'Error',
+      message: getUserFriendlyApiError(err),
+      variant: 'error',
+    })
+    return
+  }
   const movements = inventoryStore.getMovementsForBooking(bookingId)
   // eslint-disable-next-line no-console
   console.debug('Found stock movements for booking:', movements)

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import api from '../services/api'
 
 export type TaskStatus = 'pending' | 'in-progress' | 'done'
@@ -74,14 +75,22 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
   }),
   actions: {
     async fetchTasks(params?: { status?: TaskStatus }) {
-      const { data } = await api.get<BackendStaffTask[]>('/staff-tasks', {
-        params: {
-          status: params?.status,
-        },
-      })
+      try {
+        const { data } = await api.get<BackendStaffTask[]>('/staff-tasks', {
+          params: {
+            status: params?.status,
+          },
+        })
 
-      this.tasks = Array.isArray(data) ? data.map(toStaffTask) : []
-      return this.tasks
+        this.tasks = Array.isArray(data) ? data.map(toStaffTask) : []
+        return this.tasks
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          this.tasks = []
+          return this.tasks
+        }
+        throw error
+      }
     },
 
     async assignTask(payload: {

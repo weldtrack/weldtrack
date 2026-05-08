@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
 import { useAuthStore } from '../../../stores/auth'
 import api from '../../../services/api'
+import { getUserFriendlyApiError } from '../../../services/errorMessage'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 
 interface AttendanceRecord {
@@ -41,25 +43,41 @@ const currentStaffLabel = computed(() =>
 )
 
 async function fetchCurrentUser() {
-  const { data } = await api.get('/auth/me')
-  currentUserEmail.value = data?.email ?? ''
+  try {
+    const { data } = await api.get('/auth/me')
+    currentUserEmail.value = data?.email ?? ''
+  } catch (error) {
+    actionMessage.value = getUserFriendlyApiError(error)
+    currentUserEmail.value = ''
+  }
 }
 
 async function fetchAttendance() {
-  const { data } = await api.get('/attendance')
-  attendanceRecords.value = Array.isArray(data)
-    ? data.map((record: any) => ({
-        id: String(record.id),
-        email: record.email,
-        staffName: authStore.getStaffLabel(record.email, record.email),
-        date: record.date,
-        checkInAt: record.check_in_at,
-        checkOutAt: record.check_out_at || undefined,
-        hoursWorked: Number(record.hours_worked ?? 0),
-        regularHours: Number(record.regular_hours ?? 0),
-        overtimeHours: Number(record.overtime_hours ?? 0),
-      }))
-    : []
+  try {
+    const { data } = await api.get('/attendance')
+    attendanceRecords.value = Array.isArray(data)
+      ? data.map((record: any) => ({
+          id: String(record.id),
+          email: record.email,
+          staffName: authStore.getStaffLabel(record.email, record.email),
+          date: record.date,
+          checkInAt: record.check_in_at,
+          checkOutAt: record.check_out_at || undefined,
+          hoursWorked: Number(record.hours_worked ?? 0),
+          regularHours: Number(record.regular_hours ?? 0),
+          overtimeHours: Number(record.overtime_hours ?? 0),
+        }))
+      : []
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      attendanceRecords.value = []
+      actionMessage.value = ''
+      return
+    }
+
+    actionMessage.value = getUserFriendlyApiError(error)
+    attendanceRecords.value = []
+  }
 }
 
 const todayAttendance = computed(() => {
@@ -221,14 +239,18 @@ function closeCheckInModal() {
 async function saveAttendance() {
   if (!newRecordForm.value.email) return
 
-  if (checkInAction.value === 'checkin') {
-    await api.post('/attendance/check-in')
-  } else {
-    await api.post('/attendance/check-out')
-  }
+  try {
+    if (checkInAction.value === 'checkin') {
+      await api.post('/attendance/check-in')
+    } else {
+      await api.post('/attendance/check-out')
+    }
 
-  await fetchAttendance()
-  closeCheckInModal()
+    await fetchAttendance()
+    closeCheckInModal()
+  } catch (error) {
+    actionMessage.value = getUserFriendlyApiError(error)
+  }
 }
 
 function round2(value: number) {

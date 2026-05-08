@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import api from '../services/api'
 
 export interface StaffContributionSnapshot {
@@ -42,11 +43,19 @@ export const useStaffContributionsStore = defineStore('staff-contributions', {
   }),
   actions: {
     async fetchSnapshots() {
-      const { data } = await api.get<BackendStaffContributionSnapshot[]>('/staff-contributions', {
-        params: { limit: 500 },
-      })
-      this.snapshots = Array.isArray(data) ? data.map(toSnapshot) : []
-      return this.snapshots
+      try {
+        const { data } = await api.get<BackendStaffContributionSnapshot[]>('/staff-contributions', {
+          params: { limit: 500 },
+        })
+        this.snapshots = Array.isArray(data) ? data.map(toSnapshot) : []
+        return this.snapshots
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          this.snapshots = []
+          return this.snapshots
+        }
+        throw error
+      }
     },
   },
 })

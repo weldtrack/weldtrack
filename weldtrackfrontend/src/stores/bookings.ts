@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import api from '../services/api'
 
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
@@ -148,10 +149,18 @@ export const useBookingsStore = defineStore('bookings', {
   }),
   actions: {
     async fetchBookings(params?: Record<string, any>) {
-      const res = await api.get('/bookings', { params })
-      const normalizedBookings = normalizeBookingsResponse(res.data)
-      this.bookings = normalizedBookings ?? []
-      return this.bookings
+      try {
+        const res = await api.get('/bookings', { params })
+        const normalizedBookings = normalizeBookingsResponse(res.data)
+        this.bookings = normalizedBookings ?? []
+        return this.bookings
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          this.bookings = []
+          return this.bookings
+        }
+        throw error
+      }
     },
 
     async createBooking(payload: Partial<BookingItem>) {
