@@ -258,6 +258,13 @@ def list_staff_users(current_user: User = Depends(get_current_user), db: Session
 	return [get_user_response(user) for user in users]
 
 
+@router.post("/logout")
+def logout(response: Response) -> dict[str, bool | str]:
+	"""Clear the auth cookie so the client can end the session cleanly."""
+	response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
+	return {"success": True, "message": "Logged out successfully"}
+
+
 # Email verification and password reset endpoints
 # These are simple implementations - consider integrating with a proper email service
 
