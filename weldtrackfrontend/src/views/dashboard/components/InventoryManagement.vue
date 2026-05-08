@@ -56,7 +56,7 @@ function openEditDialog(item: InventoryItem) {
   formData.name = item.name
   formData.unitPrice = String(item.unitPrice)
   formData.supplier = item.supplier
-  formData.dateAdded = item.dateAdded
+  formData.dateAdded = new Date().toISOString().split('T')[0]
   formData.lowStockThreshold = String(item.lowStockThreshold)
   isDialogOpen.value = true
 }
@@ -145,6 +145,30 @@ async function handleDelete(id: string) {
 
 function formatCurrency(value: number) {
   return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+}
+
+function formatDate(value?: string) {
+  if (!value) return '-'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return d.toLocaleDateString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  })
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return '-'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return d.toLocaleString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 </script>
 
@@ -243,7 +267,7 @@ function formatCurrency(value: number) {
               <td class="px-6 py-4 text-gray-700">{{ formatCurrency(item.unitPrice) }}</td>
               <td class="px-6 py-4 text-gray-900">{{ formatCurrency(item.quantity * item.unitPrice) }}</td>
               <td class="px-6 py-4 text-gray-700">{{ item.supplier }}</td>
-              <td class="px-6 py-4 text-gray-700">{{ item.dateAdded }}</td>
+              <td class="px-6 py-4 text-gray-700">{{ formatDate(item.dateAdded) }}</td>
               <td class="px-6 py-4">
                 <span
                   v-if="item.quantity <= item.lowStockThreshold"
@@ -437,7 +461,7 @@ function formatCurrency(value: number) {
         >
           <div>
             <p class="font-medium text-gray-900">{{ movement.itemName }}</p>
-            <p class="text-sm text-gray-600">{{ movement.timestamp }}</p>
+            <p class="text-sm text-gray-600">{{ formatDateTime(movement.timestamp) }}</p>
             <p v-if="movement.teamEmails.length" class="text-xs text-gray-500">
               Team: {{ movement.teamEmails.join(', ') }}
             </p>

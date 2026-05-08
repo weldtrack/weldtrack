@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 from app.db import get_db
-from app.models.inventory import InventoryItem, StockMovement
+from app.models.inventory import InventoryItem, StockMovement, MovementType
 from app.models.stafftask import StaffTask
 from app.schemas.inventory import (
     InventoryItemCreate,
@@ -85,10 +85,27 @@ def partial_update_inventory_item(
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     
+    # Track quantity changes for stock movements
+    old_quantity = item.quantity or 0
+    
     # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(item, key):
             setattr(item, key, value)
+    
+    # Create stock movement if quantity changed
+    new_quantity = item.quantity or 0
+    if old_quantity != new_quantity:
+        quantity_delta = new_quantity - old_quantity
+        movement_type = MovementType.stock_in if quantity_delta > 0 else MovementType.stock_out
+        
+        movement = StockMovement(
+            item_id=item.id,
+            item_name=item.name,
+            quantity=abs(quantity_delta),
+            type=movement_type,
+        )
+        db.add(movement)
     
     db.commit()
     db.refresh(item)

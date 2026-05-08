@@ -2,10 +2,13 @@
 import { computed, reactive, ref } from 'vue'
 import { useBookingsStore, type BookingItem, type BookingStatus } from '../../../stores/bookings'
 import { useInventoryStore } from '../../../stores/inventory'
+import { useModalStore } from '../../../stores/modal'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 import { getLaborPrice } from '../../../constants/pricing'
 
 const bookingsStore = useBookingsStore()
+const inventoryStore = useInventoryStore()
+const modalStore = useModalStore()
 const bookings = computed(() => bookingsStore.bookings)
 const activeBookings = computed(() =>
   bookings.value.filter((booking) => booking.status === 'pending' || booking.status === 'confirmed'),
@@ -24,7 +27,6 @@ const isCompleteModalOpen = ref(false)
 const completionForm = reactive({
   materialCost: '',
 })
-const inventoryStore = useInventoryStore()
 const isCancelModalOpen = ref(false)
 const cancelForm = reactive({
   reason: '',
@@ -154,6 +156,26 @@ const computedCompletionTotal = computed(() => {
 })
 
 async function confirmComplete() {
+  if (!selectedBooking.value) return
+  
+  // Check if staff has recorded materials
+  if (!hasStaffMaterialSubmission(selectedBooking.value.id)) {
+    // Show modal asking to confirm completion without materials
+    modalStore.open({
+      title: 'No materials recorded',
+      message: 'Staff has not submitted any recorded materials for this booking. Are you sure you want to complete it without material records?',
+      variant: 'warning',
+      confirmLabel: 'Complete Anyway',
+      cancelLabel: 'Cancel',
+      onConfirm: () => completeBookingForce(),
+    })
+    return
+  }
+  
+  completeBookingForce()
+}
+
+async function completeBookingForce() {
   if (!selectedBooking.value) return
   const labor = getLaborPriceFor(selectedBooking.value.projectType)
   const material = Number(completionForm.materialCost) || 0

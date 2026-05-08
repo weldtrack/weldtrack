@@ -44,13 +44,15 @@ const myAssignedTasks = computed(() => {
   return staffTasksStore.tasks.filter((task) => task.assignedStaffIds.includes(currentUserId.value))
 })
 
+const getTodayDate = () => new Date().toISOString().split('T')[0]
+
 const newTaskForm = ref({
   projectName: '',
   title: '',
   description: '',
   requiredStaffCount: 2,
   assignedStaffIds: ['' , ''] as string[],
-  dueDate: '',
+  dueDate: getTodayDate(),
   location: {
     country: 'PH' as const,
     region: 'Bicol Region (Region V)' as const,
@@ -148,11 +150,10 @@ function selectConfirmedBooking(bookingId: number) {
   if (!booking) return
 
   selectedBookingId.value = booking.id
-  const today = new Date().toISOString().split('T')[0]
   newTaskForm.value.projectName = `${booking.projectType} - ${booking.email || booking.customerName || `Booking #${booking.id}`}`
   newTaskForm.value.title = booking.projectType
   newTaskForm.value.description = booking.description || ''
-  newTaskForm.value.dueDate = booking.scheduleDate || booking.preferredDate || today
+  newTaskForm.value.dueDate = booking.scheduleDate || booking.preferredDate || getTodayDate()
 }
 
 onMounted(async () => {
@@ -312,7 +313,7 @@ function resetNewTaskForm() {
     description: '',
     requiredStaffCount: 2,
     assignedStaffIds: ['', ''],
-    dueDate: '',
+    dueDate: getTodayDate(),
     location: {
       country: 'PH',
       region: 'Bicol Region (Region V)',
