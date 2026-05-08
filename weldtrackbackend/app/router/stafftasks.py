@@ -4,10 +4,58 @@ from sqlalchemy import select, desc
 from uuid import UUID
 from app.db import get_db
 from app.models.stafftask import StaffTask, TaskStatus
+from app.models.staffcontribution import StaffContributionSnapshot
 from app.schemas.stafftask import TaskCreate, TaskStatusUpdate, TaskOut
 from datetime import datetime
 
 router = APIRouter(prefix="/staff-tasks", tags=["staff-tasks"])
+
+
+def serialize_task(task: StaffTask) -> dict:
+    return {
+        "id": task.id,
+        "bookingId": task.booking_id,
+        "projectName": task.project_name,
+        "title": task.title,
+        "description": task.description,
+        "assignedStaffIds": [a.staff_id for a in task.assignees],
+        "assignedStaffEmails": [a.staff.email for a in task.assignees if a.staff and a.staff.email],
+        "assignedAt": task.assigned_at,
+        "dueDate": task.due_date,
+        "status": task.status.value,
+        "location": {
+            "country": task.country,
+            "region": task.region,
+            "province": task.province,
+            "municipality": task.municipality,
+            "barangay": task.barangay,
+            "house": task.house,
+        }
+    }
+
+
+def upsert_contribution_snapshot(task: StaffTask, db: Session) -> None:
+    contributor_ids = [a.staff_id for a in task.assignees]
+    contributor_emails = [a.staff.email for a in task.assignees if a.staff and a.staff.email]
+
+    snapshot = db.scalars(
+        select(StaffContributionSnapshot).where(StaffContributionSnapshot.task_id == str(task.id))
+    ).first()
+
+    if snapshot is None:
+        snapshot = StaffContributionSnapshot(
+            task_id=str(task.id),
+            project_name=task.project_name,
+            task_title=task.title,
+        )
+        db.add(snapshot)
+
+    snapshot.booking_id = task.booking_id
+    snapshot.project_name = task.project_name
+    snapshot.task_title = task.title
+    snapshot.contributor_ids = contributor_ids
+    snapshot.contributor_emails = contributor_emails
+    snapshot.completed_at = datetime.utcnow()
 
 
 @router.get("", response_model=list[TaskOut])
@@ -26,28 +74,7 @@ def list_staff_tasks(
     query = query.offset(skip).limit(limit)
     tasks = db.scalars(query).all()
     
-    # Format response
-    return [
-        {
-            "id": task.id,
-            "projectName": task.project_name,
-            "title": task.title,
-            "description": task.description,
-            "assignedStaffIds": [a.staff_id for a in task.assignees],
-            "assignedAt": task.assigned_at,
-            "dueDate": task.due_date,
-            "status": task.status.value,
-            "location": {
-                "country": task.country,
-                "region": task.region,
-                "province": task.province,
-                "municipality": task.municipality,
-                "barangay": task.barangay,
-                "house": task.house,
-            }
-        }
-        for task in tasks
-    ]
+    return [serialize_task(task) for task in tasks]
 
 
 @router.get("/{task_id}", response_model=TaskOut)
@@ -60,24 +87,7 @@ def get_staff_task(
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     
-    return {
-        "id": task.id,
-        "projectName": task.project_name,
-        "title": task.title,
-        "description": task.description,
-        "assignedStaffIds": [a.staff_id for a in task.assignees],
-        "assignedAt": task.assigned_at,
-        "dueDate": task.due_date,
-        "status": task.status.value,
-        "location": {
-            "country": task.country,
-            "region": task.region,
-            "province": task.province,
-            "municipality": task.municipality,
-            "barangay": task.barangay,
-            "house": task.house,
-        }
-    }
+    return serialize_task(task)
 
 
 @router.post("", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
@@ -86,7 +96,18 @@ def create_staff_task(
     db: Session = Depends(get_db),
 ):
     """Create a new staff task"""
+    if payload.bookingId is not None:
+        existing_task = db.scalars(
+            select(StaffTask).where(StaffTask.booking_id == payload.bookingId)
+        ).first()
+        if existing_task is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A staff task already exists for this booking.",
+            )
+
     task = StaffTask(
+        booking_id=payload.bookingId,
         project_name=payload.projectName,
         title=payload.title,
         description=payload.description,
@@ -109,24 +130,7 @@ def create_staff_task(
     db.commit()
     db.refresh(task)
     
-    return {
-        "id": task.id,
-        "projectName": task.project_name,
-        "title": task.title,
-        "description": task.description,
-        "assignedStaffIds": payload.assignedStaffIds,
-        "assignedAt": task.assigned_at,
-        "dueDate": task.due_date,
-        "status": task.status.value,
-        "location": {
-            "country": task.country,
-            "region": task.region,
-            "province": task.province,
-            "municipality": task.municipality,
-            "barangay": task.barangay,
-            "house": task.house,
-        }
-    }
+    return serialize_task(task)
 
 
 @router.put("/{task_id}/status", response_model=TaskOut)
@@ -141,27 +145,12 @@ def update_staff_task_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     
     task.status = TaskStatus(payload.status)
+    if task.status == TaskStatus.done:
+        upsert_contribution_snapshot(task, db)
     db.commit()
     db.refresh(task)
     
-    return {
-        "id": task.id,
-        "projectName": task.project_name,
-        "title": task.title,
-        "description": task.description,
-        "assignedStaffIds": [a.staff_id for a in task.assignees],
-        "assignedAt": task.assigned_at,
-        "dueDate": task.due_date,
-        "status": task.status.value,
-        "location": {
-            "country": task.country,
-            "region": task.region,
-            "province": task.province,
-            "municipality": task.municipality,
-            "barangay": task.barangay,
-            "house": task.house,
-        }
-    }
+    return serialize_task(task)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

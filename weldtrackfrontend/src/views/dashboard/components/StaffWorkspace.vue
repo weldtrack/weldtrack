@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAdminSectionStore } from '../../../stores/adminSection'
 import { useAuthStore } from '../../../stores/auth'
-import { useStaffTasksStore } from '../../../stores/staffTasks'
+import { useStaffContributionsStore } from '../../../stores/staffContributions'
 import api from '../../../services/api'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 import StaffAttendance from './StaffAttendance.vue'
@@ -36,7 +36,7 @@ const activeTab = computed<StaffTab>({
   },
 })
 const authStore = useAuthStore()
-const staffTasksStore = useStaffTasksStore()
+const staffContributionsStore = useStaffContributionsStore()
 const isAdmin = computed(() => authStore.role === 'admin')
 
 // Create staff form (admin only) — moved into its own tab
@@ -131,14 +131,21 @@ async function confirmDeleteStaff() {
 const currentUserId = ref('')
 
 function getStaffLabel(staffId: string) {
-  return authStore.getStaffLabel(staffId, staffId ? `Staff #${staffId}` : '')
+  return authStore.getStaffLabel(staffId)
+}
+
+function getContributorLabels(snapshot: { contributorIds?: string[]; contributorEmails?: string[] }) {
+  if (snapshot.contributorEmails?.length) return snapshot.contributorEmails.filter(Boolean)
+  if (!snapshot.contributorIds?.length) return []
+  return snapshot.contributorIds
+    .map((id) => getStaffLabel(id))
+    .filter(Boolean)
 }
 
 const completedContributions = computed(() => {
-  const doneTasks = staffTasksStore.tasks.filter((t) => {
-    if (t.status !== 'done') return false
+  const relevantSnapshots = staffContributionsStore.snapshots.filter((snapshot) => {
     if (isAdmin.value) return true
-    if (Array.isArray(t.assignedStaffIds)) return t.assignedStaffIds.includes(currentUserId.value)
+    if (Array.isArray(snapshot.contributorIds)) return snapshot.contributorIds.includes(currentUserId.value)
     return false
   })
 
@@ -147,20 +154,20 @@ const completedContributions = computed(() => {
     { projectName: string; doneCount: number; lastDoneAt: string; contributors: string[] }
   > = {}
 
-  doneTasks.forEach((t) => {
-    const existing = byProject[t.projectName]
-    const contributorNames = (t.assignedStaffIds || []).map((id) => getStaffLabel(id))
+  relevantSnapshots.forEach((snapshot) => {
+    const existing = byProject[snapshot.projectName]
+    const contributorNames = getContributorLabels(snapshot)
 
     if (!existing) {
-      byProject[t.projectName] = {
-        projectName: t.projectName,
+      byProject[snapshot.projectName] = {
+        projectName: snapshot.projectName,
         doneCount: 1,
-        lastDoneAt: t.assignedAt,
+        lastDoneAt: snapshot.completedAt,
         contributors: [...contributorNames],
       }
     } else {
       existing.doneCount += 1
-      if (new Date(t.assignedAt) > new Date(existing.lastDoneAt)) existing.lastDoneAt = t.assignedAt
+      if (new Date(snapshot.completedAt) > new Date(existing.lastDoneAt)) existing.lastDoneAt = snapshot.completedAt
       contributorNames.forEach((name) => {
         if (!existing.contributors.includes(name)) existing.contributors.push(name)
       })
@@ -182,7 +189,7 @@ function isCurrentUserContributor(name: string) {
 
 onMounted(() => {
   Promise.all([
-    staffTasksStore.fetchTasks(),
+    staffContributionsStore.fetchSnapshots(),
     authStore.fetchStaffDirectory(),
     api.get('/auth/me').then(({ data }) => {
       currentUserId.value = String(data?.id ?? '')

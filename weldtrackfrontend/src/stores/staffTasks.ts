@@ -5,10 +5,12 @@ export type TaskStatus = 'pending' | 'in-progress' | 'done'
 
 export interface StaffTask {
   id: string
+  bookingId: number | null
   projectName: string
   title: string
   description: string
   assignedStaffIds: string[]
+  assignedStaffEmails: string[]
   assignedAt: string
   dueDate: string
   status: TaskStatus
@@ -24,10 +26,12 @@ export interface StaffTask {
 
 type BackendStaffTask = {
   id: string
+  bookingId?: number | null
   projectName: string
   title: string
   description?: string | null
   assignedStaffIds: number[]
+  assignedStaffEmails?: string[]
   assignedAt: string
   dueDate: string
   status: TaskStatus
@@ -44,10 +48,12 @@ type BackendStaffTask = {
 function toStaffTask(task: BackendStaffTask): StaffTask {
   return {
     id: task.id,
+    bookingId: task.bookingId ?? null,
     projectName: task.projectName,
     title: task.title,
     description: task.description ?? '',
     assignedStaffIds: Array.isArray(task.assignedStaffIds) ? task.assignedStaffIds.map(String) : [],
+    assignedStaffEmails: Array.isArray(task.assignedStaffEmails) ? task.assignedStaffEmails.filter(Boolean) : [],
     assignedAt: task.assignedAt,
     dueDate: task.dueDate,
     status: task.status,
@@ -79,6 +85,7 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
     },
 
     async assignTask(payload: {
+      bookingId?: number | null
       projectName: string
       title: string
       description: string
@@ -92,6 +99,7 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
       }
     }) {
       const { data } = await api.post<BackendStaffTask>('/staff-tasks', {
+        bookingId: payload.bookingId ?? null,
         projectName: payload.projectName,
         title: payload.title,
         description: payload.description,

@@ -20,9 +20,18 @@ const modalStore = useModalStore()
 const isAdmin = computed(() => authStore.role === 'admin')
 
 const staffList = computed(() => authStore.staffDirectory as StaffMember[])
+const assignedBookingIds = computed(() => {
+  return new Set(
+    staffTasksStore.tasks
+      .map((task) => task.bookingId)
+      .filter((bookingId): bookingId is number => bookingId != null),
+  )
+})
 const confirmedBookings = computed(() =>
   Array.isArray(bookingsStore.bookings)
-    ? bookingsStore.bookings.filter((booking) => booking.status === 'confirmed')
+    ? bookingsStore.bookings.filter((booking) => {
+        return booking.status === 'confirmed' && !assignedBookingIds.value.has(booking.id)
+      })
     : [],
 )
 
@@ -53,6 +62,8 @@ const newTaskForm = ref({
 })
 
 const inventoryStore = useInventoryStore()
+const isRemoveTaskModalOpen = ref(false)
+const taskToRemove = ref<{ id: string; title: string } | null>(null)
 
 // record materials modal
 const isRecordModalOpen = ref(false)
@@ -66,18 +77,69 @@ const recordForm = reactive({
   afterImagePreview: '' as string,
 })
 
-function openRecordModal(taskId: string) {
-  recordingTask.value = taskId
-  // initialize with first available item if present
+function resetRecordForm() {
   recordForm.lines = [{ itemId: inventoryStore.items[0]?.id || '', quantity: 1 }]
   recordForm.bookingId = ''
   recordForm.beforeImageFile = null
   recordForm.afterImageFile = null
   recordForm.beforeImagePreview = ''
   recordForm.afterImagePreview = ''
-  // debug: inspect inventory at modal open
-  // eslint-disable-next-line no-console
-  console.debug('Opening Record Modal — inventory items:', inventoryStore.items)
+}
+
+function getTaskBookingId(taskId: string) {
+  const task = staffTasksStore.tasks.find((entry) => entry.id === taskId)
+  if (task?.bookingId != null) return task.bookingId
+  const movement = inventoryStore.getMovementsForTask(taskId).find((entry) => entry.bookingId != null)
+  return movement?.bookingId ?? null
+}
+
+function hasRecordedMaterialsForTask(taskId: string) {
+  return inventoryStore.getMovementsForTask(taskId).some((entry) => entry.type === 'stock-out')
+}
+
+function isTaskBookingCompleted(taskId: string) {
+  const bookingId = getTaskBookingId(taskId)
+  if (bookingId == null) return false
+  const booking = bookingsStore.bookings.find((entry) => entry.id === bookingId)
+  return booking?.status === 'completed'
+}
+
+async function openRecordModal(taskId: string) {
+  recordingTask.value = taskId
+  resetRecordForm()
+
+  await inventoryStore.fetchMovements()
+
+  const bookingId = getTaskBookingId(taskId)
+  if (bookingId != null) {
+    recordForm.bookingId = String(bookingId)
+
+    const booking = await bookingsStore.getBooking(bookingId)
+    if (booking.status === 'completed') {
+      modalStore.open({
+        title: 'Booking already completed',
+        message: 'Recorded materials can no longer be updated after admin completes the booking.',
+        variant: 'warning',
+      })
+      closeRecordModal()
+      return
+    }
+
+    if (Array.isArray(booking.materials) && booking.materials.length > 0) {
+      recordForm.lines = booking.materials.map((line) => ({
+        itemId: String(line.itemId),
+        quantity: Number(line.qty) || 1,
+      }))
+    }
+
+    if (booking.beforeImages?.length) {
+      recordForm.beforeImagePreview = String(booking.beforeImages[0] || '')
+    }
+    if (booking.afterImages?.length) {
+      recordForm.afterImagePreview = String(booking.afterImages[0] || '')
+    }
+  }
+
   isRecordModalOpen.value = true
 }
 
@@ -99,7 +161,7 @@ onMounted(async () => {
     api.get('/auth/me').then(({ data }) => {
       currentUserId.value = String(data?.id ?? '')
     }),
-    bookingsStore.fetchBookings(),
+    bookingsStore.fetchBookings({ limit: 100 }),
     staffTasksStore.fetchTasks(),
     inventoryStore.fetchInventory(),
     inventoryStore.fetchMovements(),
@@ -109,10 +171,7 @@ onMounted(async () => {
 function closeRecordModal() {
   isRecordModalOpen.value = false
   recordingTask.value = null
-  recordForm.beforeImageFile = null
-  recordForm.afterImageFile = null
-  recordForm.beforeImagePreview = ''
-  recordForm.afterImagePreview = ''
+  resetRecordForm()
 }
 
 function handleBeforeImageChange(ev: Event) {
@@ -150,22 +209,36 @@ function removeMaterialLine(index: number) {
   recordForm.lines.splice(index, 1)
 }
 
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2,
+  }).format(amount)
+}
+
+function getItemPrice(itemId: string) {
+  const item = inventoryStore.items.find((entry) => entry.id === itemId)
+  return Number(item?.unitPrice ?? 0)
+}
+
+function getLineTotal(itemId: string, quantity: number) {
+  return getItemPrice(itemId) * Math.max(0, Number(quantity) || 0)
+}
+
+const materialsTotalPrice = computed(() => {
+  return recordForm.lines.reduce((total, line) => {
+    return total + getLineTotal(line.itemId, line.quantity)
+  }, 0)
+})
+
 async function recordMaterialsUsage() {
   if (!recordingTask.value) return
-  const bookingIdRaw = (recordForm.bookingId || '').toString().trim()
-  if (!bookingIdRaw) {
+  const bookingId = getTaskBookingId(recordingTask.value)
+  if (!Number.isFinite(Number(bookingId)) || Number(bookingId) <= 0) {
     modalStore.open({
-      title: 'Booking ID required',
-      message: 'Please enter a booking ID before submitting materials.',
-      variant: 'warning',
-    })
-    return
-  }
-  const bookingId = Number(bookingIdRaw)
-  if (!Number.isFinite(bookingId) || bookingId <= 0) {
-    modalStore.open({
-      title: 'Invalid booking ID',
-      message: 'Booking ID must be a valid number.',
+      title: 'Missing booking link',
+      message: 'This task is not linked to a booking yet. Reassign it from a confirmed booking first.',
       variant: 'warning',
     })
     return
@@ -194,15 +267,14 @@ async function recordMaterialsUsage() {
     beforeImage: recordForm.beforeImagePreview || undefined,
     afterImage: recordForm.afterImagePreview || undefined,
   }
-  await api.post(`/bookings/${bookingId}/materials`, payload)
+  await api.post(`/bookings/${Number(bookingId)}/materials`, payload)
   await inventoryStore.fetchInventory()
   await inventoryStore.fetchMovements()
 
   // Auto-mark task as done after successful submission
   await staffTasksStore.updateTaskStatus(recordingTask.value, 'done')
 
-  const bookingsStore = useBookingsStore()
-  await bookingsStore.getBooking(bookingId)
+  await bookingsStore.getBooking(Number(bookingId))
 
   closeRecordModal()
 }
@@ -267,13 +339,15 @@ function getStatusClass(status: TaskStatus) {
   return 'bg-gray-100 text-gray-700'
 }
 
-function getStaffName(staffId: string) {
-  return authStore.getStaffLabel(staffId, staffId ? `Staff #${staffId}` : 'Unassigned')
-}
+function getTeamLabel(task: { assignedStaffIds?: string[]; assignedStaffEmails?: string[] }) {
+  if (task.assignedStaffEmails?.length) return task.assignedStaffEmails.join(', ')
+  if (!task.assignedStaffIds?.length) return 'No team assigned'
 
-function getTeamLabel(staffIds: string[]) {
-  if (!staffIds?.length) return 'No team assigned'
-  return staffIds.map((id) => getStaffName(id)).join(', ')
+  const labels = task.assignedStaffIds
+    .map((id) => authStore.getStaffLabel(id))
+    .filter(Boolean)
+
+  return labels.length ? labels.join(', ') : 'Unassigned'
 }
 
 function getItemQuantity(itemId: string) {
@@ -307,6 +381,7 @@ async function assignTask() {
   if (new Set(assignedStaffIds).size !== assignedStaffIds.length) return
 
   await staffTasksStore.assignTask({
+    bookingId: selectedBookingId.value,
     projectName,
     title,
     description,
@@ -338,8 +413,20 @@ async function updateTaskStatus(taskId: string, status: TaskStatus) {
   await staffTasksStore.updateTaskStatus(taskId, status)
 }
 
-async function removeTask(taskId: string) {
-  await staffTasksStore.removeTask(taskId)
+function openRemoveTaskModal(task: { id: string; title: string }) {
+  taskToRemove.value = { id: task.id, title: task.title }
+  isRemoveTaskModalOpen.value = true
+}
+
+function closeRemoveTaskModal() {
+  isRemoveTaskModalOpen.value = false
+  taskToRemove.value = null
+}
+
+async function confirmRemoveTask() {
+  if (!taskToRemove.value) return
+  await staffTasksStore.removeTask(taskToRemove.value.id)
+  closeRemoveTaskModal()
 }
 </script>
 
@@ -430,7 +517,7 @@ async function removeTask(taskId: string) {
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p class="font-semibold text-gray-900">{{ task.title }}</p>
-                <p class="text-sm text-gray-600">{{ task.projectName }} · Team: {{ getTeamLabel(task.assignedStaffIds) }}</p>
+                <p class="text-sm text-gray-600">{{ task.projectName }} · Team: {{ getTeamLabel(task) }}</p>
               </div>
               <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="getStatusClass(task.status)">{{ task.status }}</span>
             </div>
@@ -438,15 +525,11 @@ async function removeTask(taskId: string) {
             <p class="mt-2 text-sm text-gray-700">{{ task.description || 'No description' }}</p>
             <p class="mt-2 text-xs text-gray-500">Due: {{ formatDate(task.dueDate) }}</p>
             <p class="mt-1 text-xs text-gray-500">Location: {{ formatTaskLocation(task) }}</p>
+            <p v-if="isTaskBookingCompleted(task.id)" class="mt-2 text-xs font-semibold text-green-700">Task completed</p>
 
             <div class="mt-3 flex flex-wrap gap-2">
-              <select :value="task.status" class="rounded-lg border border-gray-300 px-2 py-1 text-sm" @change="updateTaskStatus(task.id, ($event.target as HTMLSelectElement).value as TaskStatus)">
-                <option value="pending">Pending</option>
-                <option value="in-progress">In Progress</option>
-                <option value="done">Done</option>
-              </select>
-                <button type="button" class="rounded-lg bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 hover:bg-amber-200" @click="openRecordModal(task.id)">Record Materials</button>
-              <button type="button" class="rounded-lg bg-red-100 px-3 py-1 text-sm font-semibold text-red-700 hover:bg-red-200" @click="removeTask(task.id)">Remove</button>
+              <button v-if="!isTaskBookingCompleted(task.id)" type="button" class="rounded-lg bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 hover:bg-amber-200" @click="openRecordModal(task.id)">{{ hasRecordedMaterialsForTask(task.id) ? 'Update Materials' : 'Record Materials' }}</button>
+              <button type="button" class="rounded-lg bg-red-100 px-3 py-1 text-sm font-semibold text-red-700 hover:bg-red-200" @click="openRemoveTaskModal(task)">Remove</button>
             </div>
           </div>
         </div>
@@ -479,13 +562,18 @@ async function removeTask(taskId: string) {
               <div class="mt-2">
                 <label class="block text-sm font-medium text-gray-700">Item</label>
                 <select v-model="line.itemId" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <option v-for="it in inventoryStore.items" :key="it.id" :value="it.id">{{ it.name }} — {{ getItemQuantity(it.id) }} left</option>
+                  <option v-for="it in inventoryStore.items" :key="it.id" :value="it.id">{{ it.name }} — {{ formatCurrency(it.unitPrice) }} — {{ getItemQuantity(it.id) }} left</option>
                 </select>
               </div>
 
               <div class="mt-2">
                 <label class="block text-sm font-medium text-gray-700">Quantity Used</label>
                 <input v-model.number="line.quantity" type="number" min="1" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm" />
+              </div>
+
+              <div class="mt-3 grid grid-cols-1 gap-2 rounded-xl bg-white px-4 py-3 text-sm text-gray-600 sm:grid-cols-2">
+                <p>Unit Price: <span class="font-semibold text-gray-900">{{ formatCurrency(getItemPrice(line.itemId)) }}</span></p>
+                <p>Line Total: <span class="font-semibold text-gray-900">{{ formatCurrency(getLineTotal(line.itemId, line.quantity)) }}</span></p>
               </div>
             </div>
 
@@ -494,9 +582,16 @@ async function removeTask(taskId: string) {
             </button>
           </div>
 
+          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p class="text-sm text-emerald-700">Estimated total material cost</p>
+            <p class="mt-1 text-2xl font-semibold text-emerald-900">{{ formatCurrency(materialsTotalPrice) }}</p>
+          </div>
+
           <div>
-            <label class="block text-sm font-medium text-gray-700">Booking ID (required)</label>
-            <input v-model="recordForm.bookingId" type="text" placeholder="Link to booking ID" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" />
+            <label class="block text-sm font-medium text-gray-700">Linked Booking ID</label>
+            <div class="mt-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
+              {{ recordForm.bookingId || 'No linked booking' }}
+            </div>
           </div>
 
           <div>
@@ -520,7 +615,30 @@ async function removeTask(taskId: string) {
 
         <template #footer>
           <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeRecordModal">Cancel</button>
-          <button type="button" class="rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700" @click="recordMaterialsUsage">Record</button>
+          <button type="button" class="rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700" @click="recordMaterialsUsage">{{ hasRecordedMaterialsForTask(recordingTask || '') ? 'Update Record' : 'Record' }}</button>
+        </template>
+      </ModalShell>
+
+      <ModalShell
+        :show="isRemoveTaskModalOpen"
+        title="Remove Task"
+        subtitle="Confirm task removal"
+        tone="red"
+        size="md"
+        @close="closeRemoveTaskModal"
+      >
+        <div class="space-y-4">
+          <p class="text-sm text-gray-700">
+            Remove <span class="font-semibold text-gray-900">{{ taskToRemove?.title || 'this task' }}</span>?
+          </p>
+          <p class="text-sm text-red-700">
+            This action cannot be undone.
+          </p>
+        </div>
+
+        <template #footer>
+          <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeRemoveTaskModal">Cancel</button>
+          <button type="button" class="rounded-xl bg-linear-to-r from-red-600 to-rose-600 px-4 py-3 font-semibold text-white shadow-lg shadow-red-600/20 hover:from-red-700 hover:to-rose-700" @click="confirmRemoveTask">Remove Task</button>
         </template>
       </ModalShell>
 
@@ -534,7 +652,7 @@ async function removeTask(taskId: string) {
             <div>
               <p class="font-semibold text-gray-900">{{ task.title }}</p>
               <p class="text-sm text-gray-600">{{ task.projectName }}</p>
-              <p class="text-xs text-gray-500">Team: {{ getTeamLabel(task.assignedStaffIds) }}</p>
+              <p class="text-xs text-gray-500">Team: {{ getTeamLabel(task) }}</p>
             </div>
             <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="getStatusClass(task.status)">{{ task.status }}</span>
           </div>
@@ -542,8 +660,9 @@ async function removeTask(taskId: string) {
           <p class="mt-2 text-sm text-gray-700">{{ task.description || 'No description' }}</p>
           <p class="mt-2 text-xs text-gray-500">Due: {{ formatDate(task.dueDate) }}</p>
           <p class="mt-1 text-xs text-gray-500">Location: {{ formatTaskLocation(task) }}</p>
+          <p v-if="isTaskBookingCompleted(task.id)" class="mt-2 text-xs font-semibold text-green-700">Task completed</p>
           <div class="mt-3 flex flex-wrap gap-2">
-            <button type="button" class="rounded-lg bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 hover:bg-amber-200" @click="openRecordModal(task.id)">Record & Submit Materials</button>
+            <button v-if="!isTaskBookingCompleted(task.id)" type="button" class="rounded-lg bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 hover:bg-amber-200" @click="openRecordModal(task.id)">{{ hasRecordedMaterialsForTask(task.id) ? 'Update Submitted Materials' : 'Record & Submit Materials' }}</button>
           </div>
         </div>
       </div>

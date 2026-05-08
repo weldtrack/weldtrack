@@ -117,13 +117,19 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchStaffDirectory() {
-      const { data } = await api.get('/auth/staff')
-      this.staffDirectory = Array.isArray(data)
-        ? data.map((user: { id?: number; email?: string }) => ({
-            id: String(user.id ?? ''),
-            email: user.email || '',
-          }))
-        : []
+      try {
+        const { data } = await api.get('/auth/staff')
+        this.staffDirectory = Array.isArray(data)
+          ? data.map((user: { id?: number; email?: string }) => ({
+              id: String(user.id ?? ''),
+              email: user.email || '',
+            }))
+          : []
+      } catch (error) {
+        this.staffDirectory = []
+        const statusCode = (error as { response?: { status?: number } })?.response?.status
+        if (statusCode !== 403) throw error
+      }
 
       return this.staffDirectory
     },
@@ -132,7 +138,7 @@ export const useAuthStore = defineStore('auth', {
       const staff = this.staffDirectory.find((entry) => entry.id === String(staffId))
       if (staff?.email) return staff.email
       if (fallback) return fallback
-      return staffId ? `Staff ${staffId}` : ''
+      return ''
     },
 
     async resetPassword(payload: { email: string; code: string; password: string; password_confirmation: string }) {

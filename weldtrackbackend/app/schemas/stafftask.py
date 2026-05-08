@@ -12,6 +12,7 @@ class TaskLocationIn(BaseModel):
 
 
 class TaskCreate(BaseModel):
+    bookingId: int | None = None
     projectName: str
     title: str
     description: str | None = ""
@@ -28,10 +29,12 @@ class TaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    bookingId: int | None
     projectName: str
     title: str
     description: str | None
     assignedStaffIds: list[int]
+    assignedStaffEmails: list[str]
     assignedAt: datetime
     dueDate: date
     status: Literal["pending", "in-progress", "done"]

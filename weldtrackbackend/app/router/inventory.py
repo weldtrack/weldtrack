@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from uuid import UUID
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 from app.db import get_db
 from app.models.inventory import InventoryItem, StockMovement
+from app.models.stafftask import StaffTask
 from app.schemas.inventory import (
     InventoryItemCreate,
     InventoryItemUpdate,
@@ -127,4 +130,35 @@ def get_stock_movements(
     
     query = query.offset(skip).limit(limit)
     movements = db.scalars(query).all()
-    return movements
+    task_ids: list[UUID] = []
+    for movement in movements:
+        if not movement.task_id:
+            continue
+        try:
+            task_ids.append(UUID(movement.task_id))
+        except ValueError:
+            continue
+
+    tasks_by_id: dict[str, StaffTask] = {}
+    if task_ids:
+        tasks = db.scalars(select(StaffTask).where(StaffTask.id.in_(task_ids))).all()
+        tasks_by_id = {str(task.id): task for task in tasks}
+
+    return [
+        {
+            "id": movement.id,
+            "item_id": movement.item_id,
+            "item_name": movement.item_name,
+            "quantity": movement.quantity,
+            "type": movement.type.value,
+            "timestamp": movement.timestamp,
+            "booking_id": movement.booking_id,
+            "task_id": movement.task_id,
+            "team_emails": [
+                assignee.staff.email
+                for assignee in tasks_by_id.get(movement.task_id, []).assignees
+                if assignee.staff and assignee.staff.email
+            ] if movement.task_id and movement.task_id in tasks_by_id else [],
+        }
+        for movement in movements
+    ]

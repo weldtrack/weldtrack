@@ -41,6 +41,7 @@ class StaffTask(Base):
     project_name: Mapped[str] = mapped_column(String(200), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    booking_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
     assigned_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

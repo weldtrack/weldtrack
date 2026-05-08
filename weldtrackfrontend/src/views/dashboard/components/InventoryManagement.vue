@@ -438,6 +438,9 @@ function formatCurrency(value: number) {
           <div>
             <p class="font-medium text-gray-900">{{ movement.itemName }}</p>
             <p class="text-sm text-gray-600">{{ movement.timestamp }}</p>
+            <p v-if="movement.teamEmails.length" class="text-xs text-gray-500">
+              Team: {{ movement.teamEmails.join(', ') }}
+            </p>
           </div>
           <span
             :class="[

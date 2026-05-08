@@ -186,11 +186,18 @@ async function loadMaterialsForBooking() {
   try {
     const remote = await bookingsStore.getBooking(bookingId)
     if (remote && Array.isArray(remote.materials)) {
-      const total = remote.materials.reduce((acc: number, m: any) => acc + (Number(m.unitPrice ?? 0) * Number(m.quantity ?? 0)), 0)
-      completionForm.materialCost = String(total)
-      // eslint-disable-next-line no-console
-      console.debug('Loaded from booking.materials:', total)
-      return
+      const total = remote.materials.reduce((acc, line) => {
+        const subtotal = Number(line.subtotal ?? 0)
+        if (subtotal > 0) return acc + subtotal
+        return acc + Number(line.unitPrice ?? 0) * Number(line.qty ?? 0)
+      }, 0)
+
+      if (total > 0) {
+        completionForm.materialCost = String(total)
+        // eslint-disable-next-line no-console
+        console.debug('Loaded from booking.materials:', total)
+        return
+      }
     }
   } catch (err) {
     // eslint-disable-next-line no-console

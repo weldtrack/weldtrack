@@ -8,8 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.api import router
-from app.db import Base, engine
+from app.db import Base, engine, ensure_runtime_schema
 Base.metadata.create_all(bind=engine)
+ensure_runtime_schema()
 
 app = FastAPI(title="Weldtrack")
 origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")

@@ -51,14 +51,14 @@ class Booking(Base):
     after_images:   Mapped[list | None]  = mapped_column(JSON, nullable=True, default=list)
 
     # Relationship
-    materials: Mapped[list["BookingMaterial"]] = relationship(
-        "BookingMaterial",
+    materials: Mapped[list["RecordMaterial"]] = relationship(
+        "RecordMaterial",
         back_populates="booking",
         cascade="all, delete-orphan",
     )
 
 
-class BookingMaterial(Base):
+class RecordMaterial(Base):
     __tablename__ = "booking_materials"
 
     id:         Mapped[int]        = mapped_column(Integer, primary_key=True, index=True)

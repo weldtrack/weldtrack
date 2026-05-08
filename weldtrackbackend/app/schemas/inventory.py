@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from typing import Optional
 
@@ -37,6 +37,7 @@ class StockMovementBase(BaseModel):
     type: str  # "stock-in" or "stock-out"
     booking_id: Optional[int] = None
     task_id: Optional[str] = None
+    team_emails: list[str] = Field(default_factory=list)
 
 
 class StockMovementResponse(StockMovementBase):

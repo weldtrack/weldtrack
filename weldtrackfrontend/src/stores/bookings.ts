@@ -163,7 +163,11 @@ export const useBookingsStore = defineStore('bookings', {
 
     async getBooking(id: number) {
       const res = await api.get(`/bookings/${id}`)
-      return toFrontendBooking(res.data as BackendBooking)
+      const booking = toFrontendBooking(res.data as BackendBooking)
+      const idx = this.bookings.findIndex((b) => b.id === id)
+      if (idx > -1) this.bookings[idx] = booking
+      else this.bookings.unshift(booking)
+      return booking
     },
 
     async updateBooking(id: number, patch: Partial<BookingItem>) {

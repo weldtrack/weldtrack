@@ -22,6 +22,7 @@ export interface StockMovement {
   timestamp: string
   bookingId?: number | null
   taskId?: string | null
+  teamEmails: string[]
 }
 
 type BackendInventoryItem = {
@@ -43,6 +44,7 @@ type BackendStockMovement = {
   timestamp?: string
   booking_id?: number | null
   task_id?: string | null
+  team_emails?: string[]
 }
 
 function toInventoryItem(item: BackendInventoryItem): InventoryItem {
@@ -67,6 +69,7 @@ function toStockMovement(movement: BackendStockMovement): StockMovement {
     timestamp: movement.timestamp ? new Date(movement.timestamp).toLocaleString('en-PH') : '',
     bookingId: movement.booking_id ?? null,
     taskId: movement.task_id ?? null,
+    teamEmails: Array.isArray(movement.team_emails) ? movement.team_emails.filter(Boolean) : [],
   }
 }
 

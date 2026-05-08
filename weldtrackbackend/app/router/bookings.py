@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 from app.db import get_db
-from app.models.booking import Booking, BookingStatus, BookingMaterial
+from app.models.booking import Booking, BookingStatus, RecordMaterial
 from app.schemas.booking import BookingCreate, BookingUpdate, BookingResponse, MaterialCreate
 from app.router.user.auth import get_current_user
 from app.models.user import User
@@ -56,7 +56,7 @@ def create_booking(
     # Add materials if provided
     if payload.model_dump().get("materials"):
         for material_data in payload.materials:
-            material = BookingMaterial(**material_data.model_dump(), booking_id=booking.id)
+            material = RecordMaterial(**material_data.model_dump(), booking_id=booking.id)
             db.add(material)
     
     db.commit()
@@ -128,10 +128,30 @@ def add_booking_materials(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Record materials used for a booking (creates stock movements and updates inventory quantities)."""
+    """Record materials used for a booking and persist a booking-linked material snapshot."""
     booking = db.get(Booking, booking_id)
     if not booking:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+    if booking.status == BookingStatus.completed:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Booking is already completed")
+
+    existing_movements = db.scalars(
+        select(StockMovement).where(
+            StockMovement.booking_id == booking_id,
+            StockMovement.task_id == (str(payload.taskId) if payload.taskId is not None else None),
+            StockMovement.type == MovementType.stock_out,
+        )
+    ).all()
+
+    for movement in existing_movements:
+        item = db.get(InventoryItem, movement.item_id)
+        if item:
+            item.quantity = int(item.quantity or 0) + int(movement.quantity or 0)
+            db.add(item)
+        db.delete(movement)
+
+    for material in list(booking.materials or []):
+        db.delete(material)
 
     created: list[StockMovement] = []
 
@@ -141,6 +161,20 @@ def add_booking_materials(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Inventory item {line.itemId} not found")
 
         qty = int(line.quantity)
+        unit_price = float(item.unit_price or 0)
+        subtotal = qty * unit_price
+
+        material_record = RecordMaterial(
+            booking_id=booking_id,
+            item_id=str(item.id),
+            name=item.name,
+            qty=qty,
+            unit_price=unit_price,
+            subtotal=subtotal,
+            is_temp=0,
+        )
+        db.add(material_record)
+
         # create stock movement
         movement = StockMovement(
             item_id=item.id,
@@ -156,6 +190,12 @@ def add_booking_materials(
         item.quantity = max(0, item.quantity - qty)
         db.add(item)
         created.append(movement)
+
+    if payload.beforeImage:
+        booking.before_images = [payload.beforeImage]
+    if payload.afterImage:
+        booking.after_images = [payload.afterImage]
+    db.add(booking)
 
     db.commit()
 
