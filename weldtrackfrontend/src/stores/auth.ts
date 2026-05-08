@@ -141,8 +141,16 @@ export const useAuthStore = defineStore('auth', {
       return ''
     },
 
-    async resetPassword(payload: { email: string; code: string; password: string; password_confirmation: string }) {
-      const { data } = await api.post('/auth/forgot-password/reset', payload)
+    async resetPassword(payload: { email: string; code: string; password: string; password_confirmation?: string; passwordConfirmation?: string; confirm?: string }) {
+      // Normalize common confirmation field names to `password_confirmation` for backend compatibility
+      const body: Record<string, string> = {
+        email: payload.email,
+        code: payload.code,
+        password: payload.password,
+        password_confirmation: payload.password_confirmation || payload.passwordConfirmation || payload.confirm || '',
+      }
+
+      const { data } = await api.post('/auth/forgot-password/reset', body)
       return data as { success?: boolean }
     },
 

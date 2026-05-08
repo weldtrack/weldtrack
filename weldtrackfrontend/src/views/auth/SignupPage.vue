@@ -127,15 +127,17 @@ async function submitCode() {
       action: 'createaccount',
     })
     
-    // If response has user data, it means account was created and we're logged in
-    if (response.user || response.access_token) {
+    // If response contains a token/user data, create session and navigate away.
+    if (response.user || response.access_token || response.token) {
       authStore.setSession({
-        token: response.access_token || '',
+        token: response.access_token || response.token || '',
         email: response.user?.email || form.email,
         role: response.user?.role || 'customer',
       })
-      router.replace('/dashboard')
-    } else if (response.success) {
+      // allow route leave to avoid the "leave page" modal blocking the programmatic redirect
+      allowRouteLeave.value = true
+      await router.replace('/dashboard')
+    } else {
       throw new Error('Request failed.')
     }
   } catch (error) {
