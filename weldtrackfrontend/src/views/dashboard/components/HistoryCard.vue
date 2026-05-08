@@ -10,7 +10,7 @@ function getLaborCost(projectType?: string) {
   return getLaborPrice(projectType || '')
 }
 
-function getMaterialLines(bookingId: number, materials?: any[], materialCost?: number) {
+function getMaterialLines(bookingId: number, materials?: any[]) {
   if (Array.isArray(materials) && materials.length > 0) return materials
 
   const movements = inventoryStore.getMovementsForBooking(bookingId).filter((m) => m.type === 'stock-out')
@@ -38,13 +38,13 @@ function getMaterialLines(bookingId: number, materials?: any[], materialCost?: n
   return []
 }
 
-function getMaterialsTotal(bookingId: number, materials?: any[], materialCost?: number) {
-  return getMaterialLines(bookingId, materials, materialCost).reduce((sum: number, line: any) => sum + (line.subtotal || 0), 0)
+function getMaterialsTotal(bookingId: number, materials?: any[]) {
+  return getMaterialLines(bookingId, materials).reduce((sum: number, line: any) => sum + (line.subtotal || 0), 0)
 }
 
 function getGrandTotal(item: any) {
   const labor = getLaborCost(item.projectType)
-  const materials = getMaterialsTotal(item.id, item.materials, item.materialCost)
+  const materials = getMaterialsTotal(item.id, item.materials)
   return item.totalPrice ?? labor + materials
 }
 
@@ -66,8 +66,8 @@ function getStatusClass(status: string) {
   return status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
 }
 
-const materialLines = computed(() => getMaterialLines(item.id, item.materials, item.materialCost))
-const materialsTotal = computed(() => getMaterialsTotal(item.id, item.materials, item.materialCost))
+const materialLines = computed(() => getMaterialLines(item.id, item.materials))
+const materialsTotal = computed(() => getMaterialsTotal(item.id, item.materials))
 const grandTotal = computed(() => getGrandTotal(item))
 </script>
 
