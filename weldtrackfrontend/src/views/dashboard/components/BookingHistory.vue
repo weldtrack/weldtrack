@@ -10,9 +10,7 @@ const bookingsStore = useBookingsStore()
 const currentEmail = computed(() => authStore.email || '')
 
 onMounted(() => {
-  bookingsStore.fetchBookings().catch(() => {
-    // keep seeded local data if the API is unavailable
-  })
+  bookingsStore.fetchBookings()
 })
 
 const customerBookings = computed(() => {

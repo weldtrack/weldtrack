@@ -4,7 +4,6 @@ from datetime import datetime
 
 # Base fields (shared)
 class FeedbackBase(BaseModel):
-    customer_name: str
     email: EmailStr
     project_type: str
     rating: float
@@ -18,7 +17,6 @@ class FeedbackCreate(FeedbackBase):
 
 # UPDATE (PUT /feedbacks/{id})
 class FeedbackUpdate(BaseModel):
-    customer_name: str | None = None
     email: EmailStr | None = None
     project_type: str | None = None
     rating: float | None = None

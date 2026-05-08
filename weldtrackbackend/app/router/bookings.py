@@ -6,6 +6,9 @@ from app.models.booking import Booking, BookingStatus, BookingMaterial
 from app.schemas.booking import BookingCreate, BookingUpdate, BookingResponse, MaterialCreate
 from app.router.user.auth import get_current_user
 from app.models.user import User
+from app.models.inventory import InventoryItem, StockMovement, MovementType
+from app.schemas.stafftask import TaskMaterialsCreate
+from app.schemas.inventory import StockMovementResponse
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -115,3 +118,49 @@ def delete_booking(
     
     db.delete(booking)
     db.commit()
+
+
+
+@router.post("/{booking_id}/materials", response_model=list[StockMovementResponse])
+def add_booking_materials(
+    booking_id: int,
+    payload: TaskMaterialsCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Record materials used for a booking (creates stock movements and updates inventory quantities)."""
+    booking = db.get(Booking, booking_id)
+    if not booking:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+
+    created: list[StockMovement] = []
+
+    for line in payload.lines:
+        item = db.get(InventoryItem, line.itemId)
+        if not item:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Inventory item {line.itemId} not found")
+
+        qty = int(line.quantity)
+        # create stock movement
+        movement = StockMovement(
+            item_id=item.id,
+            item_name=item.name,
+            quantity=qty,
+            type=MovementType.stock_out,
+            booking_id=booking_id,
+            task_id=str(payload.taskId) if payload.taskId is not None else None,
+        )
+        db.add(movement)
+
+        # decrement inventory quantity (never negative)
+        item.quantity = max(0, item.quantity - qty)
+        db.add(item)
+        created.append(movement)
+
+    db.commit()
+
+    # refresh and return created movements
+    for m in created:
+        db.refresh(m)
+
+    return created

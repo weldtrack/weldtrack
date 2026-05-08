@@ -1,20 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
-
-interface Staff {
-  id: string
-  name: string
-  position: string
-  hoursWorkedToday: number
-  checkedInTime?: string
-  checkedOutTime?: string
-  overtimeHours: number
-}
+import api from '../../../services/api'
+import ModalShell from '../../../components/ui/ModalShell.vue'
 
 interface AttendanceRecord {
   id: string
-  staffId: string
+  email: string
   staffName: string
   date: string
   checkInAt: string
@@ -26,30 +18,11 @@ interface AttendanceRecord {
 
 const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.role === 'admin')
-
-// Map email to staff ID (or use default for testing)
-const currentUserId = computed(() => {
-  const email = authStore.email?.toLowerCase() || ''
-
-  if (email.includes('juan')) return '1'
-  if (email.includes('maria')) return '2'
-  if (email.includes('carlos')) return '3'
-  if (email.includes('rosa')) return '4'
-
-  // Keep staff flow working even for unmapped emails.
-  return '1'
-})
-
-const staffList = ref<Staff[]>([
-  { id: '1', name: 'Juan Cruz', position: 'Welder', hoursWorkedToday: 0, overtimeHours: 2.5 },
-  { id: '2', name: 'Maria Santos', position: 'Fabricator', hoursWorkedToday: 0, overtimeHours: 0 },
-  { id: '3', name: 'Carlos Reyes', position: 'Welder', hoursWorkedToday: 0, overtimeHours: 1 },
-  { id: '4', name: 'Rosa Dela Cruz', position: 'Inspector', hoursWorkedToday: 0, overtimeHours: 0 },
-])
+const currentUserEmail = ref('')
 
 const attendanceRecords = ref<AttendanceRecord[]>([])
 
-const currentStaffId = ref<string>('')
+const currentStaffEmail = ref<string>('')
 const showCheckInModal = ref(false)
 const checkInAction = ref<'checkin' | 'checkout'>('checkin')
 const actionMessage = ref('')
@@ -58,8 +31,36 @@ const nowTick = ref(Date.now())
 let tickTimer: number | undefined
 
 const newRecordForm = ref({
-  staffId: '',
+  email: '',
 })
+
+const currentStaffLabel = computed(() =>
+  newRecordForm.value.email
+    ? authStore.getStaffLabel(newRecordForm.value.email, newRecordForm.value.email)
+    : '-',
+)
+
+async function fetchCurrentUser() {
+  const { data } = await api.get('/auth/me')
+  currentUserEmail.value = data?.email ?? ''
+}
+
+async function fetchAttendance() {
+  const { data } = await api.get('/attendance')
+  attendanceRecords.value = Array.isArray(data)
+    ? data.map((record: any) => ({
+        id: String(record.id),
+        email: record.email,
+        staffName: authStore.getStaffLabel(record.email, record.email),
+        date: record.date,
+        checkInAt: record.check_in_at,
+        checkOutAt: record.check_out_at || undefined,
+        hoursWorked: Number(record.hours_worked ?? 0),
+        regularHours: Number(record.regular_hours ?? 0),
+        overtimeHours: Number(record.overtime_hours ?? 0),
+      }))
+    : []
+}
 
 const todayAttendance = computed(() => {
   const today = new Date().toISOString().split('T')[0]
@@ -67,11 +68,31 @@ const todayAttendance = computed(() => {
 })
 
 const totalStaffHours = computed(() => {
-  return todayAttendance.value.reduce((sum, record) => sum + record.hoursWorked, 0)
+  return todayAttendance.value.reduce((sum, record) => {
+    if (record.checkOutAt) return sum + Number(record.hoursWorked ?? 0)
+
+    // Ongoing check-in: compute hours between check-in and now
+    if (record.checkInAt) {
+      const hours = getHoursBetween(record.checkInAt, new Date(nowTick.value).toISOString())
+      return sum + round2(hours)
+    }
+
+    return sum
+  }, 0)
 })
 
 const totalOvertimeHours = computed(() => {
-  return todayAttendance.value.reduce((sum, record) => sum + record.overtimeHours, 0)
+  return todayAttendance.value.reduce((sum, record) => {
+    if (record.checkOutAt) return sum + Number(record.overtimeHours ?? 0)
+
+    if (record.checkInAt) {
+      const hours = getHoursBetween(record.checkInAt, new Date(nowTick.value).toISOString())
+      const overtime = Math.max(0, round2(hours) - WORK_DAY_HOURS)
+      return sum + overtime
+    }
+
+    return sum
+  }, 0)
 })
 
 const presentToday = computed(() => {
@@ -79,7 +100,7 @@ const presentToday = computed(() => {
 })
 
 const myTodayAttendance = computed(() => {
-  return todayAttendance.value.find((record) => record.staffId === currentUserId.value)
+  return todayAttendance.value.find((record) => record.email === currentUserEmail.value)
 })
 
 const myHoursWorkedToday = computed(() => {
@@ -136,7 +157,20 @@ const isTimeButtonDisabled = computed(() => {
   return !canTimeOutNow.value
 })
 
-onMounted(() => {
+onMounted(async () => {
+  // Fetch current user first. Only fetch staff directory for admins so a 403
+  // doesn't prevent loading attendance for staff users.
+  await fetchCurrentUser()
+  try {
+    if (authStore.role === 'admin') {
+      await authStore.fetchStaffDirectory()
+    }
+  } catch (err) {
+    console.error('Failed to fetch staff directory (ignored):', err)
+  }
+
+  await fetchAttendance()
+
   tickTimer = window.setInterval(() => {
     nowTick.value = Date.now()
   }, 30000)
@@ -146,14 +180,14 @@ onUnmounted(() => {
   if (tickTimer) window.clearInterval(tickTimer)
 })
 
-function openCheckInModal(staffId: string) {
+function openCheckInModal(email: string) {
   actionMessage.value = ''
-  currentStaffId.value = staffId
-  newRecordForm.value.staffId = staffId
+  currentStaffEmail.value = email
+  newRecordForm.value.email = email
   
   const today = new Date().toISOString().split('T')[0]
   const existingRecord = attendanceRecords.value.find(
-    (r) => r.staffId === staffId && r.date === today,
+    (r) => r.email === email && r.date === today,
   )
 
   if (existingRecord?.checkOutAt) {
@@ -179,65 +213,22 @@ function openCheckInModal(staffId: string) {
 
 function closeCheckInModal() {
   showCheckInModal.value = false
-  currentStaffId.value = ''
-  newRecordForm.value.staffId = ''
+  currentStaffEmail.value = ''
+  newRecordForm.value.email = ''
   checkInAction.value = 'checkin'
 }
 
-function saveAttendance() {
-  const staffId = newRecordForm.value.staffId
-  if (!staffId) return
-
-  const staff = staffList.value.find((s) => s.id === staffId) || staffList.value[0]
-  if (!staff) return
-
-  const now = new Date()
-  const nowIso = now.toISOString()
-  const today = now.toISOString().split('T')[0]
+async function saveAttendance() {
+  if (!newRecordForm.value.email) return
 
   if (checkInAction.value === 'checkin') {
-    const newRecord: AttendanceRecord = {
-      id: `${Date.now()}`,
-      staffId: staffId,
-      staffName: staff.name,
-      date: today,
-      checkInAt: nowIso,
-      checkOutAt: undefined,
-      hoursWorked: 0,
-      regularHours: 0,
-      overtimeHours: 0,
-    }
-    attendanceRecords.value.push(newRecord)
-    staff.hoursWorkedToday = 0
+    await api.post('/attendance/check-in')
   } else {
-    const existingIndex = attendanceRecords.value.findIndex(
-      (r) => r.staffId === staffId && r.date === today,
-    )
-    if (existingIndex >= 0) {
-      const record = attendanceRecords.value[existingIndex]
-      record.checkOutAt = nowIso
-
-      const hoursWorked = getHoursBetween(record.checkInAt, record.checkOutAt)
-      const regularHours = Math.min(hoursWorked, WORK_DAY_HOURS)
-      const overtimeHours = Math.max(0, hoursWorked - WORK_DAY_HOURS)
-
-      record.hoursWorked = round2(hoursWorked)
-      record.regularHours = round2(regularHours)
-      record.overtimeHours = round2(overtimeHours)
-
-      staff.hoursWorkedToday = record.hoursWorked
-      staff.overtimeHours = record.overtimeHours
-    }
+    await api.post('/attendance/check-out')
   }
 
+  await fetchAttendance()
   closeCheckInModal()
-}
-
-function deleteRecord(recordId: string) {
-  const index = attendanceRecords.value.findIndex((r) => r.id === recordId)
-  if (index >= 0) {
-    attendanceRecords.value.splice(index, 1)
-  }
 }
 
 function round2(value: number) {
@@ -274,8 +265,8 @@ function formatDuration(hours: number) {
       <p class="text-sm text-gray-600">Track staff check-in/out and overtime</p>
     </div>
 
-    <!-- Attendance Summary Cards -->
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <!-- Attendance Summary Cards (Admin only) -->
+    <div v-if="isAdmin" class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="rounded-lg border border-gray-200 bg-white p-6">
         <div class="flex items-center gap-3">
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
@@ -383,7 +374,7 @@ function formatDuration(hours: number) {
           class="w-full rounded-lg px-4 py-3 font-semibold text-white transition-colors"
           :class="isTimeButtonDisabled ? 'cursor-not-allowed bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'"
           :disabled="isTimeButtonDisabled"
-          @click="openCheckInModal(currentUserId)"
+          @click="openCheckInModal(currentUserEmail)"
         >
           {{ timeButtonLabel }}
         </button>
@@ -438,66 +429,40 @@ function formatDuration(hours: number) {
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              class="ml-4 text-red-600 hover:text-red-800"
-              @click="deleteRecord(record.id)"
-            >
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div class="ml-4"></div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Check-In Modal -->
-    <div v-if="showCheckInModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div class="w-full max-w-md rounded-lg bg-white p-6">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900">
-          {{ checkInAction === 'checkin' ? 'Check In' : 'Check Out' }}
-        </h3>
-
-        <div class="mb-6 space-y-4">
-          <div class="rounded-lg bg-blue-50 p-4">
-            <p class="text-sm text-gray-600">Staff Member</p>
-            <p class="text-lg font-semibold text-gray-900">
-              {{ staffList.find((s) => s.id === newRecordForm.staffId)?.name }}
-            </p>
-          </div>
-
-          <div class="rounded-lg bg-green-50 p-4">
-            <p class="text-sm text-gray-600">{{ checkInAction === 'checkin' ? 'Check In Time' : 'Check Out Time' }}</p>
-            <p class="text-2xl font-semibold text-green-600">
-              {{ formatTime(new Date().toISOString()) }}
-            </p>
-            <p class="mt-1 text-xs text-gray-500">System time (auto-captured)</p>
-          </div>
+    <ModalShell
+      :show="showCheckInModal"
+      :title="checkInAction === 'checkin' ? 'Check In' : 'Check Out'"
+      subtitle="Attendance capture"
+      :tone="checkInAction === 'checkin' ? 'green' : 'amber'"
+      size="sm"
+      @close="closeCheckInModal"
+    >
+      <div class="mb-6 space-y-4">
+        <div class="rounded-2xl bg-blue-50 p-4">
+          <p class="text-sm text-gray-600">Staff Member</p>
+          <p class="text-lg font-semibold text-gray-900">{{ currentStaffLabel }}</p>
         </div>
 
-        <div class="flex gap-3">
-          <button
-            type="button"
-            class="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
-            @click="closeCheckInModal"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            :class="[
-              'flex-1 rounded-lg px-4 py-2 font-semibold text-white transition-colors',
-              checkInAction === 'checkin'
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-orange-600 hover:bg-orange-700'
-            ]"
-            @click="saveAttendance"
-          >
-            Confirm {{ checkInAction === 'checkin' ? 'Check In' : 'Check Out' }}
-          </button>
+        <div class="rounded-2xl bg-emerald-50 p-4">
+          <p class="text-sm text-gray-600">{{ checkInAction === 'checkin' ? 'Check In Time' : 'Check Out Time' }}</p>
+          <p class="text-2xl font-semibold text-emerald-600">{{ formatTime(new Date().toISOString()) }}</p>
+          <p class="mt-1 text-xs text-gray-500">System time (auto-captured)</p>
         </div>
       </div>
-    </div>
+
+      <template #footer>
+        <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeCheckInModal">Cancel</button>
+        <button type="button" :class="['rounded-xl px-4 py-3 font-semibold text-white shadow-lg', checkInAction === 'checkin' ? 'bg-linear-to-r from-green-600 to-emerald-600 shadow-green-600/20 hover:from-green-700 hover:to-emerald-700' : 'bg-linear-to-r from-orange-600 to-amber-600 shadow-orange-600/20 hover:from-orange-700 hover:to-amber-700']" @click="saveAttendance">
+          Confirm {{ checkInAction === 'checkin' ? 'Check In' : 'Check Out' }}
+        </button>
+      </template>
+    </ModalShell>
   </section>
 </template>

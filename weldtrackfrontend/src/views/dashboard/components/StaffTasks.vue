@@ -1,38 +1,35 @@
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useStaffTasksStore, type TaskStatus } from '../../../stores/staffTasks'
 import { useInventoryStore } from '../../../stores/inventory'
 import api from '../../../services/api'
 import { useBookingsStore } from '../../../stores/bookings'
+import { useModalStore } from '../../../stores/modal'
+import ModalShell from '../../../components/ui/ModalShell.vue'
 
 interface StaffMember {
   id: string
-  name: string
+  email: string
 }
 
 const authStore = useAuthStore()
 const staffTasksStore = useStaffTasksStore()
+const bookingsStore = useBookingsStore()
+const modalStore = useModalStore()
 const isAdmin = computed(() => authStore.role === 'admin')
 
-const staffList = ref<StaffMember[]>([
-  { id: '1', name: 'Juan Cruz' },
-  { id: '2', name: 'Maria Santos' },
-  { id: '3', name: 'Carlos Reyes' },
-  { id: '4', name: 'Rosa Dela Cruz' },
-])
+const staffList = computed(() => authStore.staffDirectory as StaffMember[])
+const confirmedBookings = computed(() =>
+  Array.isArray(bookingsStore.bookings)
+    ? bookingsStore.bookings.filter((booking) => booking.status === 'confirmed')
+    : [],
+)
 
 const staffCountOptions = [2, 4, 6, 8, 10]
 
-const currentUserId = computed(() => {
-  const email = authStore.email?.toLowerCase() || ''
-
-  if (email.includes('juan')) return '1'
-  if (email.includes('maria')) return '2'
-  if (email.includes('carlos')) return '3'
-  if (email.includes('rosa')) return '4'
-  return '1'
-})
+const currentUserId = ref('')
+const selectedBookingId = ref<number | null>(null)
 
 const myAssignedTasks = computed(() => {
   return staffTasksStore.tasks.filter((task) => task.assignedStaffIds.includes(currentUserId.value))
@@ -43,7 +40,7 @@ const newTaskForm = ref({
   title: '',
   description: '',
   requiredStaffCount: 2,
-  assignedStaffIds: ['1', '2'] as string[],
+  assignedStaffIds: ['' , ''] as string[],
   dueDate: '',
   location: {
     country: 'PH' as const,
@@ -71,14 +68,43 @@ const recordForm = reactive({
 
 function openRecordModal(taskId: string) {
   recordingTask.value = taskId
+  // initialize with first available item if present
   recordForm.lines = [{ itemId: inventoryStore.items[0]?.id || '', quantity: 1 }]
   recordForm.bookingId = ''
   recordForm.beforeImageFile = null
   recordForm.afterImageFile = null
   recordForm.beforeImagePreview = ''
   recordForm.afterImagePreview = ''
+  // debug: inspect inventory at modal open
+  // eslint-disable-next-line no-console
+  console.debug('Opening Record Modal — inventory items:', inventoryStore.items)
   isRecordModalOpen.value = true
 }
+
+function selectConfirmedBooking(bookingId: number) {
+  const booking = confirmedBookings.value.find((item) => item.id === bookingId)
+  if (!booking) return
+
+  selectedBookingId.value = booking.id
+  const today = new Date().toISOString().split('T')[0]
+  newTaskForm.value.projectName = `${booking.projectType} - ${booking.email || booking.customerName || `Booking #${booking.id}`}`
+  newTaskForm.value.title = booking.projectType
+  newTaskForm.value.description = booking.description || ''
+  newTaskForm.value.dueDate = booking.scheduleDate || booking.preferredDate || today
+}
+
+onMounted(async () => {
+  await Promise.all([
+    authStore.fetchStaffDirectory(),
+    api.get('/auth/me').then(({ data }) => {
+      currentUserId.value = String(data?.id ?? '')
+    }),
+    bookingsStore.fetchBookings(),
+    staffTasksStore.fetchTasks(),
+    inventoryStore.fetchInventory(),
+    inventoryStore.fetchMovements(),
+  ])
+})
 
 function closeRecordModal() {
   isRecordModalOpen.value = false
@@ -126,16 +152,23 @@ function removeMaterialLine(index: number) {
 
 async function recordMaterialsUsage() {
   if (!recordingTask.value) return
-  // bookingId is optional in the UI; validate only if provided
   const bookingIdRaw = (recordForm.bookingId || '').toString().trim()
-  let bookingId: number | null = null
-  if (bookingIdRaw) {
-    const bid = Number(bookingIdRaw)
-    if (!Number.isFinite(bid) || bid <= 0) {
-      window.alert('Booking ID must be a valid number.')
-      return
-    }
-    bookingId = bid
+  if (!bookingIdRaw) {
+    modalStore.open({
+      title: 'Booking ID required',
+      message: 'Please enter a booking ID before submitting materials.',
+      variant: 'warning',
+    })
+    return
+  }
+  const bookingId = Number(bookingIdRaw)
+  if (!Number.isFinite(bookingId) || bookingId <= 0) {
+    modalStore.open({
+      title: 'Invalid booking ID',
+      message: 'Booking ID must be a valid number.',
+      variant: 'warning',
+    })
+    return
   }
 
   const validLines = recordForm.lines.filter((line) => line.itemId && line.quantity > 0)
@@ -145,74 +178,31 @@ async function recordMaterialsUsage() {
 
   // Require both before and after images to be attached
   if (!recordForm.beforeImagePreview || !recordForm.afterImagePreview) {
-    window.alert('Please attach both before and after images before submitting.')
+    modalStore.open({
+      title: 'Images required',
+      message: 'Please attach both before and after images before submitting.',
+      variant: 'warning',
+    })
     return
   }
 
-  // Try server submission first; fallback to local stockOut if API unavailable
-  try {
-    const payload = {
-      submittedBy: Number(currentUserId.value) || undefined,
-      taskId,
-      movementType: 'stock_out',
-      lines: validLines.map((l) => ({ itemId: l.itemId, quantity: l.quantity })),
-      // include data-urls if available so server can persist, otherwise booking store will be patched locally
-      beforeImage: recordForm.beforeImagePreview || undefined,
-      afterImage: recordForm.afterImagePreview || undefined,
-    }
-    const res = await api.post(`/bookings/${bookingId ?? ''}/materials`, payload)
-    const materials = res.data.materials ?? res.data
-
-    if (Array.isArray(materials) && materials.length > 0) {
-      materials.forEach((m: any) => {
-        const itemIdStr = String(m.itemId)
-        const item = inventoryStore.items.find((it) => String(it.id) === itemIdStr)
-        if (item) {
-          inventoryStore.logMovement(itemIdStr, item.name, m.quantity ?? m.qty ?? 0, 'stock-out', { bookingId, taskId })
-          // also decrement local quantity to reflect server action
-          item.quantity = Math.max(0, item.quantity - (m.quantity ?? m.qty ?? 0))
-        }
-      })
-    } else {
-      // fallback: apply locally
-      validLines.forEach((line) => {
-        inventoryStore.stockOut(line.itemId, line.quantity, { taskId, bookingId })
-      })
-    }
-    // if bookingId provided, attach images to booking locally as well (server may also do it)
-    try {
-      if (bookingId !== null) {
-        const bookingsStore = useBookingsStore()
-        const existing = await bookingsStore.getBooking(bookingId)
-        const beforeList = Array.isArray(existing?.beforeImages) ? existing.beforeImages.slice() : []
-        const afterList = Array.isArray(existing?.afterImages) ? existing.afterImages.slice() : []
-        if (recordForm.beforeImagePreview) beforeList.push(recordForm.beforeImagePreview)
-        if (recordForm.afterImagePreview) afterList.push(recordForm.afterImagePreview)
-        await bookingsStore.updateBooking(bookingId, { beforeImages: beforeList, afterImages: afterList })
-      }
-    } catch (e) {
-      // ignore booking patch errors
-    }
-  } catch (err) {
-    // network or server error — apply local changes so UI remains usable
-    validLines.forEach((line) => {
-      inventoryStore.stockOut(line.itemId, line.quantity, { taskId, bookingId })
-    })
-    // also patch booking locally with previews if bookingId provided
-    try {
-      if (bookingId !== null) {
-        const bookingsStore = useBookingsStore()
-        const existing = await bookingsStore.getBooking(bookingId)
-        const beforeList = Array.isArray(existing?.beforeImages) ? existing.beforeImages.slice() : []
-        const afterList = Array.isArray(existing?.afterImages) ? existing.afterImages.slice() : []
-        if (recordForm.beforeImagePreview) beforeList.push(recordForm.beforeImagePreview)
-        if (recordForm.afterImagePreview) afterList.push(recordForm.afterImagePreview)
-        await bookingsStore.updateBooking(bookingId, { beforeImages: beforeList, afterImages: afterList })
-      }
-    } catch (e) {
-      // ignore
-    }
+  const payload = {
+    submittedBy: Number(currentUserId.value) || undefined,
+    taskId,
+    movementType: 'stock_out',
+    lines: validLines.map((l) => ({ itemId: Number(l.itemId), quantity: l.quantity })),
+    beforeImage: recordForm.beforeImagePreview || undefined,
+    afterImage: recordForm.afterImagePreview || undefined,
   }
+  await api.post(`/bookings/${bookingId}/materials`, payload)
+  await inventoryStore.fetchInventory()
+  await inventoryStore.fetchMovements()
+
+  // Auto-mark task as done after successful submission
+  await staffTasksStore.updateTaskStatus(recordingTask.value, 'done')
+
+  const bookingsStore = useBookingsStore()
+  await bookingsStore.getBooking(bookingId)
 
   closeRecordModal()
 }
@@ -222,10 +212,17 @@ const hasDuplicateAssignees = computed(() => {
   return new Set(ids).size !== ids.length
 })
 
+const selectedBookingLabel = computed(() => {
+  if (selectedBookingId.value == null) return 'No booking selected'
+  const booking = confirmedBookings.value.find((item) => item.id === selectedBookingId.value)
+  if (!booking) return 'No booking selected'
+  return `${booking.projectType} · ${booking.email || booking.customerName || `Booking #${booking.id}`}`
+})
+
 function updateRequiredStaffCount(count: number) {
   const next = [...newTaskForm.value.assignedStaffIds]
   if (next.length < count) {
-    const fallback = staffList.value[0]?.id || ''
+    const fallback = ''
     while (next.length < count) next.push(fallback)
   } else if (next.length > count) {
     next.length = count
@@ -233,6 +230,26 @@ function updateRequiredStaffCount(count: number) {
 
   newTaskForm.value.requiredStaffCount = count
   newTaskForm.value.assignedStaffIds = next
+}
+
+function resetNewTaskForm() {
+  selectedBookingId.value = null
+  newTaskForm.value = {
+    projectName: '',
+    title: '',
+    description: '',
+    requiredStaffCount: 2,
+    assignedStaffIds: ['', ''],
+    dueDate: '',
+    location: {
+      country: 'PH',
+      region: 'Bicol Region (Region V)',
+      province: '',
+      municipality: '',
+      barangay: '',
+      house: '',
+    },
+  }
 }
 
 function formatDate(isoDate: string) {
@@ -251,12 +268,17 @@ function getStatusClass(status: TaskStatus) {
 }
 
 function getStaffName(staffId: string) {
-  return staffList.value.find((staff) => staff.id === staffId)?.name || `Staff #${staffId}`
+  return authStore.getStaffLabel(staffId, staffId ? `Staff #${staffId}` : 'Unassigned')
 }
 
 function getTeamLabel(staffIds: string[]) {
   if (!staffIds?.length) return 'No team assigned'
   return staffIds.map((id) => getStaffName(id)).join(', ')
+}
+
+function getItemQuantity(itemId: string) {
+  const it = inventoryStore.items.find((i) => i.id === itemId)
+  return it ? it.quantity : 0
 }
 
 function formatTaskLocation(task: {
@@ -276,7 +298,7 @@ function formatTaskLocation(task: {
   return parts.length ? parts.join(', ') : 'No location set'
 }
 
-function assignTask() {
+async function assignTask() {
   const { projectName, title, description, assignedStaffIds, requiredStaffCount, dueDate, location } = newTaskForm.value
   if (!projectName || !title || !dueDate) return
   if (!location.province || !location.municipality || !location.barangay || !location.house) return
@@ -284,7 +306,7 @@ function assignTask() {
   if (assignedStaffIds.some((id) => !id)) return
   if (new Set(assignedStaffIds).size !== assignedStaffIds.length) return
 
-  staffTasksStore.assignTask({
+  await staffTasksStore.assignTask({
     projectName,
     title,
     description,
@@ -298,25 +320,10 @@ function assignTask() {
     },
   })
 
-  newTaskForm.value = {
-    projectName: '',
-    title: '',
-    description: '',
-    requiredStaffCount: 2,
-    assignedStaffIds: ['1', '2'],
-    dueDate: '',
-    location: {
-      country: 'PH',
-      region: 'Bicol Region (Region V)',
-      province: '',
-      municipality: '',
-      barangay: '',
-      house: '',
-    },
-  }
+    resetNewTaskForm()
 }
 
-function updateTaskStatus(taskId: string, status: TaskStatus) {
+async function updateTaskStatus(taskId: string, status: TaskStatus) {
   // when staff tries to mark done, require recording materials used first
   if (status === 'done' && !isAdmin.value) {
     const movements = inventoryStore.getMovementsForTask(taskId)
@@ -328,11 +335,11 @@ function updateTaskStatus(taskId: string, status: TaskStatus) {
     }
   }
 
-  staffTasksStore.updateTaskStatus(taskId, status)
+  await staffTasksStore.updateTaskStatus(taskId, status)
 }
 
-function removeTask(taskId: string) {
-  staffTasksStore.removeTask(taskId)
+async function removeTask(taskId: string) {
+  await staffTasksStore.removeTask(taskId)
 }
 </script>
 
@@ -346,6 +353,35 @@ function removeTask(taskId: string) {
     <div v-if="isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
       <h4 class="mb-4 text-lg font-semibold text-gray-900">Staff Management: Assign Tasks</h4>
 
+      <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-blue-900">Confirmed Bookings</p>
+            <p class="text-xs text-blue-700">Click a confirmed booking to auto-fill the task details.</p>
+          </div>
+          <p class="text-xs font-medium text-blue-700">Selected: {{ selectedBookingLabel }}</p>
+        </div>
+
+        <div v-if="confirmedBookings.length === 0" class="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-gray-500">
+          No confirmed bookings yet.
+        </div>
+
+        <div v-else class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <button
+            v-for="booking in confirmedBookings"
+            :key="booking.id"
+            type="button"
+            class="rounded-xl border px-4 py-3 text-left transition-colors"
+            :class="selectedBookingId === booking.id ? 'border-blue-500 bg-blue-100' : 'border-blue-200 bg-white hover:bg-blue-50'"
+            @click="selectConfirmedBooking(booking.id)"
+          >
+            <p class="text-sm font-semibold text-gray-900">{{ booking.projectType }}</p>
+            <p class="text-xs text-gray-600">{{ booking.email || booking.customerName || `Booking #${booking.id}` }}</p>
+            <p class="mt-1 text-xs text-gray-500">{{ booking.phone || 'No contact number' }}</p>
+          </button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         <input v-model="newTaskForm.projectName" type="text" placeholder="Project name" class="rounded-lg border border-gray-300 px-3 py-2" />
         <input v-model="newTaskForm.title" type="text" placeholder="Task title" class="rounded-lg border border-gray-300 px-3 py-2" />
@@ -357,8 +393,16 @@ function removeTask(taskId: string) {
         <input v-model="newTaskForm.dueDate" type="date" class="rounded-lg border border-gray-300 px-3 py-2" />
 
         <div class="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <select v-for="(_, index) in newTaskForm.assignedStaffIds" :key="`assign-staff-${index}`" v-model="newTaskForm.assignedStaffIds[index]" class="rounded-lg border border-gray-300 px-3 py-2">
-            <option v-for="staff in staffList" :key="staff.id" :value="staff.id">Staff {{ index + 1 }}: {{ staff.name }}</option>
+          <select
+            v-for="(_, index) in newTaskForm.assignedStaffIds"
+            :key="`assign-staff-${index}`"
+            v-model="newTaskForm.assignedStaffIds[index]"
+            class="rounded-lg border border-gray-300 px-3 py-2"
+          >
+            <option value="">Select staff member</option>
+            <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
+              {{ staff.email }}
+            </option>
           </select>
         </div>
 
@@ -370,13 +414,12 @@ function removeTask(taskId: string) {
         <input v-model="newTaskForm.location.house" type="text" placeholder="House / Street" class="rounded-lg border border-gray-300 px-3 py-2" />
 
         <p v-if="hasDuplicateAssignees" class="md:col-span-2 text-sm text-red-600">Please select different staff for each slot.</p>
-        <p v-if="newTaskForm.requiredStaffCount > staffList.length" class="md:col-span-2 text-sm text-amber-600">You selected {{ newTaskForm.requiredStaffCount }} staff but only {{ staffList.length }} staff are available now.</p>
 
         <textarea v-model="newTaskForm.description" rows="3" placeholder="Task description" class="md:col-span-2 rounded-lg border border-gray-300 px-3 py-2" />
       </div>
 
       <div class="mt-3">
-        <button type="button" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300" :disabled="hasDuplicateAssignees || newTaskForm.requiredStaffCount > staffList.length" @click="assignTask">Assign Task</button>
+        <button type="button" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300" :disabled="hasDuplicateAssignees" @click="assignTask">Assign Task</button>
       </div>
 
       <div class="mt-6">
@@ -410,72 +453,76 @@ function removeTask(taskId: string) {
       </div>
     </div>
 
-      <div v-if="isRecordModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="closeRecordModal">
-        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-          <h4 class="mb-4 text-lg font-semibold text-gray-900">Record Materials Used</h4>
-          <div class="space-y-4">
-            <div class="space-y-3">
-              <div v-for="(line, index) in recordForm.lines" :key="`material-line-${index}`" class="rounded-lg border border-gray-200 p-3">
-                <div class="flex items-center justify-between">
-                  <p class="text-sm font-medium text-gray-700">Material {{ index + 1 }}</p>
-                  <button
-                    type="button"
-                    class="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
-                    :disabled="recordForm.lines.length === 1"
-                    @click="removeMaterialLine(index)"
-                  >
-                    Remove
-                  </button>
-                </div>
-
-                <div class="mt-2">
-                  <label class="block text-sm font-medium text-gray-700">Item</label>
-                  <select v-model="line.itemId" class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3">
-                    <option v-for="it in inventoryStore.items" :key="it.id" :value="it.id">{{ it.name }} — {{ it.quantity }} left</option>
-                  </select>
-                </div>
-
-                <div class="mt-2">
-                  <label class="block text-sm font-medium text-gray-700">Quantity Used</label>
-                  <input v-model.number="line.quantity" type="number" min="1" class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3" />
-                </div>
+      <ModalShell
+        :show="isRecordModalOpen"
+        title="Record Materials Used"
+        subtitle="Staff submission"
+        tone="green"
+        size="lg"
+        @close="closeRecordModal"
+      >
+        <div class="space-y-4">
+          <div class="space-y-3">
+            <div v-for="(line, index) in recordForm.lines" :key="`material-line-${index}`" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-medium text-slate-700">Material {{ index + 1 }}</p>
+                <button
+                  type="button"
+                  class="rounded-lg bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="recordForm.lines.length === 1"
+                  @click="removeMaterialLine(index)"
+                >
+                  Remove
+                </button>
               </div>
 
-              <button type="button" class="w-full rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100" @click="addMaterialLine">
-                + Add Another Material
-              </button>
-            </div>
+              <div class="mt-2">
+                <label class="block text-sm font-medium text-gray-700">Item</label>
+                <select v-model="line.itemId" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <option v-for="it in inventoryStore.items" :key="it.id" :value="it.id">{{ it.name }} — {{ getItemQuantity(it.id) }} left</option>
+                </select>
+              </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Booking ID (optional)</label>
-              <input v-model="recordForm.bookingId" type="text" placeholder="Link to booking id (optional)" class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700">Before Image (required)</label>
-              <input type="file" accept="image/*" class="mt-1 w-full text-sm" @change="handleBeforeImageChange" />
-              <div v-if="recordForm.beforeImagePreview" class="mt-2">
-                <p class="text-xs text-gray-600">Preview:</p>
-                <img :src="recordForm.beforeImagePreview" class="max-h-40 mt-1 rounded-lg border" />
+              <div class="mt-2">
+                <label class="block text-sm font-medium text-gray-700">Quantity Used</label>
+                <input v-model.number="line.quantity" type="number" min="1" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm" />
               </div>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700">After Image (required)</label>
-              <input type="file" accept="image/*" class="mt-1 w-full text-sm" @change="handleAfterImageChange" />
-              <div v-if="recordForm.afterImagePreview" class="mt-2">
-                <p class="text-xs text-gray-600">Preview:</p>
-                <img :src="recordForm.afterImagePreview" class="max-h-40 mt-1 rounded-lg border" />
-              </div>
-            </div>
+            <button type="button" class="w-full rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100" @click="addMaterialLine">
+              + Add Another Material
+            </button>
+          </div>
 
-            <div class="flex gap-3 pt-2">
-              <button type="button" class="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50" @click="closeRecordModal">Cancel</button>
-              <button type="button" class="flex-1 rounded-lg bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700" @click="recordMaterialsUsage">Record</button>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Booking ID (required)</label>
+            <input v-model="recordForm.bookingId" type="text" placeholder="Link to booking ID" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Before Image (required)</label>
+            <input type="file" accept="image/*" class="mt-1 w-full text-sm" @change="handleBeforeImageChange" />
+            <div v-if="recordForm.beforeImagePreview" class="mt-2">
+              <p class="text-xs text-gray-600">Preview:</p>
+              <img :src="recordForm.beforeImagePreview" class="mt-1 max-h-40 rounded-xl border border-slate-200" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700">After Image (required)</label>
+            <input type="file" accept="image/*" class="mt-1 w-full text-sm" @change="handleAfterImageChange" />
+            <div v-if="recordForm.afterImagePreview" class="mt-2">
+              <p class="text-xs text-gray-600">Preview:</p>
+              <img :src="recordForm.afterImagePreview" class="mt-1 max-h-40 rounded-xl border border-slate-200" />
             </div>
           </div>
         </div>
-      </div>
+
+        <template #footer>
+          <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeRecordModal">Cancel</button>
+          <button type="button" class="rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700" @click="recordMaterialsUsage">Record</button>
+        </template>
+      </ModalShell>
 
     <div v-if="!isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
       <h4 class="mb-4 text-lg font-semibold text-gray-900">My Assigned Tasks</h4>

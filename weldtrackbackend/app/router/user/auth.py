@@ -249,6 +249,15 @@ def read_current_user(current_user: User = Depends(get_current_user)) -> UserRea
 	return get_user_response(current_user)
 
 
+@router.get("/staff", response_model=list[UserRead])
+def list_staff_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[UserRead]:
+	if current_user.role != UserRole.admin:
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
+
+	users = db.scalars(select(User).where(User.role == UserRole.staff).order_by(User.id)).all()
+	return [get_user_response(user) for user in users]
+
+
 # Email verification and password reset endpoints
 # These are simple implementations - consider integrating with a proper email service
 
@@ -459,6 +468,24 @@ def admin_create_staff(payload: dict, current_user: User = Depends(get_current_u
 	db.refresh(user)
 
 	return {"success": True, "user": get_user_response(user)}
+
+
+@router.delete("/staff/{staff_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_staff(staff_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+	"""Admin-only: delete a staff member"""
+	if current_user.role != UserRole.admin:
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
+
+	staff_user = db.get(User, staff_id)
+	if not staff_user:
+		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Staff member not found")
+
+	if staff_user.role != UserRole.staff:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can only delete staff members")
+
+	# Delete the user (cascade will handle related records)
+	db.delete(staff_user)
+	db.commit()
 
 
 @router.post("/forgot-password/reset")

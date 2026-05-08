@@ -4,6 +4,11 @@ import { requestEmailCode, verifyEmailCode } from '../services/emailAuth'
 
 const AUTH_STORAGE_KEY = 'weldtrack-auth'
 
+type StaffDirectoryEntry = {
+  id: string
+  email: string
+}
+
 function readAuthState() {
   if (typeof window === 'undefined') {
     return null
@@ -53,6 +58,7 @@ export const useAuthStore = defineStore('auth', {
     email: readAuthState()?.email || '',
     role: readAuthState()?.role || 'customer',
     isLoggedIn: readAuthState()?.isLoggedIn || false,
+    staffDirectory: [] as StaffDirectoryEntry[],
   }),
   actions: {
     async login(payload: { email: string; password: string }) {
@@ -110,6 +116,25 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async fetchStaffDirectory() {
+      const { data } = await api.get('/auth/staff')
+      this.staffDirectory = Array.isArray(data)
+        ? data.map((user: { id?: number; email?: string }) => ({
+            id: String(user.id ?? ''),
+            email: user.email || '',
+          }))
+        : []
+
+      return this.staffDirectory
+    },
+
+    getStaffLabel(staffId: string, fallback = '') {
+      const staff = this.staffDirectory.find((entry) => entry.id === String(staffId))
+      if (staff?.email) return staff.email
+      if (fallback) return fallback
+      return staffId ? `Staff ${staffId}` : ''
+    },
+
     async resetPassword(payload: { email: string; code: string; password: string; password_confirmation: string }) {
       const { data } = await api.post('/auth/forgot-password/reset', payload)
       return data as { success?: boolean }
@@ -137,6 +162,7 @@ export const useAuthStore = defineStore('auth', {
       this.email = ''
       this.role = 'customer'
       this.isLoggedIn = false
+      this.staffDirectory = []
 
       clearAuthState()
     },

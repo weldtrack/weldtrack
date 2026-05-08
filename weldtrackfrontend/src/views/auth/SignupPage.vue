@@ -2,9 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { useModalStore } from '../../stores/modal'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const modalStore = useModalStore()
 
 function getApiErrorMessage(error: unknown, fallback: string) {
   const maybeAxiosError = error as {
@@ -32,6 +34,8 @@ const isSubmittingSignup = ref(false)
 const isVerifyingCode = ref(false)
 const isProgressActive = computed(() => step.value >= 2)
 const leaveWarningMessage = 'Progress data will be deleted if you go back. Leave this page?'
+const pendingRoute = ref<string | null>(null)
+const allowRouteLeave = ref(false)
 
 const stepClass = computed(() => ({
   one: step.value >= 1 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
@@ -141,26 +145,29 @@ async function submitCode() {
   }
 }
 
-function handleBeforeUnload(event: BeforeUnloadEvent) {
-  if (!isProgressActive.value) return
+onBeforeRouteLeave((to) => {
+  if (allowRouteLeave.value || !isProgressActive.value) return true
 
-  event.preventDefault()
-  event.returnValue = leaveWarningMessage
-}
+  pendingRoute.value = to.fullPath
 
-onBeforeRouteLeave(() => {
-  if (!isProgressActive.value) return true
+  modalStore.open({
+    title: 'Leave this page?',
+    message: leaveWarningMessage,
+    variant: 'warning',
+    confirmLabel: 'Leave',
+    cancelLabel: 'Stay',
+    onConfirm: () => {
+      allowRouteLeave.value = true
+      if (pendingRoute.value) {
+        return router.push(pendingRoute.value)
+      }
+    },
+  })
 
-  return window.confirm(leaveWarningMessage)
-})
-
-onMounted(() => {
-  window.addEventListener('beforeunload', handleBeforeUnload)
+  return false
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload)
-
   if (codeTimer.value !== null) {
     window.clearInterval(codeTimer.value)
   }

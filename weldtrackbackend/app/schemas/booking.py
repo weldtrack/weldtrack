@@ -30,7 +30,6 @@ class MaterialResponse(MaterialBase):
 
 class BookingBase(BaseModel):
     project_type:   str
-    customer_name:  Optional[str]      = None
     email:          Optional[EmailStr] = None
     phone:          Optional[str]      = None
     description:    Optional[str]      = None
@@ -47,7 +46,6 @@ class BookingCreate(BookingBase):
 
 class BookingUpdate(BaseModel):
     project_type:   Optional[str]           = None
-    customer_name:  Optional[str]           = None
     email:          Optional[EmailStr]      = None
     phone:          Optional[str]           = None
     description:    Optional[str]           = None

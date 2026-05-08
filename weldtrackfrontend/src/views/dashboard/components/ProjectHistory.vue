@@ -6,9 +6,7 @@ import HistoryCard from './HistoryCard.vue'
 const bookingsStore = useBookingsStore()
 
 onMounted(() => {
-  bookingsStore.fetchBookings().catch(() => {
-    // keep existing state if the API is unavailable
-  })
+  bookingsStore.fetchBookings()
 })
 
 const projectHistory = computed(() => {

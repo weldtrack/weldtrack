@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useInventoryStore } from '../../../stores/inventory'
+import { getLaborPrice } from '../../../constants/pricing'
 
 const { item } = defineProps<{ item: any }>()
 const inventoryStore = useInventoryStore()
 
-function getLaborCost(estimatedCost?: number) {
-  return estimatedCost ?? 0
+function getLaborCost(projectType?: string) {
+  return getLaborPrice(projectType || '')
 }
 
 function getMaterialLines(bookingId: number, materials?: any[], materialCost?: number) {
@@ -34,19 +35,6 @@ function getMaterialLines(bookingId: number, materials?: any[], materialCost?: n
   const lines = Object.values(grouped)
   if (lines.length > 0) return lines
 
-  if ((materialCost ?? 0) > 0) {
-    return [
-      {
-        id: `temp-${bookingId}`,
-        name: 'Temporary Material Entry',
-        qty: 1,
-        unitPrice: materialCost ?? 0,
-        subtotal: materialCost ?? 0,
-        isTemp: true,
-      },
-    ]
-  }
-
   return []
 }
 
@@ -55,7 +43,7 @@ function getMaterialsTotal(bookingId: number, materials?: any[], materialCost?: 
 }
 
 function getGrandTotal(item: any) {
-  const labor = getLaborCost(item.estimatedCost)
+  const labor = getLaborCost(item.projectType)
   const materials = getMaterialsTotal(item.id, item.materials, item.materialCost)
   return item.totalPrice ?? labor + materials
 }
@@ -102,14 +90,14 @@ const grandTotal = computed(() => getGrandTotal(item))
     <div class="mt-3 space-y-2 text-sm">
       <div class="flex items-center justify-between">
         <span class="text-gray-600">Project Price (Labor)</span>
-        <span class="font-medium text-gray-900">{{ formatCurrency(getLaborCost(item.estimatedCost)) }}</span>
+        <span class="font-medium text-gray-900">{{ formatCurrency(getLaborCost(item.projectType)) }}</span>
       </div>
 
       <div>
         <p class="text-gray-600">Material Price Per Item</p>
         <ul class="mt-1 space-y-1">
           <li v-for="line in materialLines" :key="line.id" class="flex items-center justify-between">
-            <span class="truncate text-gray-700">{{ line.name }} · x{{ line.qty }} @ {{ formatCurrency(line.unitPrice) }} <span v-if="line.isTemp" class="text-xs text-amber-700">(temp)</span></span>
+            <span class="truncate text-gray-700">{{ line.name }} · x{{ line.qty }} @ {{ formatCurrency(line.unitPrice) }}</span>
             <span class="font-medium text-gray-900">{{ formatCurrency(line.subtotal) }}</span>
           </li>
         </ul>

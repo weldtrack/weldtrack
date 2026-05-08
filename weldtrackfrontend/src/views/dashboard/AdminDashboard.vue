@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import Layout from './DashboardLayout.vue'
 import InventoryManagement from './components/InventoryManagement.vue'
 import ProjectHistory from './components/ProjectHistory.vue'
@@ -8,102 +8,145 @@ import BookingApproval from './components/BookingApproval.vue'
 import StaffWorkspace from './components/StaffWorkspace.vue'
 import ServiceFeedback from './components/ServiceFeedback.vue'
 import { useAdminSectionStore, type AdminSection as AdminSectionType } from '../../stores/adminSection'
+import { useBookingsStore } from '../../stores/bookings'
+import { getLaborPrice } from '../../constants/pricing'
 
 type AdminSection = AdminSectionType
 
 const adminSectionStore = useAdminSectionStore()
 const currentSection = computed<AdminSection>(() => adminSectionStore.section)
+const bookingsStore = useBookingsStore()
 
-const customers = ref([
-  { id: 1, name: 'Acme Fabrication', email: 'contact@acme.com', phone: '555-0101', registeredDate: 'Mar 15, 2026', totalOrders: 5 },
-  { id: 2, name: 'Metro Builders', email: 'info@metrobuilders.com', phone: '555-0102', registeredDate: 'Feb 20, 2026', totalOrders: 3 },
-  { id: 3, name: 'J. Santos Workshop', email: 'jsantos@workshop.com', phone: '555-0103', registeredDate: 'Apr 05, 2026', totalOrders: 2 },
-  { id: 4, name: 'Northside Metalworks', email: 'contact@northside.com', phone: '555-0104', registeredDate: 'Apr 12, 2026', totalOrders: 4 },
-  { id: 5, name: 'Prime Welders', email: 'sales@primewelders.com', phone: '555-0105', registeredDate: 'Jan 10, 2026', totalOrders: 8 },
-  { id: 6, name: 'Luna Logistics', email: 'ops@lunalogstics.com', phone: '555-0106', registeredDate: 'Apr 01, 2026', totalOrders: 1 },
-  { id: 7, name: 'Mendoza Residence', email: 'mendoza@email.com', phone: '555-0107', registeredDate: 'Mar 25, 2026', totalOrders: 1 },
-  { id: 8, name: 'Cruz Transport', email: 'cruz.transport@email.com', phone: '555-0108', registeredDate: 'Apr 18, 2026', totalOrders: 2 },
-])
+onMounted(() => {
+  bookingsStore.fetchBookings()
+})
 
-const monthlyExpenses = ref([
-  { month: 'Jan', amount: 42000 },
-  { month: 'Feb', amount: 51500 },
-  { month: 'Mar', amount: 47800 },
-  { month: 'Apr', amount: 59600 },
-  { month: 'May', amount: 54800 },
-  { month: 'Jun', amount: 63400 },
-])
+const bookings = computed(() => bookingsStore.bookings)
 
-const projects = ref([
-  {
-    id: 1,
-    name: 'Warehouse Gate Fabrication',
-    client: 'Luna Logistics',
-    description: 'Heavy-duty rolling gate and support frame for the main warehouse entrance.',
-    materialsCost: 32000,
-    laborCost: 18000,
-    miscCost: 4500,
-    startDate: 'Apr 10, 2026',
-    endDate: 'Apr 25, 2026',
-    status: 'ongoing',
-  },
-  {
-    id: 2,
-    name: 'Balcony Railings',
-    client: 'Mendoza Residence',
-    description: 'Custom decorative railings for the second-floor balcony and stairs.',
-    materialsCost: 18500,
-    laborCost: 9200,
-    miscCost: 2100,
-    startDate: 'Mar 18, 2026',
-    endDate: 'Apr 02, 2026',
-    status: 'completed',
-  },
-  {
-    id: 3,
-    name: 'Truck Bed Repair',
-    client: 'Cruz Transport',
-    description: 'Repair and reinforcement of damaged truck bed frame and side panels.',
-    materialsCost: 14500,
-    laborCost: 7600,
-    miscCost: 900,
-    startDate: 'Apr 20, 2026',
-    endDate: 'Apr 29, 2026',
-    status: 'pending',
-  },
-])
+function formatCurrency(value: number) {
+  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+}
 
-const projectStatusBreakdown = [
-  { name: 'Completed', value: 45, color: '#16a34a' },
-  { name: 'Ongoing', value: 35, color: '#2563eb' },
-  { name: 'Pending', value: 20, color: '#f59e0b' },
-]
+function formatDate(value?: string) {
+  if (!value) return '-'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '-'
+  return d.toLocaleDateString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  })
+}
+
+function getBookingLabor(projectType?: string) {
+  return getLaborPrice(projectType || '')
+}
+
+function getBookingCost(booking: { projectType?: string; materialCost?: number }) {
+  return getBookingLabor(booking.projectType) + Number(booking.materialCost ?? 0)
+}
+
+const customers = computed(() => {
+  const seen = new Set<string>()
+  return bookings.value.filter((booking) => {
+    const key = (booking.email || booking.customerName || '').trim().toLowerCase()
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+})
 
 const totalCustomers = computed(() => customers.value.length)
 
 const newCustomersThisMonth = computed(() => {
-  const currentDate = new Date()
-  const currentMonth = currentDate.getMonth()
-  const currentYear = currentDate.getFullYear()
-  return customers.value.filter((customer) => {
-    const regDate = new Date(customer.registeredDate)
-    return regDate.getMonth() === currentMonth && regDate.getFullYear() === currentYear
-  }).length
+  const now = new Date()
+  const firstSeen = new Map<string, number>()
+
+  bookings.value.forEach((booking) => {
+    const key = (booking.email || booking.customerName || '').trim().toLowerCase()
+    if (!key || !booking.createdDate) return
+    const ts = new Date(booking.createdDate).getTime()
+    if (Number.isNaN(ts)) return
+    const prev = firstSeen.get(key)
+    if (prev === undefined || ts < prev) {
+      firstSeen.set(key, ts)
+    }
+  })
+
+  let count = 0
+  firstSeen.forEach((ts) => {
+    const d = new Date(ts)
+    if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+      count += 1
+    }
+  })
+  return count
 })
 
-const ongoingProjects = computed(() => projects.value.filter((project) => project.status === 'ongoing').length)
+const ongoingProjects = computed(() => bookings.value.filter((booking) => booking.status === 'confirmed').length)
 
-const completedProjects = computed(() => projects.value.filter((project) => project.status === 'completed').length)
+const completedProjects = computed(() => bookings.value.filter((booking) => booking.status === 'completed').length)
+
+const completedBookings = computed(() => bookings.value.filter((booking) => booking.status === 'completed'))
 
 const totalProjectValue = computed(() =>
-  projects.value.reduce((sum, project) => sum + project.materialsCost + project.laborCost + project.miscCost, 0),
+  completedBookings.value.reduce((sum, booking) => sum + getBookingCost(booking), 0),
 )
 
 const recentCompletedProjects = computed(() =>
-  [...projects.value]
-    .filter((project) => project.status === 'completed')
-    .sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime()),
+  bookings.value
+    .filter((booking) => booking.status === 'completed')
+    .map((booking) => ({
+      id: booking.id,
+      endDate: booking.scheduleDate || booking.createdDate,
+      name: booking.projectType,
+      client: booking.customerName || booking.email || '-',
+      materialsCost: Number(booking.materialCost ?? 0),
+      laborCost: getBookingLabor(booking.projectType),
+      totalCost: getBookingCost(booking),
+    }))
+    .sort((a, b) => new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime()),
 )
+
+const monthlyExpenses = computed(() => {
+  const now = new Date()
+  const months = Array.from({ length: 6 }).map((_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    return {
+      month: d.toLocaleDateString('en-PH', { month: 'short' }),
+      year: d.getFullYear(),
+      monthIndex: d.getMonth(),
+      amount: 0,
+    }
+  })
+
+  completedBookings.value.forEach((booking) => {
+    const rawDate = booking.scheduleDate || booking.createdDate
+    if (!rawDate) return
+    const d = new Date(rawDate)
+    if (Number.isNaN(d.getTime())) return
+    const target = months.find((m) => m.year === d.getFullYear() && m.monthIndex === d.getMonth())
+    if (!target) return
+    target.amount += getBookingCost(booking)
+  })
+
+  return months.map(({ month, amount }) => ({ month, amount }))
+})
+
+const projectStatusBreakdown = computed(() => {
+  const completed = bookings.value.filter((booking) => booking.status === 'completed').length
+  const ongoing = bookings.value.filter((booking) => booking.status === 'confirmed').length
+  const pending = bookings.value.filter((booking) => booking.status === 'pending').length
+  const total = completed + ongoing + pending
+
+  const toPercent = (value: number) => (total > 0 ? Math.round((value / total) * 100) : 0)
+
+  return [
+    { name: 'Completed', value: toPercent(completed), color: '#16a34a' },
+    { name: 'Ongoing', value: toPercent(ongoing), color: '#2563eb' },
+    { name: 'Pending', value: toPercent(pending), color: '#f59e0b' },
+  ]
+})
 
 
 
@@ -139,9 +182,9 @@ const lineChart = computed(() => {
 })
 
 const pieStyle = computed(() => {
-  const total = projectStatusBreakdown.reduce((sum, item) => sum + item.value, 0)
+  const total = projectStatusBreakdown.value.reduce((sum, item) => sum + item.value, 0)
   let start = 0
-  const segments = projectStatusBreakdown.map((item) => {
+  const segments = projectStatusBreakdown.value.map((item) => {
     const end = start + (item.value / total) * 100
     const segment = `${item.color} ${start}% ${end}%`
     start = end
@@ -203,7 +246,7 @@ const pieStyle = computed(() => {
               </svg>
             </div>
             <div>
-              <p class="text-2xl font-semibold text-gray-900">₱{{ totalProjectValue.toLocaleString('en-PH') }}</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ formatCurrency(totalProjectValue) }}</p>
               <p class="text-sm text-gray-600">Total Project Value</p>
             </div>
           </div>
@@ -297,18 +340,12 @@ const pieStyle = computed(() => {
             <tbody>
               <tr v-for="project in recentCompletedProjects.slice(0, 5)" :key="project.id"
                 class="border-b border-gray-100 hover:bg-gray-50">
-                <td class="px-4 py-3 text-gray-700">{{ project.endDate }}</td>
+                <td class="px-4 py-3 text-gray-700">{{ formatDate(project.endDate) }}</td>
                 <td class="px-4 py-3 font-medium text-gray-900">{{ project.name }}</td>
                 <td class="px-4 py-3 text-gray-700">{{ project.client }}</td>
-                <td class="px-4 py-3 text-gray-900">₱{{ project.materialsCost.toLocaleString('en-PH', {
-                  minimumFractionDigits: 2
-                  }) }}</td>
-                <td class="px-4 py-3 text-gray-900">₱{{ project.laborCost.toLocaleString('en-PH', {
-                  minimumFractionDigits: 2
-                  }) }}</td>
-                <td class="px-4 py-3 text-gray-900">₱{{ (project.materialsCost + project.laborCost + project.miscCost).toLocaleString('en-PH', {
-                  minimumFractionDigits: 2
-                  }) }}</td>
+                <td class="px-4 py-3 text-gray-900">{{ formatCurrency(project.materialsCost) }}</td>
+                <td class="px-4 py-3 text-gray-900">{{ formatCurrency(project.laborCost) }}</td>
+                <td class="px-4 py-3 text-gray-900">{{ formatCurrency(project.totalCost) }}</td>
               </tr>
             </tbody>
           </table>

@@ -2,6 +2,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useBookingsStore, type BookingItem } from '../../../stores/bookings'
+import ModalShell from '../../../components/ui/ModalShell.vue'
+import { getLaborPrice } from '../../../constants/pricing'
 
 const auth = useAuthStore()
 const bookingsStore = useBookingsStore()
@@ -42,23 +44,8 @@ const projectTypes = [
   'Other',
 ]
 
-const laborPriceMap: Record<string, number> = {
-  'Gate Welding': 4000,
-  'Metal Railings': 6000,
-  'Steel Frame Construction': 60000,
-  'Staircase Fabrication': 5000,
-  'Metal Doors & Windows': 5000,
-  'Pipe & Duct Welding': 4000,
-  'Metal Shelving': 7000,
-  'Automotive Welding': 10000,
-  'Fence Installation': 5000,
-  'Tank & Vessel Fabrication': 10000,
-  'Repair & Maintenance': 6000,
-  Other: 0,
-}
-
 const selectedLaborPrice = computed(() => {
-  return laborPriceMap[formData.projectType] ?? 0
+  return getLaborPrice(formData.projectType)
 })
 
 const selectedTotalCost = computed(() => selectedLaborPrice.value)
@@ -77,9 +64,7 @@ const pendingCount = computed(() => filteredBookings.value.filter((b) => b.statu
 const confirmedCount = computed(() => filteredBookings.value.filter((b) => b.status === 'confirmed').length)
 
 onMounted(() => {
-  bookingsStore.fetchBookings().catch(() => {
-    // keep seeded local data if the API is unavailable
-  })
+  bookingsStore.fetchBookings()
 })
 
 
@@ -129,14 +114,16 @@ function closeCancelModal() {
   cancelForm.reason = ''
 }
 
-function cancelAsCustomer() {
+async function cancelAsCustomer() {
   if (!selectedBooking.value) return
   if (selectedBooking.value.status !== 'pending') return
   if (!cancelForm.reason.trim()) return
 
-  selectedBooking.value.status = 'cancelled'
-  selectedBooking.value.cancelReason = cancelForm.reason.trim()
-  selectedBooking.value.cancelledBy = 'customer'
+  await bookingsStore.updateBooking(selectedBooking.value.id, {
+    status: 'cancelled',
+    cancelReason: cancelForm.reason.trim(),
+    cancelledBy: 'customer',
+  })
   closeCancelModal()
 }
 
@@ -153,7 +140,7 @@ function formatDate(value: string) {
 }
 
 function getLaborCost(projectType: string) {
-  return laborPriceMap[projectType] ?? 0
+  return getLaborPrice(projectType)
 }
 
 function getMaterialCostMessage(booking: BookingItem) {
@@ -242,10 +229,16 @@ function formatCreatedDate(value?: string) {
               </span>
             </div>
             <p class="mt-2 text-sm text-gray-600">{{ booking.description }}</p>
+            <p class="mt-1 text-sm text-gray-500">Booking #{{ booking.id }}</p>
           </div>
         </div>
 
         <div class="grid gap-3 text-sm sm:grid-cols-2">
+          <div class="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-gray-600 font-medium">Booking ID</p>
+            <p class="mt-1 text-gray-900 font-medium">#{{ booking.id }}</p>
+          </div>
+
           <div class="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
             <p class="text-xs uppercase tracking-wide text-blue-600 font-medium">Email</p>
             <p class="mt-1 text-gray-900 font-medium">{{ booking.email }}</p>
@@ -294,48 +287,50 @@ function formatCreatedDate(value?: string) {
       </div>
     </div>
 
-    <div v-if="isDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="closeDialog">
-      <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-        <div class="mb-5">
-          <h4 class="text-lg font-semibold text-gray-900">Create New Booking</h4>
-        </div>
-
-        <form class="space-y-4" @submit.prevent="handleSubmit">
+    <ModalShell
+      :show="isDialogOpen"
+      title="Create New Booking"
+      subtitle="Customer request"
+      tone="blue"
+      size="xl"
+      @close="closeDialog"
+    >
+      <form class="space-y-4" @submit.prevent="handleSubmit">
           <div>
             <label class="block text-sm font-medium text-gray-700" for="createdDate">Booked On</label>
-            <input id="createdDate" v-model="formData.createdDate" type="date" readonly class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3" />
+            <input id="createdDate" v-model="formData.createdDate" type="date" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700" for="email">Email</label>
-            <input id="email" v-model="formData.email" type="email" readonly required class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3" />
+            <input id="email" v-model="formData.email" type="email" readonly required class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm" />
           </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-gray-700" for="phone">Phone Number</label>
-              <input id="phone" v-model="formData.phone" type="tel" required class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3" />
+              <input id="phone" v-model="formData.phone" type="tel" required class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700" for="projectType">Project Type</label>
-              <select id="projectType" v-model="formData.projectType" required class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3">
+              <select id="projectType" v-model="formData.projectType" required class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
                 <option value="">Select project type</option>
                 <option v-for="type in projectTypes" :key="type" :value="type">{{ type }}</option>
               </select>
             </div>
           </div>
 
-          <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <div class="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
             Material cost will be displayed after project completion.
           </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
               <p class="text-sm text-gray-600">Labor Cost</p>
               <p class="mt-1 text-lg font-semibold text-gray-900">{{ formatCurrency(selectedLaborPrice) }}</p>
             </div>
-            <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
               <p class="text-sm text-gray-600">Total Cost</p>
               <p class="mt-1 text-lg font-semibold text-gray-900">{{ formatCurrency(selectedTotalCost) }}</p>
             </div>
@@ -343,44 +338,48 @@ function formatCreatedDate(value?: string) {
 
           <div>
             <label class="block text-sm font-medium text-gray-700" for="description">Project Description</label>
-            <textarea id="description" v-model="formData.description" required rows="4" placeholder="Describe your welding project requirements..." class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3" />
+            <textarea id="description" v-model="formData.description" required rows="4" placeholder="Describe your welding project requirements..." class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" />
           </div>
 
           <div class="flex gap-3 pt-4">
-            <button type="button" class="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-50" @click="closeDialog">Cancel</button>
-            <button type="submit" class="flex-1 rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700">Submit Booking</button>
+            <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeDialog">Cancel</button>
+            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700">Submit Booking</button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </ModalShell>
 
-    <div v-if="isCancelModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="closeCancelModal">
-      <div class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
-        <h4 class="mb-4 text-lg font-semibold text-gray-900">Cancel Booking</h4>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700" for="customerCancelReason">Cancel Reason</label>
-            <textarea
-              id="customerCancelReason"
-              v-model="cancelForm.reason"
-              rows="4"
-              placeholder="Tell us why you are cancelling this booking..."
-              class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3"
-            />
-          </div>
-          <div class="flex gap-3 pt-2">
-            <button type="button" class="flex-1 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50" @click="closeCancelModal">Back</button>
-            <button
-              type="button"
-              class="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
-              :disabled="!cancelForm.reason.trim()"
-              @click="cancelAsCustomer"
-            >
-              Confirm Cancel
-            </button>
-          </div>
+    <ModalShell
+      :show="isCancelModalOpen"
+      title="Cancel Booking"
+      subtitle="Tell us why you're cancelling"
+      tone="red"
+      size="lg"
+      @close="closeCancelModal"
+    >
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700" for="customerCancelReason">Cancel Reason</label>
+          <textarea
+            id="customerCancelReason"
+            v-model="cancelForm.reason"
+            rows="4"
+            placeholder="Tell us why you are cancelling this booking..."
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm"
+          />
         </div>
       </div>
-    </div>
+
+      <template #footer>
+        <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeCancelModal">Back</button>
+        <button
+          type="button"
+          class="rounded-xl bg-linear-to-r from-red-600 to-rose-600 px-4 py-3 font-semibold text-white shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="!cancelForm.reason.trim()"
+          @click="cancelAsCustomer"
+        >
+          Confirm Cancel
+        </button>
+      </template>
+    </ModalShell>
   </section>
 </template>

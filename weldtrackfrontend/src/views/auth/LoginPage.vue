@@ -2,9 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { useModalStore } from '../../stores/modal'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const modalStore = useModalStore()
 
 function getApiErrorMessage(error: unknown, fallback: string) {
   const maybeAxiosError = error as {
@@ -38,6 +40,8 @@ const isSavingNewPassword = ref(false)
 
 const isResetActive = computed(() => forgotPassword.value && resetStep.value >= 2)
 const leaveWarningMessage = 'Progress data will be deleted if you go back. Leave this page?'
+const pendingRoute = ref<string | null>(null)
+const allowRouteLeave = ref(false)
 
 const resetStepClass = computed(() => ({
   one: resetStep.value >= 1 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
@@ -193,31 +197,32 @@ async function submitNewPassword() {
   }
 }
 
+onBeforeRouteLeave((to) => {
+  if (allowRouteLeave.value || !isResetActive.value) return true
+
+  pendingRoute.value = to.fullPath
+
+  modalStore.open({
+    title: 'Leave this page?',
+    message: leaveWarningMessage,
+    variant: 'warning',
+    confirmLabel: 'Leave',
+    cancelLabel: 'Stay',
+    onConfirm: () => {
+      allowRouteLeave.value = true
+      if (pendingRoute.value) {
+        return router.push(pendingRoute.value)
+      }
+    },
+  })
+
+  return false
+})
+
 onBeforeUnmount(() => {
   if (codeTimer.value !== null) {
     window.clearInterval(codeTimer.value)
   }
-})
-
-function handleBeforeUnload(event: BeforeUnloadEvent) {
-  if (!isResetActive.value) return
-
-  event.preventDefault()
-  event.returnValue = leaveWarningMessage
-}
-
-onBeforeRouteLeave(() => {
-  if (!isResetActive.value) return true
-
-  return window.confirm(leaveWarningMessage)
-})
-
-onMounted(() => {
-  window.addEventListener('beforeunload', handleBeforeUnload)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
 </script>
 

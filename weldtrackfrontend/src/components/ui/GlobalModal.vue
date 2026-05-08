@@ -1,0 +1,65 @@
+<script setup lang="ts">
+import { storeToRefs } from 'pinia'
+import ModalShell from './ModalShell.vue'
+import { useModalStore } from '../../stores/modal'
+
+const modalStore = useModalStore()
+const { isOpen, title, message, variant, confirmLabel, cancelLabel, showCancel } = storeToRefs(modalStore)
+
+function close() {
+  modalStore.close()
+}
+
+async function accept() {
+  await modalStore.accept()
+}
+
+const toneMap = {
+  info: 'blue',
+  success: 'green',
+  warning: 'amber',
+  error: 'red',
+} as const
+</script>
+
+<template>
+  <ModalShell :show="isOpen" :title="title" :subtitle="showCancel ? 'Confirm your action' : 'Message'" :tone="toneMap[variant]" size="sm" @close="close">
+    <p class="global-modal__message">{{ message }}</p>
+
+    <template #footer>
+      <button v-if="showCancel" type="button" class="global-modal__button global-modal__button--secondary" @click="close">
+        {{ cancelLabel || 'Cancel' }}
+      </button>
+      <button type="button" :class="['global-modal__button', variant === 'error' ? 'global-modal__button--danger' : '']" @click="accept">
+        {{ confirmLabel }}
+      </button>
+    </template>
+  </ModalShell>
+</template>
+
+<style scoped>
+.global-modal__message {
+  margin: 0;
+  color: #334155;
+  line-height: 1.6;
+}
+
+.global-modal__button {
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.global-modal__button--secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.global-modal__button--danger {
+  background: #dc2626;
+}
+</style>

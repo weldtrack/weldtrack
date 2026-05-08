@@ -16,14 +16,27 @@ def list_attendance(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     user_id: int | None = None,
+    user_email: str | None = None,
     date: str | None = None,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get attendance records"""
+    """Get attendance records. Staff can only see their own."""
     query = select(AttendanceRecord).order_by(desc(AttendanceRecord.created_at))
     
-    if user_id:
-        query = query.where(AttendanceRecord.user_id == user_id)
+    # If staff, filter to their own records
+    if current_user.role == UserRole.staff:
+        query = query.where(AttendanceRecord.email == current_user.email)
+    elif user_id and not user_email:
+        # Admin: support user_id for backward compat
+        user = db.get(User, user_id)
+        if user:
+            user_email = user.email
+    
+    # Admin: allow filtering by email
+    if user_email and current_user.role == UserRole.admin:
+        query = query.where(AttendanceRecord.email == user_email)
+    
     if date:
         query = query.where(AttendanceRecord.date == date)
     
@@ -40,9 +53,31 @@ def get_user_attendance(
     db: Session = Depends(get_db),
 ):
     """Get attendance records for a specific user"""
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     query = (
         select(AttendanceRecord)
-        .where(AttendanceRecord.user_id == user_id)
+        .where(AttendanceRecord.email == user.email)
+        .order_by(desc(AttendanceRecord.date))
+        .offset(skip)
+        .limit(limit)
+    )
+    records = db.scalars(query).all()
+    return records
+
+
+@router.get("/user/email/{email}", response_model=list[AttendanceResponse])
+def get_user_attendance_by_email(
+    email: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(30, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """Get attendance records for a specific user by email"""
+    query = (
+        select(AttendanceRecord)
+        .where(AttendanceRecord.email == email)
         .order_by(desc(AttendanceRecord.date))
         .offset(skip)
         .limit(limit)
@@ -69,7 +104,7 @@ def check_in(
     existing = db.scalar(
         select(AttendanceRecord).where(
             and_(
-                AttendanceRecord.user_id == current_user.id,
+                AttendanceRecord.email == current_user.email,
                 AttendanceRecord.date == today,
             )
         )
@@ -82,7 +117,7 @@ def check_in(
         )
     
     record = AttendanceRecord(
-        user_id=current_user.id,
+        email=current_user.email,
         date=today,
         check_in_at=datetime.now(timezone.utc),
     )
@@ -110,7 +145,7 @@ def check_out(
     record = db.scalar(
         select(AttendanceRecord).where(
             and_(
-                AttendanceRecord.user_id == current_user.id,
+                AttendanceRecord.email == current_user.email,
                 AttendanceRecord.date == today,
             )
         )

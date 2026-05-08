@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useFeedbackStore } from '../../../stores/feedback'
+import { useModalStore } from '../../../stores/modal'
+import ModalShell from '../../../components/ui/ModalShell.vue'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
 const authStore = useAuthStore()
 const feedbackStore = useFeedbackStore()
+const modalStore = useModalStore()
 
 const isStaff = computed(() => authStore.role === 'staff')
 const canSubmitFeedback = computed(() => !props.isAdmin && !isStaff.value)
 
 const isDialogOpen = ref(false)
 const currentEmail = computed(() => authStore.email || '')
+const editingFeedbackId = ref<number | null>(null)
 
 const formData = reactive({
-  customerName: '',
   projectType: '',
   rating: 5,
   comment: '',
@@ -62,37 +65,66 @@ const starPercentage = (rating: number) => {
   return total === 0 ? 0 : Math.round((count / total) * 100)
 }
 
+onMounted(() => {
+  feedbackStore.fetchFeedbacks()
+})
+
 function resetForm() {
-  formData.customerName = authStore.email || ''
   formData.projectType = ''
   formData.rating = 5
   formData.comment = ''
 }
 
 function openDialog() {
+  editingFeedbackId.value = null
   resetForm()
   isDialogOpen.value = true
 }
 
 function closeDialog() {
   isDialogOpen.value = false
+  editingFeedbackId.value = null
+}
+
+function openEditDialog(feedback: { id: number; email: string; projectType: string; rating: number; comment: string }) {
+  if (feedback.email.toLowerCase() !== currentEmail.value.toLowerCase()) return
+  editingFeedbackId.value = feedback.id
+  formData.projectType = feedback.projectType
+  formData.rating = feedback.rating
+  formData.comment = feedback.comment
+  isDialogOpen.value = true
+}
+
+async function deleteFeedback(feedbackId: number, feedbackEmail: string) {
+  if (feedbackEmail.toLowerCase() !== currentEmail.value.toLowerCase()) return
+  modalStore.open({
+    title: 'Delete feedback?',
+    message: 'This action will permanently remove the feedback entry.',
+    variant: 'error',
+    confirmLabel: 'Delete',
+    cancelLabel: 'Cancel',
+    onConfirm: () => feedbackStore.deleteFeedback(feedbackId),
+  })
 }
 
 async function submitFeedback() {
-  if (!formData.customerName || !formData.projectType || !formData.comment.trim()) {
+  if (!currentEmail.value || !formData.projectType || !formData.comment.trim()) {
     return
   }
 
-  await feedbackStore.addFeedback({
-    customerName: formData.customerName,
+  const payload = {
     email: currentEmail.value,
     projectType: formData.projectType,
     rating: formData.rating,
     comment: formData.comment.trim(),
-    date: '', // Backend will set the date
-  }).catch(() => {
-    // Fallback to local add is handled in store
-  })
+  }
+
+  if (editingFeedbackId.value) {
+    await feedbackStore.updateFeedback(editingFeedbackId.value, payload)
+  } else {
+    await feedbackStore.addFeedback(payload)
+  }
+
   closeDialog()
   resetForm()
 }
@@ -101,6 +133,26 @@ function getRatingBgColor(rating: number) {
   if (rating >= 4) return 'bg-green-50 border-green-200'
   if (rating === 3) return 'bg-yellow-50 border-yellow-200'
   return 'bg-red-50 border-red-200'
+}
+
+function formatFeedbackDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function canManageFeedback(feedbackEmail: string) {
+  if (!canSubmitFeedback.value) return false
+  return feedbackEmail.toLowerCase() === currentEmail.value.toLowerCase()
 }
 </script>
 
@@ -133,15 +185,34 @@ function getRatingBgColor(rating: number) {
             <span class="text-xl text-gray-600">/ 5</span>
           </div>
           <p class="mt-2 text-sm text-gray-600">Based on {{ feedbackStore.feedbacks.length }} reviews</p>
-          <div class="mt-4 flex gap-1">
-            <span v-for="i in 5" :key="i" :class="['h-2 w-2 rounded-full', i <= Math.round(averageRating) ? 'bg-yellow-400' : 'bg-gray-300']" />
+          <p v-if="feedbackStore.feedbacks.length === 0" class="mt-3 text-xs font-medium text-gray-500">No ratings yet</p>
+          <div v-else class="mt-4 flex gap-1">
+            <svg
+              v-for="i in 5"
+              :key="i"
+              viewBox="0 0 24 24"
+              :class="['h-5 w-5', i <= Math.round(averageRating) ? 'text-yellow-400' : 'text-gray-300']"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+            </svg>
           </div>
         </div>
 
         <div class="space-y-3">
           <div v-for="rating in [5, 4, 3, 2, 1]" :key="rating" class="flex items-center gap-3">
-            <div class="flex gap-1">
-              <span v-for="i in 5" :key="i" :class="['h-3 w-3 rounded-full', i <= rating ? 'bg-yellow-400' : 'bg-gray-300']" />
+            <div class="flex gap-1" :aria-label="`${rating} star ratings`">
+              <svg
+                v-for="i in 5"
+                :key="i"
+                viewBox="0 0 24 24"
+                :class="['h-4 w-4', i <= rating && starPercentage(rating) > 0 ? 'text-yellow-400' : 'text-gray-300']"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+              </svg>
             </div>
             <div class="h-2 w-24 rounded-full border border-gray-200 bg-gray-100">
               <div class="h-full rounded-full bg-yellow-400" :style="{ width: starPercentage(rating) + '%' }" />
@@ -167,19 +238,32 @@ function getRatingBgColor(rating: number) {
           <div class="flex-1">
             <div class="flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
-                {{ feedback.customerName.slice(0, 1).toUpperCase() }}
+                {{ feedback.email.slice(0, 1).toUpperCase() }}
               </div>
               <div>
-                <h3 class="font-semibold text-gray-900">{{ feedback.customerName }}</h3>
+                <h3 class="font-semibold text-gray-900">{{ feedback.email }}</h3>
                 <p class="text-sm text-gray-600">{{ feedback.projectType }}</p>
               </div>
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
-            <div class="flex gap-1">
-              <span v-for="i in 5" :key="i" :class="['h-4 w-4 rounded-full', i <= feedback.rating ? 'bg-yellow-400' : 'bg-gray-300']" />
+            <div class="flex gap-1" :aria-label="`${feedback.rating} out of 5 stars`">
+              <svg
+                v-for="i in 5"
+                :key="i"
+                viewBox="0 0 24 24"
+                :class="['h-4 w-4', i <= feedback.rating ? 'text-yellow-400' : 'text-gray-300']"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+              </svg>
             </div>
-            <p class="text-xs text-gray-600">{{ feedback.date }}</p>
+            <p class="text-xs text-gray-600">{{ formatFeedbackDate(feedback.date) }}</p>
+            <div v-if="canManageFeedback(feedback.email)" class="mt-1 flex gap-2">
+              <button type="button" class="rounded-lg border border-blue-300 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50" @click="openEditDialog(feedback)">Edit</button>
+              <button type="button" class="rounded-lg border border-red-300 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50" @click="deleteFeedback(feedback.id, feedback.email)">Delete</button>
+            </div>
           </div>
         </div>
         <p class="mt-4 text-gray-700">{{ feedback.comment }}</p>
@@ -187,53 +271,80 @@ function getRatingBgColor(rating: number) {
     </div>
 
     <!-- Feedback Modal -->
-    <div v-if="isDialogOpen && canSubmitFeedback" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="closeDialog">
-      <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div class="mb-5">
-          <h4 class="text-lg font-semibold text-gray-900">Share Your Feedback</h4>
+    <ModalShell
+      :show="isDialogOpen && canSubmitFeedback"
+      :title="editingFeedbackId ? 'Edit Feedback' : 'Share Your Feedback'"
+      subtitle="Customer review"
+      tone="blue"
+      size="lg"
+      @close="closeDialog"
+    >
+      <form class="space-y-4" @submit.prevent="submitFeedback">
+        <div>
+          <label class="block text-sm font-medium text-gray-700" for="email">Email</label>
+          <input
+            id="email"
+            :value="currentEmail"
+            type="email"
+            readonly
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-600 shadow-sm"
+          />
         </div>
 
-        <form class="space-y-4" @submit.prevent="submitFeedback">
-          <div>
-            <label class="block text-sm font-medium text-gray-700" for="name">Name</label>
-            <input id="name" v-model="formData.customerName" type="text" required class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3" />
-          </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700" for="projectType">Project Type</label>
+          <select
+            id="projectType"
+            v-model="formData.projectType"
+            required
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          >
+            <option value="">Select project type</option>
+            <option v-for="type in projectTypes" :key="type" :value="type">{{ type }}</option>
+          </select>
+        </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700" for="projectType">Project Type</label>
-            <select id="projectType" v-model="formData.projectType" required class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3">
-              <option value="">Select project type</option>
-              <option v-for="type in projectTypes" :key="type" :value="type">{{ type }}</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-            <div class="flex gap-2">
-              <button
-                v-for="rating in [1, 2, 3, 4, 5]"
-                :key="rating"
-                type="button"
-                class="flex h-12 w-12 items-center justify-center rounded-lg border-2 transition-all"
-                :class="formData.rating === rating ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300 bg-white hover:border-yellow-300'"
-                @click="formData.rating = rating"
+        <div>
+          <label class="mb-2 block text-sm font-medium text-gray-700">Rating</label>
+          <div class="flex items-center gap-2">
+            <button
+              v-for="rating in [1, 2, 3, 4, 5]"
+              :key="rating"
+              type="button"
+              class="rounded p-1 transition-transform hover:scale-110"
+              :aria-label="`Rate ${rating} star${rating > 1 ? 's' : ''}`"
+              @click="formData.rating = rating"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                :class="['h-8 w-8', rating <= formData.rating ? 'text-yellow-400' : 'text-slate-300']"
+                fill="currentColor"
+                aria-hidden="true"
               >
-                <span class="text-lg font-bold" :class="formData.rating === rating ? 'text-yellow-600' : 'text-gray-400'">{{ rating }}</span>
-              </button>
-            </div>
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+              </svg>
+            </button>
           </div>
+          <p class="mt-1 text-xs font-medium text-slate-500">Selected: {{ formData.rating }}/5</p>
+        </div>
 
-          <div>
-            <label class="block text-sm font-medium text-gray-700" for="comment">Your Feedback</label>
-            <textarea id="comment" v-model="formData.comment" required rows="4" placeholder="Tell us about your experience with our service..." class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3" />
-          </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700" for="comment">Your Feedback</label>
+          <textarea
+            id="comment"
+            v-model="formData.comment"
+            required
+            rows="4"
+            placeholder="Tell us about your experience with our service..."
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          />
+        </div>
 
-          <div class="flex gap-3 pt-4">
-            <button type="button" class="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-50" @click="closeDialog">Cancel</button>
-            <button type="submit" class="flex-1 rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700">Submit Feedback</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div class="flex gap-3 pt-4">
+          <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeDialog">Cancel</button>
+          <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700">{{ editingFeedbackId ? 'Update Feedback' : 'Submit Feedback' }}</button>
+        </div>
+      </form>
+    </ModalShell>
   </section>
 </template>

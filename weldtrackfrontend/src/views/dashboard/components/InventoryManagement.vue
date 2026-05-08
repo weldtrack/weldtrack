@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useInventoryStore, type InventoryItem } from '../../../stores/inventory'
+import { useModalStore } from '../../../stores/modal'
+import ModalShell from '../../../components/ui/ModalShell.vue'
 
 const store = useInventoryStore()
+const modalStore = useModalStore()
 
 const isDialogOpen = ref(false)
 const isStockModalOpen = ref(false)
@@ -29,6 +32,10 @@ const lowStockCount = computed(() => store.items.filter((item) => item.quantity 
 const supplierCount = computed(() => new Set(store.items.map((item) => item.supplier)).size)
 const selectedCount = computed(() => selectedItems.value.size)
 const allSelected = computed(() => selectedCount.value === filteredInventory.value.length && filteredInventory.value.length > 0)
+
+onMounted(async () => {
+  await Promise.all([store.fetchInventory(), store.fetchMovements()])
+})
 
 function resetForm() {
   formData.name = ''
@@ -72,7 +79,11 @@ function toggleSelectAll() {
 
 function openStockModal() {
   if (selectedItems.value.size === 0) {
-    window.alert('Please select at least one item')
+    modalStore.open({
+      title: 'No items selected',
+      message: 'Please select at least one item before adding stock.',
+      variant: 'warning',
+    })
     return
   }
   selectedStockAdjustment.value = null
@@ -84,19 +95,25 @@ function closeStockModal() {
   selectedStockAdjustment.value = null
 }
 
-function applyStockAdjustment() {
+async function applyStockAdjustment() {
   if (selectedStockAdjustment.value === null) {
-    window.alert('Please select a quantity')
+    modalStore.open({
+      title: 'Quantity required',
+      message: 'Please select a quantity to add before continuing.',
+      variant: 'warning',
+    })
     return
   }
 
   const adjustment = selectedStockAdjustment.value
-  selectedItems.value.forEach((itemId) => store.stockIn(itemId, adjustment))
+  for (const itemId of selectedItems.value) {
+    await store.stockIn(itemId, adjustment)
+  }
   selectedItems.value.clear()
   closeStockModal()
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   const payload = {
     name: formData.name,
     quantity: editingItem.value?.quantity || 0,
@@ -107,16 +124,23 @@ function handleSubmit() {
   }
 
   if (editingItem.value) {
-    store.updateItem(editingItem.value.id, payload)
+    await store.updateItem(editingItem.value.id, payload)
   } else {
-    store.addItem(payload)
+    await store.addItem(payload)
   }
 
   closeDialog()
 }
 
-function handleDelete(id: string) {
-  if (window.confirm('Are you sure you want to delete this item?')) store.deleteItem(id)
+async function handleDelete(id: string) {
+  modalStore.open({
+    title: 'Delete material?',
+    message: 'This action will permanently remove the item from inventory.',
+    variant: 'error',
+    confirmLabel: 'Delete',
+    cancelLabel: 'Cancel',
+    onConfirm: () => store.deleteItem(id),
+  })
 }
 
 function formatCurrency(value: number) {
@@ -254,26 +278,22 @@ function formatCurrency(value: number) {
       </div>
     </div>
 
-    <div
-      v-if="isDialogOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      @click.self="closeDialog"
+    <ModalShell
+      :show="isDialogOpen"
+      :title="editingItem ? 'Edit Material' : 'Add New Material'"
+      subtitle="Inventory record"
+      tone="blue"
+      size="md"
+      @close="closeDialog"
     >
-      <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div class="mb-5">
-          <h4 class="text-lg font-semibold text-gray-900">
-            {{ editingItem ? 'Edit Material' : 'Add New Material' }}
-          </h4>
-        </div>
-
-        <form class="space-y-4" @submit.prevent="handleSubmit">
+      <form class="space-y-4" @submit.prevent="handleSubmit">
           <div>
             <label class="block text-sm font-medium text-gray-700" for="name">Material Name</label>
             <input
               id="name"
               v-model="formData.name"
               required
-              class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
@@ -287,7 +307,7 @@ function formatCurrency(value: number) {
                 step="0.01"
                 min="0"
                 required
-                class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
 
@@ -297,7 +317,7 @@ function formatCurrency(value: number) {
                 id="supplier"
                 v-model="formData.supplier"
                 required
-                class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
           </div>
@@ -310,7 +330,7 @@ function formatCurrency(value: number) {
                 v-model="formData.dateAdded"
                 type="date"
                 required
-                class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
 
@@ -322,36 +342,31 @@ function formatCurrency(value: number) {
                 type="number"
                 min="0"
                 required
-                class="mt-1 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
           </div>
 
           <div class="flex gap-3 pt-2">
-            <button type="button" class="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-50" @click="closeDialog">
+            <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeDialog">
               Cancel
             </button>
-            <button type="submit" class="flex-1 rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700">
+            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700">
               {{ editingItem ? 'Update' : 'Add' }} Material
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </ModalShell>
 
-    <div
-      v-if="isStockModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      @click.self="closeStockModal"
+    <ModalShell
+      :show="isStockModalOpen"
+      :title="`Add Stock to ${selectedCount} item(s)`"
+      subtitle="Bulk stock adjustment"
+      tone="green"
+      size="md"
+      @close="closeStockModal"
     >
-      <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div class="mb-5">
-          <h4 class="text-lg font-semibold text-gray-900">
-            Add Stock to {{ selectedCount }} item(s)
-          </h4>
-        </div>
-
-        <div class="space-y-4">
+      <div class="space-y-4">
           <div>
             <label class="mb-3 block text-sm font-medium text-gray-700">Select Quantity to Add</label>
             <div class="flex flex-wrap gap-2">
@@ -360,10 +375,10 @@ function formatCurrency(value: number) {
                 :key="qty"
                 type="button"
                 :class="[
-                  'rounded-lg border px-4 py-2 font-semibold transition-colors',
+                  'rounded-xl border px-4 py-2.5 font-semibold transition-all',
                   selectedStockAdjustment === qty
-                    ? 'border-green-600 bg-green-100 text-green-800'
-                    : 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100',
+                    ? 'border-green-600 bg-green-100 text-green-800 shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
                 ]"
                 @click="selectedStockAdjustment = qty"
               >
@@ -384,7 +399,7 @@ function formatCurrency(value: number) {
             />
           </div>
 
-          <div v-if="selectedStockAdjustment !== null" class="rounded border border-green-200 bg-green-50 p-3">
+          <div v-if="selectedStockAdjustment !== null" class="rounded-xl border border-green-200 bg-green-50 p-3">
             <p class="text-sm text-green-600">
               Will add {{ selectedStockAdjustment }} unit(s) to each selected item
             </p>
@@ -393,22 +408,21 @@ function formatCurrency(value: number) {
           <div class="flex gap-3 pt-2">
             <button
               type="button"
-              class="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-semibold text-gray-700 hover:bg-gray-50"
+              class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
               @click="closeStockModal"
             >
               Cancel
             </button>
             <button
               type="button"
-              class="flex-1 rounded-lg bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700"
+              class="flex-1 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700"
               @click="applyStockAdjustment"
             >
               Apply
             </button>
           </div>
-        </div>
       </div>
-    </div>
+    </ModalShell>
 
     <div class="rounded-lg border border-gray-200 bg-white p-6">
       <h3 class="mb-4 text-lg font-semibold text-gray-900">Stock Movement Log</h3>

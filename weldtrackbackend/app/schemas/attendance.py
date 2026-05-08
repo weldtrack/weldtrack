@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class AttendanceBase(BaseModel):
-    user_id: int
+    email: str
 
 
 class AttendanceCheckIn(AttendanceBase):
@@ -11,12 +11,12 @@ class AttendanceCheckIn(AttendanceBase):
 
 
 class AttendanceCheckOut(BaseModel):
-    user_id: int
+    email: str
 
 
 class AttendanceResponse(BaseModel):
     id: int
-    user_id: int
+    email: str
     date: str
     check_in_at: datetime
     check_out_at: datetime | None = None

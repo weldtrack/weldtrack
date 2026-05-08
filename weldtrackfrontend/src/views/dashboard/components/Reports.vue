@@ -1,104 +1,33 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-
-interface InventoryItem {
-  id: string
-  name: string
-  quantity: number
-  unitPrice: number
-  supplier: string
-  lowStockThreshold: number
-}
-
-interface Project {
-  id: string
-  name: string
-  client: string
-  status: 'ongoing' | 'completed'
-  materialsCost: number
-  laborCost: number
-}
-
-interface Sale {
-  id: string
-  amount: number
-}
-
-interface Staff {
-  id: string
-  name: string
-  position: string
-  hoursWorkedThisMonth: number
-  overtimeHoursThisMonth: number
-}
+import { computed, onMounted, ref } from 'vue'
+import api from '../../../services/api'
+import { useBookingsStore } from '../../../stores/bookings'
+import { useInventoryStore } from '../../../stores/inventory'
+import { useModalStore } from '../../../stores/modal'
+import { getLaborPrice } from '../../../constants/pricing'
 
 interface AttendanceRecord {
-  id: string
-  staffId: string
-  staffName: string
+  id: number
+  email: string
   date: string
-  checkInTime: string
-  checkOutTime?: string
-  hoursWorked: number
-  overtimeHours: number
+  hours_worked: number
+  overtime_hours: number
 }
 
-// Sample data
-const inventory: InventoryItem[] = [
-  { id: '1', name: 'Steel Rods (12mm)', quantity: 150, unitPrice: 350, supplier: 'Metro Steel Corp', lowStockThreshold: 20 },
-  { id: '2', name: 'Welding Electrodes E6013', quantity: 8, unitPrice: 450, supplier: 'Weld Pro Supplies', lowStockThreshold: 10 },
-  { id: '3', name: 'MIG Welding Wire', quantity: 45, unitPrice: 1200, supplier: 'Industrial Metals Inc', lowStockThreshold: 15 },
-  { id: '4', name: 'Metal Sheets (4x8)', quantity: 25, unitPrice: 2800, supplier: 'Manila Metal Traders', lowStockThreshold: 10 },
-  { id: '5', name: 'Angle Bar (2x2)', quantity: 60, unitPrice: 520, supplier: 'Metro Steel Corp', lowStockThreshold: 20 },
-]
+const bookingsStore = useBookingsStore()
+const inventoryStore = useInventoryStore()
+const modalStore = useModalStore()
+const attendanceRecords = ref<AttendanceRecord[]>([])
 
-const projects: Project[] = [
-  {
-    id: '1',
-    name: 'Steel Frame Fabrication',
-    client: 'XYZ Construction',
-    status: 'ongoing',
-    materialsCost: 45000,
-    laborCost: 33000,
-  },
-  {
-    id: '2',
-    name: 'Staircase Installation',
-    client: 'ABC Hotels',
-    status: 'completed',
-    materialsCost: 18000,
-    laborCost: 14000,
-  },
-  {
-    id: '3',
-    name: 'Gate & Fence Work',
-    client: 'Industrial Park Dev',
-    status: 'ongoing',
-    materialsCost: 32000,
-    laborCost: 21000,
-  },
-]
+onMounted(async () => {
+  await Promise.all([
+    bookingsStore.fetchBookings(),
+    inventoryStore.fetchInventory(),
+  ])
 
-const sales: Sale[] = [
-  { id: '1', amount: 8750 },
-  { id: '2', amount: 6000 },
-  { id: '3', amount: 15000 },
-  { id: '4', amount: 12500 },
-]
-
-// Staff data for attendance and overtime reporting
-const staffData: Staff[] = [
-  { id: '1', name: 'Juan Cruz', position: 'Welder', hoursWorkedThisMonth: 165, overtimeHoursThisMonth: 12.5 },
-  { id: '2', name: 'Maria Santos', position: 'Fabricator', hoursWorkedThisMonth: 160, overtimeHoursThisMonth: 0 },
-  { id: '3', name: 'Carlos Reyes', position: 'Welder', hoursWorkedThisMonth: 168, overtimeHoursThisMonth: 8 },
-  { id: '4', name: 'Rosa Dela Cruz', position: 'Inspector', hoursWorkedThisMonth: 158, overtimeHoursThisMonth: 0 },
-]
-
-const attendanceRecords: AttendanceRecord[] = [
-  { id: '1', staffId: '1', staffName: 'Juan Cruz', date: '2026-04-30', checkInTime: '08:00 AM', checkOutTime: '05:30 PM', hoursWorked: 9.5, overtimeHours: 1.5 },
-  { id: '2', staffId: '2', staffName: 'Maria Santos', date: '2026-04-30', checkInTime: '08:15 AM', checkOutTime: '05:00 PM', hoursWorked: 8.75, overtimeHours: 0 },
-  { id: '3', staffId: '3', staffName: 'Carlos Reyes', date: '2026-04-30', checkInTime: '07:45 AM', checkOutTime: '04:45 PM', hoursWorked: 9, overtimeHours: 1 },
-]
+  const { data } = await api.get<AttendanceRecord[]>('/attendance')
+  attendanceRecords.value = Array.isArray(data) ? data : []
+})
 
 const today = new Date()
 const defaultStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`
@@ -117,56 +46,85 @@ function isWithinSelectedRange(isoDate: string) {
 }
 
 const filteredAttendanceRecords = computed(() =>
-  attendanceRecords.filter((record) => isWithinSelectedRange(record.date)),
+  attendanceRecords.value.filter((record) => isWithinSelectedRange(record.date)),
 )
 
 const totalInventoryValue = computed(() =>
-  inventory.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+  inventoryStore.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
 )
 
 const lowStockCount = computed(() =>
-  inventory.filter((item) => item.quantity <= item.lowStockThreshold).length,
+  inventoryStore.items.filter((item) => item.quantity <= item.lowStockThreshold).length,
+)
+
+const inventory = computed(() => inventoryStore.items)
+
+const projects = computed(() =>
+  bookingsStore.bookings
+    .filter((b) => b.status !== 'cancelled')
+    .map((b) => ({
+      id: String(b.id),
+      status: b.status === 'completed' ? 'completed' : 'ongoing',
+      materialsCost: Number(b.materialCost ?? 0),
+      laborCost: getLaborPrice(b.projectType),
+      totalPrice: getLaborPrice(b.projectType) + Number(b.materialCost ?? 0),
+    })),
 )
 
 const totalProjectCosts = computed(() =>
-  projects.reduce((sum, project) => sum + project.materialsCost + project.laborCost, 0),
+  projects.value.reduce((sum, project) => sum + project.materialsCost + project.laborCost, 0),
 )
 
-const ongoingProjects = computed(() => projects.filter((p) => p.status === 'ongoing').length)
-const completedProjects = computed(() => projects.filter((p) => p.status === 'completed').length)
+const ongoingProjects = computed(() => projects.value.filter((p) => p.status === 'ongoing').length)
+const completedProjects = computed(() => projects.value.filter((p) => p.status === 'completed').length)
 
-const totalSalesRevenue = computed(() => sales.reduce((sum, sale) => sum + sale.amount, 0))
+const totalSalesRevenue = computed(() =>
+  projects.value.reduce((sum, project) => sum + (project.totalPrice || project.materialsCost + project.laborCost), 0),
+)
 
 const netProfit = computed(() => totalSalesRevenue.value - totalProjectCosts.value)
 
 const totalStaffHours = computed(() =>
-  filteredAttendanceRecords.value.reduce((sum, record) => sum + record.hoursWorked, 0),
+  filteredAttendanceRecords.value.reduce((sum, record) => sum + Number(record.hours_worked ?? 0), 0),
 )
 
 const totalOvertimeHours = computed(() =>
-  filteredAttendanceRecords.value.reduce((sum, record) => sum + record.overtimeHours, 0),
+  filteredAttendanceRecords.value.reduce((sum, record) => sum + Number(record.overtime_hours ?? 0), 0),
 )
 
 const staffWithOvertimeCount = computed(
-  () => new Set(filteredAttendanceRecords.value.filter((record) => record.overtimeHours > 0).map((record) => record.staffId)).size,
+  () => new Set(filteredAttendanceRecords.value.filter((record) => Number(record.overtime_hours ?? 0) > 0).map((record) => record.email)).size,
 )
 
+const staffData = computed(() => {
+  const emails = new Set(filteredAttendanceRecords.value.map((record) => record.email))
+  return Array.from(emails)
+})
+
 const averageOvertimePerStaff = computed(() => {
-  const uniqueStaff = new Set(filteredAttendanceRecords.value.map((record) => record.staffId)).size
+  const uniqueStaff = new Set(filteredAttendanceRecords.value.map((record) => record.email)).size
   return uniqueStaff > 0 ? Math.round((totalOvertimeHours.value / uniqueStaff) * 10) / 10 : 0
 })
 
 const averageHoursPerStaff = computed(() => {
-  const uniqueStaff = new Set(filteredAttendanceRecords.value.map((record) => record.staffId)).size
+  const uniqueStaff = new Set(filteredAttendanceRecords.value.map((record) => record.email)).size
   return uniqueStaff > 0 ? Math.round((totalStaffHours.value / uniqueStaff) * 100) / 100 : 0
 })
 
 function handleExportPDF(reportType: string) {
   if (hasInvalidDateRange.value) {
-    alert('Invalid date range. Start Date must be on or before End Date.')
+    modalStore.open({
+      title: 'Invalid date range',
+      message: 'Start Date must be on or before End Date.',
+      variant: 'warning',
+    })
     return
   }
-  alert(`Exporting ${reportType} from ${selectedStartDate.value} to ${selectedEndDate.value}... (Feature simulated for demo)`)
+  modalStore.open({
+    title: reportType,
+    message: `Exporting ${reportType} from ${selectedStartDate.value} to ${selectedEndDate.value}... (Feature simulated for demo)`,
+    variant: 'info',
+  })
 }
 
 function formatCurrency(value: number) {

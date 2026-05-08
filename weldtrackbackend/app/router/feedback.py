@@ -3,9 +3,25 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 from app.db import get_db
 from app.models.feedback import Feedback
+from app.models.user import User, UserRole
+from app.router.user.auth import get_current_user
 from app.schemas.feedback import FeedbackCreate, FeedbackUpdate, FeedbackResponse
 
 router = APIRouter(prefix="/feedbacks", tags=["feedbacks"])
+
+
+def ensure_customer_feedback_owner(feedback: Feedback, current_user: User) -> None:
+    if current_user.role != UserRole.customer:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only customers can modify feedback",
+        )
+
+    if (feedback.email or "").lower() != (current_user.email or "").lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only modify your own feedback",
+        )
 
 
 @router.get("", response_model=list[FeedbackResponse])
@@ -38,7 +54,10 @@ def create_feedback(
     db: Session = Depends(get_db),
 ):
     """Create a new feedback"""
-    feedback = Feedback(**payload.model_dump())
+    payload_data = payload.model_dump()
+    # Keep compatibility with email-only frontend while DB still requires customer_name.
+    fallback_name = payload_data.get("email", "")
+    feedback = Feedback(customer_name=fallback_name, **payload_data)
     db.add(feedback)
     db.commit()
     db.refresh(feedback)
@@ -49,12 +68,15 @@ def create_feedback(
 def update_feedback(
     feedback_id: int,
     payload: FeedbackUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Update a feedback"""
     feedback = db.get(Feedback, feedback_id)
     if not feedback:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")
+
+    ensure_customer_feedback_owner(feedback, current_user)
     
     # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
@@ -70,12 +92,15 @@ def update_feedback(
 def partial_update_feedback(
     feedback_id: int,
     payload: FeedbackUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Partially update a feedback"""
     feedback = db.get(Feedback, feedback_id)
     if not feedback:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")
+
+    ensure_customer_feedback_owner(feedback, current_user)
     
     # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
@@ -90,12 +115,15 @@ def partial_update_feedback(
 @router.delete("/{feedback_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_feedback(
     feedback_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Delete a feedback"""
     feedback = db.get(Feedback, feedback_id)
     if not feedback:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")
+
+    ensure_customer_feedback_owner(feedback, current_user)
     
     db.delete(feedback)
     db.commit()
