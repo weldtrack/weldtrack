@@ -214,42 +214,41 @@ onMounted(() => {
     <div>
       
 
-      <div class="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-      <button
-        type="button"
-        class="rounded-md px-4 py-2 text-sm font-semibold transition-colors"
-        :class="activeTab === 'attendance' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-        @click="activeTab = 'attendance'"
-      >
-        Attendance
-      </button>
-      <button
-        type="button"
-        class="rounded-md px-4 py-2 text-sm font-semibold transition-colors"
-        :class="activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-        @click="activeTab = 'tasks'"
-      >
-        Tasks
-      </button>
-      <button
-        type="button"
-        class="rounded-md px-4 py-2 text-sm font-semibold transition-colors"
-        :class="activeTab === 'contributions' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-        @click="activeTab = 'contributions'"
-      >
-        Contributions
-      </button>
-      <button
-        v-if="isAdmin"
-        type="button"
-        class="rounded-md px-4 py-2 text-sm font-semibold transition-colors"
-        :class="activeTab === 'create' ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-        @click="activeTab = 'create'"
-      >
-        Create Staff
-      </button>
-      
-    </div>
+      <div class="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-2 sm:gap-1">
+        <button
+          type="button"
+          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          :class="activeTab === 'attendance' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
+          @click="activeTab = 'attendance'"
+        >
+          Attendance
+        </button>
+        <button
+          type="button"
+          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          :class="activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
+          @click="activeTab = 'tasks'"
+        >
+          Tasks
+        </button>
+        <button
+          type="button"
+          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          :class="activeTab === 'contributions' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
+          @click="activeTab = 'contributions'"
+        >
+          Contributions
+        </button>
+        <button
+          v-if="isAdmin"
+          type="button"
+          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          :class="activeTab === 'create' ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
+          @click="activeTab = 'create'"
+        >
+          Create Staff
+        </button>
+      </div>
     </div>
 
     <StaffAttendance v-if="activeTab === 'attendance'" />
@@ -263,11 +262,11 @@ onMounted(() => {
         <div v-if="createStaffError" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ createStaffError }}</div>
         <div v-if="createStaffSuccess" class="mb-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">{{ createStaffSuccess }}</div>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <input v-model="createStaffForm.email" type="email" placeholder="staff@example.com" class="col-span-3 rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
-          <input v-model="createStaffForm.password" type="password" placeholder="Password" class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
-          <input v-model="createStaffForm.confirm" type="password" placeholder="Confirm" class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
-          <button :disabled="creatingStaff" @click="submitCreateStaff" class="col-span-3 mt-1 h-10 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60">{{ creatingStaff ? 'Creating...' : 'Create Staff' }}</button>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <input v-model="createStaffForm.email" type="email" placeholder="staff@example.com" class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 sm:col-span-2" />
+          <input v-model="createStaffForm.password" type="password" placeholder="Password" class="min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
+          <input v-model="createStaffForm.confirm" type="password" placeholder="Confirm" class="min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
+          <button :disabled="creatingStaff" @click="submitCreateStaff" class="mt-1 h-10 rounded-xl bg-green-600 px-4 font-semibold text-white hover:bg-green-700 disabled:opacity-60 sm:col-span-2">{{ creatingStaff ? 'Creating...' : 'Create Staff' }}</button>
         </div>
       </div>
 
