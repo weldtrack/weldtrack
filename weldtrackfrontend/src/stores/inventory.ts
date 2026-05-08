@@ -20,6 +20,7 @@ export interface StockMovement {
   quantity: number
   type: MovementType
   timestamp: string
+  rawTimestamp?: string
   bookingId?: number | null
   taskId?: string | null
   teamEmails: string[]
@@ -66,6 +67,7 @@ function toStockMovement(movement: BackendStockMovement): StockMovement {
     itemName: movement.item_name,
     quantity: Number(movement.quantity ?? 0),
     type: movement.type,
+    rawTimestamp: movement.timestamp ?? '',
     timestamp: movement.timestamp ? new Date(movement.timestamp).toLocaleString('en-PH') : '',
     bookingId: movement.booking_id ?? null,
     taskId: movement.task_id ?? null,

@@ -399,21 +399,6 @@ async function assignTask() {
     resetNewTaskForm()
 }
 
-async function updateTaskStatus(taskId: string, status: TaskStatus) {
-  // when staff tries to mark done, require recording materials used first
-  if (status === 'done' && !isAdmin.value) {
-    const movements = inventoryStore.getMovementsForTask(taskId)
-    const hasUsedMaterials = movements.some((m) => m.type === 'stock-out')
-    if (!hasUsedMaterials) {
-      // open record modal to force recording materials before completion
-      openRecordModal(taskId)
-      return
-    }
-  }
-
-  await staffTasksStore.updateTaskStatus(taskId, status)
-}
-
 function openRemoveTaskModal(task: { id: string; title: string }) {
   taskToRemove.value = { id: task.id, title: task.title }
   isRemoveTaskModalOpen.value = true
