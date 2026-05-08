@@ -8,11 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.api import router
-from app.db import Base, engine, ensure_runtime_schema, SessionLocal
+from app.db import Base, engine, SessionLocal
 
-# Create tables and apply runtime schema repairs
+
 Base.metadata.create_all(bind=engine)
-ensure_runtime_schema()
 
 import base64
 import hashlib
@@ -64,7 +63,7 @@ def _create_admin_if_missing() -> None:
 _create_admin_if_missing()
 
 app = FastAPI(title="Weldtrack")
-origins = os.getenv("CORS_ORIGINS").split(",")
+origins = os.getenv("CORS_ORIGINS")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -79,6 +78,6 @@ app.include_router(router)
 if __name__ == "__main__":
     import uvicorn
 
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8000"))
+    host = os.getenv("HOST")
+    port = int(os.getenv("PORT"))
     uvicorn.run("app.main:app", host=host, port=port, reload=True)
