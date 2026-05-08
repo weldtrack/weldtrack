@@ -13,7 +13,7 @@ Base.metadata.create_all(bind=engine)
 ensure_runtime_schema()
 
 app = FastAPI(title="Weldtrack")
-origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+origins = os.getenv("CORS_ORIGINS").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
