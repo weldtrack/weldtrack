@@ -55,7 +55,6 @@ def create_feedback(
 ):
     """Create a new feedback"""
     payload_data = payload.model_dump()
-    # Keep compatibility with email-only frontend while DB still requires customer_name.
     fallback_name = payload_data.get("email", "")
     feedback = Feedback(customer_name=fallback_name, **payload_data)
     db.add(feedback)
@@ -78,7 +77,6 @@ def update_feedback(
 
     ensure_customer_feedback_owner(feedback, current_user)
     
-    # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(feedback, key):
             setattr(feedback, key, value)
@@ -102,7 +100,6 @@ def partial_update_feedback(
 
     ensure_customer_feedback_owner(feedback, current_user)
     
-    # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(feedback, key):
             setattr(feedback, key, value)

@@ -32,7 +32,6 @@ const projectHistory = computed(() => {
 const completedCount = computed(() => projectHistory.value.filter((item) => item.status === 'completed').length)
 const cancelledCount = computed(() => projectHistory.value.filter((item) => item.status === 'cancelled').length)
 
-// Only counts are needed here; HistoryCard renders details.
 </script>
 
 <template>

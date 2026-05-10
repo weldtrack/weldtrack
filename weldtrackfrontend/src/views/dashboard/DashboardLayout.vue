@@ -26,17 +26,16 @@ const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => 
   if (authStore.role === 'admin') {
     return [
       { id: 'dashboard', label: 'Dashboard' },
-      { id: 'inventory', label: 'Inventory' },
       { id: 'booking', label: 'Booking' },
+      { id: 'inventory', label: 'Inventory' },
       { id: 'staff', label: 'Staff' },
+      { id: 'users', label: 'Users' },
+      { id: 'reports', label: 'Reports' },
       { id: 'projects', label: 'Project History' },
       { id: 'feedback', label: 'Customer Feedback' },
-      { id: 'reports', label: 'Reports' },
     ]
   }
 
-  // Staff users: expose direct entries for Attendance, Tasks, Contributions
-  // remove the generic Dashboard item for staff and default to Attendance
   if (authStore.role === 'staff') {
     return [
       { id: 'staff-attendance', label: 'Attendance' },
@@ -58,19 +57,16 @@ const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => 
 })
 
 onMounted(() => {
-  // For customers, default to Booking view
   if (authStore.role === 'customer' && adminSectionStore.section !== 'booking') {
     adminSectionStore.setSection('booking')
   }
 
-  // For staff, default to Attendance view
   if (authStore.role === 'staff' && !adminSectionStore.section.startsWith('staff')) {
     adminSectionStore.setSection('staff-attendance')
   }
 })
 
 function selectSection(section: AdminSection) {
-  // For staff users, navigate to the staff dashboard route so the StaffWorkspace is rendered
   if (authStore.role === 'staff' && section === 'staff') {
     router.push({ name: 'staff-dashboard' }).catch(() => {})
     return
@@ -94,7 +90,6 @@ function handleLogout() {
       isMobileSidebarOpen.value = false
     })
     .catch(() => {
-      // Even if logout API fails, clear local session
       authStore.logout()
       router.replace({ name: 'login' }).catch(() => {})
       isMobileSidebarOpen.value = false

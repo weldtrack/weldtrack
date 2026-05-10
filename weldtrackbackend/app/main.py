@@ -53,7 +53,6 @@ def _create_admin_if_missing() -> None:
         db.add(admin)
         db.flush()
 
-        # Mark email as verified
         ev = EmailVerification(user_id=admin.id, is_verified=True)
         db.add(ev)
         db.commit()

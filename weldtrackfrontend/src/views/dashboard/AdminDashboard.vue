@@ -7,6 +7,7 @@ import Reports from './components/Reports.vue'
 import BookingApproval from './components/BookingApproval.vue'
 import StaffWorkspace from './components/StaffWorkspace.vue'
 import ServiceFeedback from './components/ServiceFeedback.vue'
+import AdminUsers from './components/AdminUsers.vue'
 import { useAdminSectionStore, type AdminSection as AdminSectionType } from '../../stores/adminSection'
 import { useBookingsStore } from '../../stores/bookings'
 import { getLaborPrice } from '../../constants/pricing'
@@ -360,6 +361,7 @@ const pieStyle = computed(() => {
     <BookingApproval v-else-if="currentSection === 'booking'" />
     <ServiceFeedback v-else-if="currentSection === 'feedback'" :is-admin="true" />
     <Reports v-else-if="currentSection === 'reports'" />
+    <AdminUsers v-else-if="currentSection === 'users'" />
     <StaffWorkspace
       v-else-if="currentSection === 'staff' || currentSection === 'staff-attendance' || currentSection === 'staff-tasks' || currentSection === 'staff-contributions' || currentSection === 'staff-create'" />
   </Layout>

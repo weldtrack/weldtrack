@@ -18,9 +18,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
 
-# =========================
-# ENUMS
-# =========================
 class TaskStatus(str, enum.Enum):
     pending = "pending"
     in_progress = "in-progress"
@@ -30,9 +27,6 @@ class TaskStatus(str, enum.Enum):
 class MovementType(str, enum.Enum):
     stock_out = "stock_out"
 
-# =========================
-# STAFF TASK
-# =========================
 class StaffTask(Base):
     __tablename__ = "staff_tasks"
 
@@ -57,7 +51,6 @@ class StaffTask(Base):
         nullable=False,
     )
 
-    # location
     country: Mapped[str] = mapped_column(String(8), default="PH", nullable=False)
     region: Mapped[str] = mapped_column(String(64), default="Bicol Region (Region V)", nullable=False)
     province: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -65,7 +58,6 @@ class StaffTask(Base):
     barangay: Mapped[str] = mapped_column(String(100), nullable=False)
     house: Mapped[str] = mapped_column(String(150), nullable=False)
 
-    # relationships
     assignees = relationship(
         "StaffTaskAssignee",
         back_populates="task",
@@ -79,9 +71,6 @@ class StaffTask(Base):
     )
 
 
-# =========================
-# STAFF TASK ASSIGNEE
-# =========================
 class StaffTaskAssignee(Base):
     __tablename__ = "staff_task_assignees"
 
@@ -99,9 +88,6 @@ class StaffTaskAssignee(Base):
     staff = relationship("User", back_populates="assigned_tasks", foreign_keys=[staff_id])
 
 
-# =========================
-# TASK MATERIAL USAGE
-# =========================
 class TaskMaterialUsage(Base):
     __tablename__ = "task_material_usages"
 
@@ -134,7 +120,6 @@ class TaskMaterialUsage(Base):
         nullable=False,
     )
 
-    # relationships
     task = relationship("StaffTask", back_populates="material_usages")
     submitted_by_staff = relationship("User", back_populates="material_submissions", foreign_keys=[submitted_by_staff_id])
 
@@ -145,9 +130,6 @@ class TaskMaterialUsage(Base):
     )
 
 
-# =========================
-# TASK MATERIAL USAGE LINE
-# =========================
 class TaskMaterialUsageLine(Base):
     __tablename__ = "task_material_usage_lines"
 

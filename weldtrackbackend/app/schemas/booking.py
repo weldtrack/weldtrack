@@ -4,7 +4,6 @@ from datetime import datetime
 from app.models.booking import BookingStatus, CancelledBy
 
 
-# ─── Material ─────────────────────────────────────────────────────────────────
 
 class MaterialBase(BaseModel):
     item_id:    str
@@ -26,7 +25,6 @@ class MaterialResponse(MaterialBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# ─── Booking ──────────────────────────────────────────────────────────────────
 
 class BookingBase(BaseModel):
     project_type:   str

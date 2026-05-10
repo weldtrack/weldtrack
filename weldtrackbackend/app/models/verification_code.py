@@ -42,7 +42,6 @@ class EmailVerification(Base):
         server_default=func.now()
     )
 
-    # Relationship
     user = relationship(
         "User",
         back_populates="email_verification",

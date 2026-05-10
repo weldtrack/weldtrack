@@ -38,7 +38,6 @@ def send_verification_email(to_email: str, verification_code: str) -> bool:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
         
-        # SendGrid returns 202 for successful send
         return response.status_code == 202
     
     except Exception as e:

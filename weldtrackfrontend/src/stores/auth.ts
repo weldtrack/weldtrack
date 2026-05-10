@@ -21,7 +21,6 @@ function readAuthState() {
 
   try {
     return JSON.parse(storedValue) as {
-      token?: string
       email?: string
       role?: string
       isLoggedIn?: boolean
@@ -32,7 +31,6 @@ function readAuthState() {
 }
 
 function writeAuthState(state: {
-  token: string
   email: string
   role: string
   isLoggedIn: boolean
@@ -54,7 +52,7 @@ function clearAuthState() {
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: readAuthState()?.token || '',
+    token: '',
     email: readAuthState()?.email || '',
     role: readAuthState()?.role || 'customer',
     isLoggedIn: readAuthState()?.isLoggedIn || false,
@@ -142,7 +140,6 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async resetPassword(payload: { email: string; code: string; password: string; password_confirmation?: string; passwordConfirmation?: string; confirm?: string }) {
-      // Normalize common confirmation field names to `password_confirmation` for backend compatibility
       const body: Record<string, string> = {
         email: payload.email,
         code: payload.code,
@@ -159,13 +156,12 @@ export const useAuthStore = defineStore('auth', {
       email?: string
       role?: string
     }) {
-      this.token = payload.token || ''
+      this.token = ''
       this.role = payload.role || 'customer'
       this.email = payload.email || ''
       this.isLoggedIn = true
 
       writeAuthState({
-        token: this.token,
         email: this.email,
         role: this.role,
         isLoggedIn: this.isLoggedIn,

@@ -85,7 +85,6 @@ async function submitSignup() {
       throw new Error('Request failed.')
     }
     
-    // Code sent successfully, move to verification step
     step.value = 2
     startCodeTimer()
   } catch (error) {
@@ -112,14 +111,12 @@ async function submitCode() {
       action: 'createaccount',
     })
     
-    // If response contains a token/user data, create session and navigate away.
     if (response.user || response.access_token || response.token) {
       authStore.setSession({
         token: response.access_token || response.token || '',
         email: response.user?.email || form.email,
         role: response.user?.role || 'customer',
       })
-      // allow route leave to avoid the "leave page" modal blocking the programmatic redirect
       allowRouteLeave.value = true
       await router.replace('/dashboard')
     } else {

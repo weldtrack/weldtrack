@@ -64,7 +64,6 @@ def update_inventory_item(
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     
-    # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(item, key):
             setattr(item, key, value)
@@ -85,15 +84,12 @@ def partial_update_inventory_item(
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
     
-    # Track quantity changes for stock movements
     old_quantity = item.quantity or 0
     
-    # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(item, key):
             setattr(item, key, value)
     
-    # Create stock movement if quantity changed
     new_quantity = item.quantity or 0
     if old_quantity != new_quantity:
         quantity_delta = new_quantity - old_quantity

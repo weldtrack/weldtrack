@@ -67,7 +67,6 @@ const inventoryStore = useInventoryStore()
 const isRemoveTaskModalOpen = ref(false)
 const taskToRemove = ref<{ id: string; title: string } | null>(null)
 
-// record materials modal
 const isRecordModalOpen = ref(false)
 const recordingTask = ref<string | null>(null)
 const recordForm = reactive({
@@ -250,7 +249,6 @@ async function recordMaterialsUsage() {
 
   const taskId = recordingTask.value
 
-  // Require both before and after images to be attached
   if (!recordForm.beforeImagePreview || !recordForm.afterImagePreview) {
     modalStore.open({
       title: 'Images required',
@@ -272,7 +270,6 @@ async function recordMaterialsUsage() {
   await inventoryStore.fetchInventory()
   await inventoryStore.fetchMovements()
 
-  // Auto-mark task as done after successful submission
   await staffTasksStore.updateTaskStatus(recordingTask.value, 'done')
 
   await bookingsStore.getBooking(Number(bookingId))

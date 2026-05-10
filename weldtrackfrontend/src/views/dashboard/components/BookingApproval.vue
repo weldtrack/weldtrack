@@ -36,7 +36,6 @@ const cancelForm = reactive({
 function getLaborPriceFor(type: string) {
   return getLaborPrice(type)
 }
-// price is determined automatically on confirm; no UI helpers needed here
 
 function getStatusLabel(status: BookingStatus) {
   switch (status) {
@@ -86,7 +85,6 @@ function openCompleteModal(booking: BookingItem) {
   selectedBooking.value = booking
   completionForm.materialCost = booking.materialCost ? String(booking.materialCost) : ''
   isCompleteModalOpen.value = true
-  // Refetch movements to show newly submitted staff materials
   inventoryStore.fetchMovements().then(() => loadMaterialsForBooking())
 }
 
@@ -100,7 +98,6 @@ function closeApprovalModal() {
   isApprovalModalOpen.value = false
   selectedBooking.value = null
   approvalForm.scheduleDate = ''
-  // approvalForm.estimatedCost = '' // Removed reference to estimatedCost
 }
 
 function openCancelModal(booking: BookingItem) {
@@ -159,9 +156,7 @@ const computedCompletionTotal = computed(() => {
 async function confirmComplete() {
   if (!selectedBooking.value) return
   
-  // Check if staff has recorded materials
   if (!hasStaffMaterialSubmission(selectedBooking.value.id)) {
-    // Show modal asking to confirm completion without materials
     modalStore.open({
       title: 'No materials recorded',
       message: 'Staff has not submitted any recorded materials for this booking. Are you sure you want to complete it without material records?',
@@ -232,7 +227,6 @@ async function loadMaterialsForBooking() {
     })
   }
 
-  // Fallback: load from stock movements
   try {
     await inventoryStore.fetchMovements({ bookingId })
   } catch (err) {

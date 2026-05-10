@@ -53,7 +53,6 @@ def create_booking(
     db.add(booking)
     db.flush()
     
-    # Add materials if provided
     if payload.model_dump().get("materials"):
         for material_data in payload.materials:
             material = RecordMaterial(**material_data.model_dump(), booking_id=booking.id)
@@ -75,7 +74,6 @@ def update_booking(
     if not booking:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
     
-    # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(booking, key):
             setattr(booking, key, value)
@@ -96,7 +94,6 @@ def partial_update_booking(
     if not booking:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
     
-    # Update fields
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(booking, key):
             setattr(booking, key, value)
@@ -175,7 +172,6 @@ def add_booking_materials(
         )
         db.add(material_record)
 
-        # create stock movement
         movement = StockMovement(
             item_id=item.id,
             item_name=item.name,
@@ -186,7 +182,6 @@ def add_booking_materials(
         )
         db.add(movement)
 
-        # decrement inventory quantity (never negative)
         item.quantity = max(0, item.quantity - qty)
         db.add(item)
         created.append(movement)
@@ -199,7 +194,6 @@ def add_booking_materials(
 
     db.commit()
 
-    # refresh and return created movements
     for m in created:
         db.refresh(m)
 

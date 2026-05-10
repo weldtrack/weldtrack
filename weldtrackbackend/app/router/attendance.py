@@ -24,16 +24,13 @@ def list_attendance(
     """Get attendance records. Staff can only see their own."""
     query = select(AttendanceRecord).order_by(desc(AttendanceRecord.created_at))
     
-    # If staff, filter to their own records
     if current_user.role == UserRole.staff:
         query = query.where(AttendanceRecord.email == current_user.email)
     elif user_id and not user_email:
-        # Admin: support user_id for backward compat
         user = db.get(User, user_id)
         if user:
             user_email = user.email
     
-    # Admin: allow filtering by email
     if user_email and current_user.role == UserRole.admin:
         query = query.where(AttendanceRecord.email == user_email)
     
@@ -100,7 +97,6 @@ def check_in(
     
     today = datetime.now(timezone.utc).date().isoformat()
     
-    # Check if already checked in today
     existing = db.scalar(
         select(AttendanceRecord).where(
             and_(
@@ -166,7 +162,6 @@ def check_out(
     check_out_time = datetime.now(timezone.utc)
     record.check_out_at = check_out_time
     
-    # Calculate hours
     if record.check_in_at:
         hours = (check_out_time - record.check_in_at).total_seconds() / 3600
         record.hours_worked = round(hours, 2)

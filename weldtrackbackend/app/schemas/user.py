@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
@@ -22,6 +23,9 @@ class UserRead(UserBase):
     id: int
     role: UserRole
     created_at: datetime
+    is_banned: bool = False
+    is_online: bool = False
+    last_active: Optional[datetime] = None
 
     class Config:
         from_attributes = True

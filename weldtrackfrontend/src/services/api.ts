@@ -4,9 +4,13 @@ import { useLoadingStore } from '../stores/loading'
 
 type TrackedRequestConfig = InternalAxiosRequestConfig & {
   __loadingTracked?: boolean
+  skipGlobalLoading?: boolean
 }
 
 function startGlobalLoading(config: TrackedRequestConfig) {
+  if (config.skipGlobalLoading) {
+    return
+  }
   const loadingStore = useLoadingStore()
   loadingStore.start()
   config.__loadingTracked = true
@@ -29,21 +33,8 @@ const api = axios.create({
   withCredentials: true,
 })
 
-// Add request interceptor to include auth token
 api.interceptors.request.use((config) => {
   const trackedConfig = config as TrackedRequestConfig
-
-  const token = localStorage.getItem('weldtrack-auth')
-  if (token) {
-    try {
-      const authData = JSON.parse(token)
-      if (authData.token) {
-        trackedConfig.headers.Authorization = `Bearer ${authData.token}`
-      }
-    } catch {
-      // Invalid token format, skip
-    }
-  }
   startGlobalLoading(trackedConfig)
   return trackedConfig
 }, (error) => {
@@ -56,6 +47,13 @@ api.interceptors.response.use((response) => {
   return response
 }, (error) => {
   finishGlobalLoading(error?.config as TrackedRequestConfig | undefined)
+  
+  if (error?.response?.status === 401) {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('weldtrack-auth')
+    }
+  }
+  
   return Promise.reject(error)
 })
 

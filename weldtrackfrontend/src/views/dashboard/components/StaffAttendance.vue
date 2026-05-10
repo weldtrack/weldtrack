@@ -89,7 +89,6 @@ const totalStaffHours = computed(() => {
   return todayAttendance.value.reduce((sum, record) => {
     if (record.checkOutAt) return sum + Number(record.hoursWorked ?? 0)
 
-    // Ongoing check-in: compute hours between check-in and now
     if (record.checkInAt) {
       const hours = getHoursBetween(record.checkInAt, new Date(nowTick.value).toISOString())
       return sum + round2(hours)
@@ -176,8 +175,6 @@ const isTimeButtonDisabled = computed(() => {
 })
 
 onMounted(async () => {
-  // Fetch current user first. Only fetch staff directory for admins so a 403
-  // doesn't prevent loading attendance for staff users.
   await fetchCurrentUser()
   try {
     if (authStore.role === 'admin') {
@@ -287,7 +284,6 @@ function formatDuration(hours: number) {
       <p class="text-sm text-gray-600">Track staff check-in/out and overtime</p>
     </div>
 
-    <!-- Attendance Summary Cards (Admin only) -->
     <div v-if="isAdmin" class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="rounded-lg border border-gray-200 bg-white p-6">
         <div class="flex items-center gap-3">
@@ -342,7 +338,6 @@ function formatDuration(hours: number) {
       </div>
     </div>
 
-    <!-- Personal Staff Stats (Staff Only) -->
     <div v-if="!isAdmin" class="grid grid-cols-1 gap-4 md:grid-cols-3">
       <div class="rounded-lg border border-blue-200 bg-blue-50 p-6">
         <div class="flex items-center gap-3">
@@ -387,7 +382,6 @@ function formatDuration(hours: number) {
       </div>
     </div>
 
-    <!-- My Attendance Section (Staff) -->
     <div v-if="!isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
       <h4 class="mb-4 text-lg font-semibold text-gray-900">My Attendance</h4>
       <div class="space-y-4">
@@ -421,7 +415,6 @@ function formatDuration(hours: number) {
       </div>
     </div>
 
-    <!-- Today's Attendance Records (Admin Only) -->
     <div v-if="isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
       <h4 class="mb-4 text-lg font-semibold text-gray-900">Today's Records</h4>
       <div v-if="todayAttendance.length === 0" class="py-8 text-center text-gray-500">
@@ -457,7 +450,6 @@ function formatDuration(hours: number) {
       </div>
     </div>
 
-    <!-- Check-In Modal -->
     <ModalShell
       :show="showCheckInModal"
       :title="checkInAction === 'checkin' ? 'Check In' : 'Check Out'"

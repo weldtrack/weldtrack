@@ -41,13 +41,11 @@ const authStore = useAuthStore()
 const staffContributionsStore = useStaffContributionsStore()
 const isAdmin = computed(() => authStore.role === 'admin')
 
-// Create staff form (admin only) — moved into its own tab
 const createStaffForm = reactive({ email: '', password: '', confirm: '' })
 const creatingStaff = ref(false)
 const createStaffError = ref('')
 const createStaffSuccess = ref('')
 
-// Staff list and delete
 const staffList = ref<StaffMember[]>([])
 const showDeleteModal = ref(false)
 const selectedStaffToDelete = ref<StaffMember | null>(null)
@@ -86,7 +84,6 @@ async function submitCreateStaff() {
 
   creatingStaff.value = true
   try {
-    // Call admin endpoint to create staff directly (no verification code)
     const { data } = await api.post('/auth/admin/create-staff', {
       email: createStaffForm.email,
       password: createStaffForm.password,
@@ -193,7 +190,6 @@ function isCurrentUserContributor(name: string) {
   return Boolean(currentName && name === currentName)
 }
 
-// Note: `activeTab` is computed and syncs with `adminSectionStore.section`
 
 onMounted(() => {
   Promise.all([
@@ -217,7 +213,7 @@ onMounted(() => {
       <div class="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-2 sm:gap-1">
         <button
           type="button"
-          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
           :class="activeTab === 'attendance' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
           @click="activeTab = 'attendance'"
         >
@@ -225,7 +221,7 @@ onMounted(() => {
         </button>
         <button
           type="button"
-          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
           :class="activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
           @click="activeTab = 'tasks'"
         >
@@ -233,7 +229,7 @@ onMounted(() => {
         </button>
         <button
           type="button"
-          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
           :class="activeTab === 'contributions' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
           @click="activeTab = 'contributions'"
         >
@@ -242,7 +238,7 @@ onMounted(() => {
         <button
           v-if="isAdmin"
           type="button"
-          class="min-w-0 flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:flex-none sm:px-4"
+          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
           :class="activeTab === 'create' ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
           @click="activeTab = 'create'"
         >
@@ -270,7 +266,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Staff List -->
       <div class="rounded-lg border border-gray-200 bg-white p-4">
         <h3 class="mb-4 text-lg font-semibold text-gray-900">Staff Members</h3>
 
@@ -336,7 +331,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Delete Staff Modal -->
     <ModalShell
       :show="showDeleteModal"
       title="Delete Staff Member"

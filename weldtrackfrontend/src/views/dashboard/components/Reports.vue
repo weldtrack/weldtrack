@@ -28,12 +28,10 @@ const fetchAttendanceData = async (startDate: string, endDate: string) => {
   try {
     const { data } = await api.get<AttendanceRecord[]>('/attendance', {
       params: {
-        // backend enforces max limit=200
         limit: 200,
       },
     })
     
-    // Filter by date range on frontend
     const start = new Date(`${startDate}T00:00:00`)
     const end = new Date(`${endDate}T23:59:59`)
     
@@ -282,7 +280,6 @@ async function generateStockInReportPDF() {
       </div>
     `
 
-    // include stock movement logs for the selected date range
     const start = new Date(`${selectedStartDate.value}T00:00:00`)
     const end = new Date(`${selectedEndDate.value}T23:59:59`)
 
@@ -300,7 +297,6 @@ async function generateStockInReportPDF() {
       jsPDF: { orientation: 'landscape' as const, unit: 'mm' as const, format: 'a4' as const },
     }
 
-    // append movement log section
     const movementRows = movementsFiltered.map((m) => `
       <tr>
         <td style="padding:8px;border:1px solid #ddd;">${formatDateTime(m.rawTimestamp || m.timestamp)}</td>
@@ -597,7 +593,6 @@ async function generateStaffAttendanceReportPDF() {
     </div>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-      <!-- Stock-In Report Card -->
       <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Stock-In Report</h3>
@@ -644,7 +639,6 @@ async function generateStaffAttendanceReportPDF() {
         </button>
       </div>
 
-      <!-- Financial Summary Card -->
       <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Financial Summary</h3>
@@ -713,7 +707,6 @@ async function generateStaffAttendanceReportPDF() {
         </div>
       </div>
 
-      <!-- Staff Attendance Report Card -->
       <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Staff Attendance</h3>

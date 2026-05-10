@@ -26,31 +26,25 @@ class Booking(Base):
     project_type:   Mapped[str]           = mapped_column(String(255), nullable=False)
     status:         Mapped[BookingStatus] = mapped_column(Enum(BookingStatus), nullable=False, default=BookingStatus.pending)
 
-    # Customer info
     customer_name:  Mapped[str | None]   = mapped_column(String(255), nullable=True)
     email:          Mapped[str | None]   = mapped_column(String(255), nullable=True)
     phone:          Mapped[str | None]   = mapped_column(String(50),  nullable=True)
     description:    Mapped[str | None]   = mapped_column(Text,        nullable=True)
 
-    # Dates
     created_date:   Mapped[datetime]     = mapped_column(DateTime(timezone=True), server_default=func.now())
     preferred_date: Mapped[str | None]   = mapped_column(String(100), nullable=True)
     schedule_date:  Mapped[str | None]   = mapped_column(String(100), nullable=True)
 
-    # Costs
     estimated_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
     material_cost:  Mapped[float | None] = mapped_column(Float, nullable=True)
     total_price:    Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    # Cancellation
     cancel_reason:  Mapped[str | None]        = mapped_column(Text,               nullable=True)
     cancelled_by:   Mapped[CancelledBy | None] = mapped_column(Enum(CancelledBy), nullable=True)
 
-    # Images
     before_images:  Mapped[list | None]  = mapped_column(JSON, nullable=True, default=list)
     after_images:   Mapped[list | None]  = mapped_column(JSON, nullable=True, default=list)
 
-    # Relationship
     materials: Mapped[list["RecordMaterial"]] = relationship(
         "RecordMaterial",
         back_populates="booking",

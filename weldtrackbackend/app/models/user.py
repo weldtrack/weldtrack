@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Integer, String, func
+from sqlalchemy import DateTime, Enum, Integer, String, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -37,8 +37,22 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now()
     )
+
+    is_banned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    is_online: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    last_active: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    logged_out_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="When the user last logged out - used to invalidate old tokens"
+    )
     
-    # Relationships
     email_verification = relationship(
         "EmailVerification",
         back_populates="user",

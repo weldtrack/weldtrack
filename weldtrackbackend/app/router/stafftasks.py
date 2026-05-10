@@ -121,7 +121,6 @@ def create_staff_task(
     db.add(task)
     db.flush()
     
-    # Add assignees
     from app.models.stafftask import StaffTaskAssignee
     for staff_id in payload.assignedStaffIds:
         assignee = StaffTaskAssignee(task_id=task.id, staff_id=staff_id)

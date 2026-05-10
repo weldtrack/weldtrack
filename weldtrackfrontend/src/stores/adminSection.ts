@@ -5,6 +5,7 @@ export type AdminSection =
   | 'inventory'
   | 'projects'
   | 'booking'
+  | 'users'
   | 'booking-history'
   | 'feedback'
   | 'reports'
@@ -15,14 +16,28 @@ export type AdminSection =
   | 'staff-feedback'
   | 'staff-create'
 
+const STORAGE_KEY = 'weldtrack-admin-section'
+
+function getInitialSection(): AdminSection {
+  if (typeof window === 'undefined') {
+    return 'dashboard'
+  }
+  
+  const saved = window.localStorage.getItem(STORAGE_KEY)
+  return (saved as AdminSection) || 'dashboard'
+}
+
 export const useAdminSectionStore = defineStore('admin-section', {
   state: () => ({
-    section: 'dashboard' as AdminSection,
+    section: getInitialSection() as AdminSection,
     selectedMaterial: null as null | { id: number; name: string; price: number; requestedQuantity?: number },
   }),
   actions: {
     setSection(section: AdminSection) {
       this.section = section
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY, section)
+      }
     },
     setSelectedMaterial(payload: { id: number; name: string; price: number; requestedQuantity?: number }) {
       this.selectedMaterial = payload

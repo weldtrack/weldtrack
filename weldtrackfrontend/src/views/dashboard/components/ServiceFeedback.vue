@@ -182,7 +182,6 @@ function canManageFeedback(feedbackEmail: string) {
       </button>
     </div>
 
-    <!-- Rating Overview -->
     <div class="rounded-lg border border-gray-200 bg-white p-6">
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
@@ -229,7 +228,6 @@ function canManageFeedback(feedbackEmail: string) {
       </div>
     </div>
 
-    <!-- Feedbacks List -->
     <div class="space-y-4">
       <div v-if="feedbacksSorted.length === 0" class="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,26 +237,24 @@ function canManageFeedback(feedbackEmail: string) {
         <p class="mt-1 text-sm text-gray-600">Be the first to share your experience</p>
       </div>
 
-      <div v-for="feedback in feedbacksSorted" :key="feedback.id" :class="['rounded-lg border p-6', getRatingBgColor(feedback.rating)]">
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
-            <div class="flex items-center gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-bold">
-                {{ feedback.email.slice(0, 1).toUpperCase() }}
-              </div>
-              <div>
-                <h3 class="font-semibold text-gray-900">{{ feedback.email }}</h3>
-                <p class="text-sm text-gray-600">{{ feedback.projectType }}</p>
-              </div>
+      <div v-for="feedback in feedbacksSorted" :key="feedback.id" :class="['rounded-lg border p-4 sm:p-6', getRatingBgColor(feedback.rating)]">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div class="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+            <div class="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-sm">
+              {{ feedback.email.slice(0, 1).toUpperCase() }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="font-semibold text-gray-900 text-sm sm:text-base overflow-auto">{{ feedback.email }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600 overflow-auto">{{ feedback.projectType }}</p>
             </div>
           </div>
-          <div class="flex flex-col items-end gap-2">
-            <div class="flex gap-1" :aria-label="`${feedback.rating} out of 5 stars`">
+          <div class="flex flex-col items-start sm:items-end gap-2 shrink-0">
+            <div class="flex gap-0.5 sm:gap-1" :aria-label="`${feedback.rating} out of 5 stars`">
               <svg
                 v-for="i in 5"
                 :key="i"
                 viewBox="0 0 24 24"
-                :class="['h-4 w-4', i <= feedback.rating ? 'text-yellow-400' : 'text-gray-300']"
+                :class="['h-3 w-3 sm:h-4 sm:w-4', i <= feedback.rating ? 'text-yellow-400' : 'text-gray-300']"
                 fill="currentColor"
                 aria-hidden="true"
               >
@@ -266,17 +262,16 @@ function canManageFeedback(feedbackEmail: string) {
               </svg>
             </div>
             <p class="text-xs text-gray-600">{{ formatFeedbackDate(feedback.date) }}</p>
-            <div v-if="canManageFeedback(feedback.email)" class="mt-1 flex gap-2">
-              <button type="button" class="rounded-lg border border-blue-300 px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50" @click="openEditDialog(feedback)">Edit</button>
-              <button type="button" class="rounded-lg border border-red-300 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50" @click="deleteFeedback(feedback.id, feedback.email)">Delete</button>
+            <div v-if="canManageFeedback(feedback.email)" class="mt-1 flex gap-1 sm:gap-2">
+              <button type="button" class="rounded-lg border border-blue-300 px-2 py-0.5 sm:py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 whitespace-nowrap" @click="openEditDialog(feedback)">Edit</button>
+              <button type="button" class="rounded-lg border border-red-300 px-2 py-0.5 sm:py-1 text-xs font-semibold text-red-700 hover:bg-red-50 whitespace-nowrap" @click="deleteFeedback(feedback.id, feedback.email)">Delete</button>
             </div>
           </div>
         </div>
-        <p class="mt-4 text-gray-700">{{ feedback.comment }}</p>
+        <p class="mt-3 sm:mt-4 text-sm sm:text-base text-gray-700 overflow-auto">{{ feedback.comment }}</p>
       </div>
     </div>
 
-    <!-- Feedback Modal -->
     <ModalShell
       :show="isDialogOpen && canSubmitFeedback"
       :title="editingFeedbackId ? 'Edit Feedback' : 'Share Your Feedback'"
