@@ -122,15 +122,6 @@ async function confirmApproval() {
   }
 
   await bookingsStore.updateBooking(selectedBooking.value.id, patch)
-
-  console.log('Project auto-created from booking:', {
-    bookingId: selectedBooking.value.id,
-    customerEmail: selectedBooking.value.email,
-    serviceType: selectedBooking.value.projectType,
-    estimatedPrice: laborPrice,
-    scheduleDate: approvalForm.scheduleDate,
-  })
-
   closeApprovalModal()
 }
 
@@ -183,23 +174,12 @@ async function completeBookingForce() {
   }
 
   await bookingsStore.updateBooking(selectedBooking.value.id, patch)
-
-  console.log('Booking completed with totals:', {
-    bookingId: selectedBooking.value.id,
-    labor,
-    material,
-    total: labor + material,
-  })
-
   closeCompleteModal()
 }
 
 async function loadMaterialsForBooking() {
   if (!selectedBooking.value) return
   const bookingId = Number(selectedBooking.value.id)
-  
-  // eslint-disable-next-line no-console
-  console.debug('Loading materials for booking:', bookingId)
   
   try {
     const remote = await bookingsStore.getBooking(bookingId)
@@ -212,14 +192,10 @@ async function loadMaterialsForBooking() {
 
       if (total > 0) {
         completionForm.materialCost = String(total)
-        // eslint-disable-next-line no-console
-        console.debug('Loaded from booking.materials:', total)
         return
       }
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('Error fetching booking:', err)
     modalStore.open({
       title: 'Error',
       message: getUserFriendlyApiError(err),
@@ -238,8 +214,6 @@ async function loadMaterialsForBooking() {
     return
   }
   const movements = inventoryStore.getMovementsForBooking(bookingId)
-  // eslint-disable-next-line no-console
-  console.debug('Found stock movements for booking:', movements)
   
   let total = 0
   movements.forEach((m) => {
@@ -248,14 +222,10 @@ async function loadMaterialsForBooking() {
       if (item) {
         const lineTotal = m.quantity * item.unitPrice
         total += lineTotal
-        // eslint-disable-next-line no-console
-        console.debug(`  ${item.name}: ${m.quantity} × ${item.unitPrice} = ${lineTotal}`)
       }
     }
   })
   completionForm.materialCost = String(total)
-  // eslint-disable-next-line no-console
-  console.debug('Calculated material total:', total)
 }
 
 function hasStaffMaterialSubmission(bookingId: number) {
@@ -275,18 +245,18 @@ function hasStaffMaterialSubmission(bookingId: number) {
       </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="rounded-lg border border-gray-200 bg-white p-4">
-        <p class="text-sm text-gray-600">Pending</p>
-        <p class="text-2xl text-gray-900">{{ pendingCount }}</p>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="rounded-lg bg-yellow-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-yellow-600">Pending</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ pendingCount }}</p>
       </div>
-      <div class="rounded-lg border border-gray-200 bg-white p-4">
-        <p class="text-sm text-gray-600">Confirmed</p>
-        <p class="text-2xl text-gray-900">{{ confirmedCount }}</p>
+      <div class="rounded-lg bg-blue-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-blue-600">Confirmed</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ confirmedCount }}</p>
       </div>
-      <div class="rounded-lg border border-gray-200 bg-white p-4">
-        <p class="text-sm text-gray-600">Completed</p>
-        <p class="text-2xl text-gray-900">{{ completedCount }}</p>
+      <div class="rounded-lg bg-emerald-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-emerald-600">Completed</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ completedCount }}</p>
       </div>
     </div>
 
@@ -375,6 +345,10 @@ function hasStaffMaterialSubmission(bookingId: number) {
         <p><span class="font-semibold text-slate-900">Email:</span> {{ selectedBooking.email }}</p>
         <p><span class="font-semibold text-slate-900">Service:</span> {{ selectedBooking.projectType }}</p>
         <p><span class="font-semibold text-slate-900">Contact:</span> {{ selectedBooking.phone }}</p>
+        <div v-if="selectedBooking.location && (selectedBooking.location.province || selectedBooking.location.municipality || selectedBooking.location.barangay || selectedBooking.location.house)" class="mt-2">
+          <p class="font-semibold text-slate-900">Customer Address</p>
+          <p class="text-sm text-slate-700">{{ selectedBooking.location.house ? selectedBooking.location.house + ', ' : '' }}{{ selectedBooking.location.barangay ? selectedBooking.location.barangay + ', ' : '' }}{{ selectedBooking.location.municipality ? selectedBooking.location.municipality + ', ' : '' }}{{ selectedBooking.location.province ? selectedBooking.location.province : '' }}</p>
+        </div>
         <div v-if="selectedBooking.beforeImages?.length || selectedBooking.afterImages?.length" class="mt-3">
           <p class="font-semibold text-slate-900">Field Images</p>
           <div class="mt-2 grid grid-cols-2 gap-2">

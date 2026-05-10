@@ -41,14 +41,14 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
       <p class="text-sm text-gray-600">Completed and cancelled projects from booking decisions</p>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div class="rounded-lg border border-gray-200 bg-white p-4">
-        <p class="text-sm text-gray-600">Completed Projects</p>
-        <p class="text-2xl text-gray-900">{{ completedCount }}</p>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="rounded-lg bg-emerald-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Completed Projects</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ completedCount }}</p>
       </div>
-      <div class="rounded-lg border border-gray-200 bg-white p-4">
-        <p class="text-sm text-gray-600">Cancelled Projects</p>
-        <p class="text-2xl text-gray-900">{{ cancelledCount }}</p>
+      <div class="rounded-lg bg-red-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-red-600 font-semibold">Cancelled Projects</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ cancelledCount }}</p>
       </div>
     </div>
 

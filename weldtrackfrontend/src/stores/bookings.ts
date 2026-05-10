@@ -30,6 +30,14 @@ export interface BookingItem {
   }>
   beforeImages?: string[]
   afterImages?: string[]
+  location?: {
+    country?: string
+    region?: string
+    province?: string
+    municipality?: string
+    barangay?: string
+    house?: string
+  }
 }
 
 type BackendMaterial = {
@@ -62,6 +70,12 @@ type BackendBooking = {
   materials?: BackendMaterial[]
   before_images?: string[]
   after_images?: string[]
+  country?: string
+  region?: string
+  province?: string
+  municipality?: string
+  barangay?: string
+  house?: string
 }
 
 function toFrontendBooking(booking: BackendBooking): BookingItem {
@@ -93,6 +107,14 @@ function toFrontendBooking(booking: BackendBooking): BookingItem {
       : [],
     beforeImages: booking.before_images || [],
     afterImages: booking.after_images || [],
+    location: {
+      country: booking.country ?? undefined,
+      region: booking.region ?? undefined,
+      province: booking.province ?? undefined,
+      municipality: booking.municipality ?? undefined,
+      barangay: booking.barangay ?? undefined,
+      house: booking.house ?? undefined,
+    },
   }
 }
 
@@ -125,6 +147,16 @@ function toBackendBookingPayload(payload: Partial<BookingItem>) {
     ...(payload.beforeImages !== undefined ? { before_images: payload.beforeImages } : {}),
     ...(payload.afterImages !== undefined ? { after_images: payload.afterImages } : {}),
     ...(payload.materials !== undefined ? { materials: toBackendMaterial(payload.materials) } : {}),
+    ...(payload.location !== undefined
+      ? {
+          country: payload.location.country,
+          region: payload.location.region,
+          province: payload.location.province,
+          municipality: payload.location.municipality,
+          barangay: payload.location.barangay,
+          house: payload.location.house,
+        }
+      : {}),
   }
 }
 

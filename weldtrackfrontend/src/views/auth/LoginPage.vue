@@ -44,6 +44,9 @@ async function submitLogin() {
   isSubmittingLogin.value = true
 
   try {
+    // Clear stale auth before attempting login
+    authStore.logout()
+    
     await authStore.login({
       email: loginForm.email,
       password: loginForm.password,

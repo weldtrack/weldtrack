@@ -69,3 +69,8 @@ class User(Base):
         back_populates="submitted_by_staff",
         foreign_keys="TaskMaterialUsage.submitted_by_staff_id",
     )
+    customer_addresses = relationship(
+        "CustomerAddress",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

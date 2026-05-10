@@ -18,7 +18,7 @@ class TaskCreate(BaseModel):
     description: str | None = ""
     assignedStaffIds: list[int] = Field(min_length=1)
     dueDate: date
-    location: TaskLocationIn
+    location: TaskLocationIn | None = None
 
 
 class TaskStatusUpdate(BaseModel):

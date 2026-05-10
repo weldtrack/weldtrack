@@ -208,77 +208,30 @@ const pieStyle = computed(() => {
         <p class="text-gray-600">Project progress, expenses, and customer information</p>
       </div>
 
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div class="rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg">
-          <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
-              <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M5 13l4 4L19 7M4 6h16M4 18h8" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-semibold text-gray-900">{{ completedProjects }}</p>
-              <p class="text-sm text-gray-600">Completed Projects</p>
-            </div>
-          </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="rounded-lg bg-emerald-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Completed Projects</p>
+          <p class="mt-2 text-2xl font-bold text-gray-900">{{ completedProjects }}</p>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg">
-          <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
-              <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-semibold text-gray-900">{{ ongoingProjects }}</p>
-              <p class="text-sm text-gray-600">Ongoing Projects</p>
-            </div>
-          </div>
+        <div class="rounded-lg bg-purple-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-purple-600 font-semibold">Ongoing Projects</p>
+          <p class="mt-2 text-2xl font-bold text-gray-900">{{ ongoingProjects }}</p>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg">
-          <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-              <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6h13" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-semibold text-gray-900">{{ formatCurrency(totalProjectValue) }}</p>
-              <p class="text-sm text-gray-600">Total Project Value</p>
-            </div>
-          </div>
+        <div class="rounded-lg bg-blue-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">Total Project Value</p>
+          <p class="mt-2 text-2xl font-bold text-gray-900">{{ formatCurrency(totalProjectValue) }}</p>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg">
-          <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100">
-              <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a7 7 0 1114 0" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-semibold text-gray-900">{{ totalCustomers }}</p>
-              <p class="text-sm text-gray-600">Total Customers</p>
-            </div>
-          </div>
+        <div class="rounded-lg bg-indigo-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-indigo-600 font-semibold">Total Customers</p>
+          <p class="mt-2 text-2xl font-bold text-gray-900">{{ totalCustomers }}</p>
         </div>
 
-        <div class="rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg">
-          <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100">
-              <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-semibold text-gray-900">{{ newCustomersThisMonth }}</p>
-              <p class="text-sm text-gray-600">New Customers This Month</p>
-            </div>
-          </div>
+        <div class="rounded-lg bg-orange-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-orange-600 font-semibold">New Customers This Month</p>
+          <p class="mt-2 text-2xl font-bold text-gray-900">{{ newCustomersThisMonth }}</p>
         </div>
       </div>
 

@@ -26,6 +26,24 @@ function finishGlobalLoading(config?: TrackedRequestConfig) {
   config.__loadingTracked = false
 }
 
+function getStoredAuthToken() {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+
+  const storedValue = window.localStorage.getItem('weldtrack-auth')
+  if (!storedValue) {
+    return ''
+  }
+
+  try {
+    const parsed = JSON.parse(storedValue) as { token?: string }
+    return parsed.token || ''
+  } catch {
+    return ''
+  }
+}
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -36,6 +54,22 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const trackedConfig = config as TrackedRequestConfig
   startGlobalLoading(trackedConfig)
+
+  // Skip auth token for login/signup endpoints (they don't need it and stale tokens can cause issues)
+  const url = trackedConfig.url || ''
+  const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/signup') || url.includes('/auth/verifycode') || url.includes('/auth/verifyemail')
+  
+  if (!isAuthEndpoint) {
+    const token = getStoredAuthToken()
+    if (token) {
+      trackedConfig.headers = trackedConfig.headers ?? {}
+      const headers = trackedConfig.headers as Record<string, string>
+      if (!headers.Authorization) {
+        headers.Authorization = `Bearer ${token}`
+      }
+    }
+  }
+
   return trackedConfig
 }, (error) => {
   finishGlobalLoading(error?.config as TrackedRequestConfig | undefined)

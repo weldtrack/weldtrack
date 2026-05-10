@@ -2,11 +2,13 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useBookingsStore, type BookingItem } from '../../../stores/bookings'
+import { useCustomerAddressesStore } from '../../../stores/customerAddresses'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 import { getLaborPrice } from '../../../constants/pricing'
 
 const auth = useAuthStore()
 const bookingsStore = useBookingsStore()
+const addressesStore = useCustomerAddressesStore()
 
 const userRole = computed(() => auth.role || 'customer')
 const currentUser = computed(() => auth.email || 'User')
@@ -51,6 +53,7 @@ const selectedLaborPrice = computed(() => {
 })
 
 const selectedTotalCost = computed(() => selectedLaborPrice.value)
+const activeAddress = computed(() => addressesStore.activeAddress)
 
 const filteredBookings = computed(() => {
   const bookings = Array.isArray(bookingsStore.bookings) ? bookingsStore.bookings : []
@@ -67,6 +70,7 @@ const confirmedCount = computed(() => filteredBookings.value.filter((b) => b.sta
 
 onMounted(() => {
   bookingsStore.fetchBookings()
+  addressesStore.fetchMyAddresses()
 })
 
 
@@ -90,6 +94,10 @@ function openDialog() {
 }
 
 async function handleSubmit() {
+  if (userRole.value === 'customer' && !activeAddress.value) {
+    return
+  }
+
   isSubmitting.value = true
   try {
     await bookingsStore.createBooking({
@@ -104,7 +112,6 @@ async function handleSubmit() {
     })
     closeDialog()
   } catch (error) {
-    console.error('Failed to create booking:', error)
   } finally {
     isSubmitting.value = false
   }
@@ -182,6 +189,26 @@ function getScheduleMessage(booking: BookingItem) {
 function formatCreatedDate(value?: string) {
   return value ? formatDate(value) : '-'
 }
+
+function formatBookingAddress(booking: BookingItem) {
+  const address = booking.location
+  if (!address) return ''
+  return [address.house, address.barangay, address.municipality, address.province].filter(Boolean).join(', ')
+}
+
+function formatActiveAddress() {
+  if (!activeAddress.value) return ''
+  return [
+    activeAddress.value.house,
+    activeAddress.value.barangay,
+    activeAddress.value.municipality,
+    activeAddress.value.province,
+    activeAddress.value.region,
+    activeAddress.value.country,
+  ]
+    .filter(Boolean)
+    .join(', ')
+}
 </script>
 
 <template>
@@ -195,6 +222,8 @@ function formatCreatedDate(value?: string) {
       <button
         type="button"
         class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
+        :disabled="userRole === 'customer' && !activeAddress"
+        :class="userRole === 'customer' && !activeAddress ? 'cursor-not-allowed opacity-60' : ''"
         @click="openDialog"
       >
         <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,6 +246,10 @@ function formatCreatedDate(value?: string) {
         <p class="text-sm font-medium text-purple-700">Total</p>
         <p class="mt-1 text-2xl font-bold text-purple-900">{{ filteredBookings.length }}</p>
       </div>
+    </div>
+
+    <div v-if="userRole === 'customer' && !activeAddress" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      Add an address in the `Addresses` tab and set one as active before creating a booking.
     </div>
 
     <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-2">
@@ -255,6 +288,11 @@ function formatCreatedDate(value?: string) {
           <div class="rounded-lg bg-green-50 border border-green-200 px-3 py-2">
             <p class="text-xs uppercase tracking-wide text-green-600 font-medium">Phone</p>
             <p class="mt-1 text-gray-900 font-medium">{{ booking.phone }}</p>
+          </div>
+
+          <div v-if="booking.location && (booking.location.province || booking.location.municipality || booking.location.barangay || booking.location.house)" class="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-emerald-600 font-medium">Address</p>
+            <p class="mt-1 text-gray-900 font-medium text-sm">{{ formatBookingAddress(booking) }}</p>
           </div>
 
           <div class="rounded-lg bg-purple-50 border border-purple-200 px-3 py-2">
@@ -314,6 +352,12 @@ function formatCreatedDate(value?: string) {
             <input id="email" v-model="formData.email" type="email" readonly required class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm" />
           </div>
 
+          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p class="text-sm font-semibold text-emerald-900">Active Address</p>
+            <p v-if="activeAddress" class="mt-1 text-sm text-emerald-800">{{ activeAddress.label }}: {{ formatActiveAddress() }}</p>
+            <p v-else class="mt-1 text-sm text-amber-800">No active address selected.</p>
+          </div>
+
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-gray-700" for="phone">Phone Number</label>
@@ -351,7 +395,7 @@ function formatCreatedDate(value?: string) {
 
           <div class="flex gap-3 pt-4">
             <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting" @click="closeDialog">Cancel</button>
-            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting">
+            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting || (userRole === 'customer' && !activeAddress)">
               <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

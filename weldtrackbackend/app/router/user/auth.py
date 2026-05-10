@@ -21,12 +21,12 @@ from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
-AUTH_COOKIE_NAME = os.getenv("AUTH_COOKIE_NAME", "access_token")
-AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "false").lower() == "true"
-AUTH_COOKIE_SAMESITE = os.getenv("AUTH_COOKIE_SAMESITE", "lax")
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+AUTH_COOKIE_NAME = os.getenv("AUTH_COOKIE_NAME")
+AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE").lower() == "true"
+AUTH_COOKIE_SAMESITE = os.getenv("AUTH_COOKIE_SAMESITE")
 PASSWORD_HASH_ITERATIONS = 120_000
 PASSWORD_HASH_PREFIX = "pbkdf2_sha256"
 
@@ -253,6 +253,12 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 			headers={"WWW-Authenticate": "Bearer"},
 		)
 
+	if user.is_banned:
+		raise HTTPException(
+			status_code=status.HTTP_403_FORBIDDEN,
+			detail="You are banned from logging in. Please contact an administrator.",
+		)
+
 	try:
 		user.last_active = datetime.now(timezone.utc)
 		db.add(user)
@@ -297,11 +303,11 @@ def logout(response: Response, current_user: User = Depends(get_current_user), d
 
 
 def is_user_online(user: User) -> bool:
-	"""Determine if user is online based on session activity (last_active within 5 minutes)"""
+	"""Determine if user is online based on session activity (last_active within 30 seconds)"""
 	if user.last_active is None:
 		return False
-	five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
-	return user.last_active >= five_minutes_ago
+	thirty_seconds_ago = datetime.now(timezone.utc) - timedelta(seconds=30)
+	return user.last_active >= thirty_seconds_ago
 
 
 @router.get("/admin/users", response_model=list[UserRead])
@@ -324,16 +330,16 @@ def admin_get_users(current_user: User = Depends(get_current_user), db: Session 
 
 @router.get("/admin/online", response_model=list[UserRead])
 def admin_get_online_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[UserRead]:
-	"""Admin-only: get online users (based on recent last_active within 5 minutes)"""
+	"""Admin-only: get online users (based on recent last_active within 30 seconds)"""
 	if current_user.role != UserRole.admin:
 		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
 	
-	five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
+	thirty_seconds_ago = datetime.now(timezone.utc) - timedelta(seconds=30)
 	
 	users = db.scalars(
 		select(User)
 		.where(User.role != UserRole.admin)
-		.where((User.last_active != None) & (User.last_active >= five_minutes_ago))
+		.where((User.last_active != None) & (User.last_active >= thirty_seconds_ago))
 		.order_by(User.last_active.desc(), User.id.desc())
 	).all()
 	

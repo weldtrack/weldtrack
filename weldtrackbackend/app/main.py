@@ -13,6 +13,7 @@ from app.db import Base, engine, SessionLocal
 
 Base.metadata.create_all(bind=engine)
 
+
 import base64
 import hashlib
 import secrets
@@ -62,7 +63,7 @@ def _create_admin_if_missing() -> None:
 _create_admin_if_missing()
 
 app = FastAPI(title="Weldtrack")
-origins = os.getenv("CORS_ORIGINS")
+origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

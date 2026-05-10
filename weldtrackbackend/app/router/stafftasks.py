@@ -106,16 +106,33 @@ def create_staff_task(
                 detail="A staff task already exists for this booking.",
             )
 
+    # If location is not provided but bookingId is, try to copy location from the booking
+    location_data = None
+    if payload.location is not None:
+        location_data = payload.location
+    elif payload.bookingId is not None:
+        from app.models.booking import Booking
+        booking = db.get(Booking, payload.bookingId)
+        if booking:
+            location_data = type('LD', (), {})()
+            location_data.province = booking.province
+            location_data.municipality = booking.municipality
+            location_data.barangay = booking.barangay
+            location_data.house = booking.house
+
+    if location_data is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Location is required")
+
     task = StaffTask(
         booking_id=payload.bookingId,
         project_name=payload.projectName,
         title=payload.title,
         description=payload.description,
         due_date=payload.dueDate,
-        province=payload.location.province,
-        municipality=payload.location.municipality,
-        barangay=payload.location.barangay,
-        house=payload.location.house,
+        province=location_data.province,
+        municipality=location_data.municipality,
+        barangay=location_data.barangay,
+        house=location_data.house,
     )
     
     db.add(task)

@@ -5,6 +5,7 @@ export type AdminSection =
   | 'inventory'
   | 'projects'
   | 'booking'
+  | 'addresses'
   | 'users'
   | 'booking-history'
   | 'feedback'

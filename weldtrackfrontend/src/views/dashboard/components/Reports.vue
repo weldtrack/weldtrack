@@ -47,7 +47,6 @@ const fetchAttendanceData = async (startDate: string, endDate: string) => {
       return
     }
 
-    console.error('Failed to fetch attendance:', err)
     modalStore.open({
       title: 'Error',
       message: getUserFriendlyApiError(err),
@@ -335,7 +334,6 @@ async function generateStockInReportPDF() {
       variant: 'success',
     })
   } catch (err) {
-    console.error('Error generating PDF:', err)
     modalStore.open({
       title: 'Error',
       message: 'Failed to generate PDF report',
@@ -459,7 +457,7 @@ async function generateFinancialReportPDF() {
       variant: 'success',
     })
   } catch (err) {
-    console.error('Error generating PDF:', err)
+
     modalStore.open({
       title: 'Error',
       message: 'Failed to generate PDF report',
@@ -542,7 +540,6 @@ async function generateStaffAttendanceReportPDF() {
       variant: 'success',
     })
   } catch (err) {
-    console.error('Error generating PDF:', err)
     modalStore.open({
       title: 'Error',
       message: 'Failed to generate PDF report',

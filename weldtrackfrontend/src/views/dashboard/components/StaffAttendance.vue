@@ -181,7 +181,6 @@ onMounted(async () => {
       await authStore.fetchStaffDirectory()
     }
   } catch (err) {
-    console.error('Failed to fetch staff directory (ignored):', err)
   }
 
   await fetchAttendance()
@@ -284,57 +283,20 @@ function formatDuration(hours: number) {
       <p class="text-sm text-gray-600">Track staff check-in/out and overtime</p>
     </div>
 
-    <div v-if="isAdmin" class="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a7 7 0 1114 0"
-              />
-            </svg>
-          </div>
-          <div>
-            <p class="text-2xl font-semibold text-gray-900">{{ presentToday }}</p>
-            <p class="text-sm text-gray-600">Present Today</p>
-          </div>
-        </div>
+    <div v-if="isAdmin" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="rounded-lg bg-blue-50 p-6">
+        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">Present Today</p>
+        <p class="mt-2 text-2xl font-bold text-gray-900">{{ presentToday }}</p>
       </div>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
-            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <p class="text-2xl font-semibold text-gray-900">{{ totalStaffHours.toFixed(1) }}h</p>
-            <p class="text-sm text-gray-600">Total Staff Hours</p>
-          </div>
-        </div>
+      <div class="rounded-lg bg-emerald-50 p-6">
+        <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Total Staff Hours</p>
+        <p class="mt-2 text-2xl font-bold text-gray-900">{{ totalStaffHours.toFixed(1) }}h</p>
       </div>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
-        <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100">
-            <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-          </div>
-          <div>
-            <p class="text-2xl font-semibold text-gray-900">{{ totalOvertimeHours.toFixed(1) }}h</p>
-            <p class="text-sm text-gray-600">Total Overtime</p>
-          </div>
-        </div>
+      <div class="rounded-lg bg-orange-50 p-6">
+        <p class="text-xs uppercase tracking-wide text-orange-600 font-semibold">Total Overtime</p>
+        <p class="mt-2 text-2xl font-bold text-gray-900">{{ totalOvertimeHours.toFixed(1) }}h</p>
       </div>
     </div>
 

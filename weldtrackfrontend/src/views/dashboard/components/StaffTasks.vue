@@ -153,6 +153,13 @@ function selectConfirmedBooking(bookingId: number) {
   newTaskForm.value.title = booking.projectType
   newTaskForm.value.description = booking.description || ''
   newTaskForm.value.dueDate = booking.scheduleDate || booking.preferredDate || getTodayDate()
+  // copy booking location if available
+  if (booking.location) {
+    newTaskForm.value.location.province = booking.location.province || ''
+    newTaskForm.value.location.municipality = booking.location.municipality || ''
+    newTaskForm.value.location.barangay = booking.location.barangay || ''
+    newTaskForm.value.location.house = booking.location.house || ''
+  }
 }
 
 onMounted(async () => {
@@ -453,39 +460,42 @@ async function confirmRemoveTask() {
       </div>
 
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <input v-model="newTaskForm.projectName" type="text" placeholder="Project name" class="rounded-lg border border-gray-300 px-3 py-2" />
-        <input v-model="newTaskForm.title" type="text" placeholder="Task title" class="rounded-lg border border-gray-300 px-3 py-2" />
+        <div class="md:col-span-2">
+          <p class="mb-2 text-sm font-semibold text-gray-700">Assign Staff Members</p>
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <select
+              v-for="(_, index) in newTaskForm.assignedStaffIds"
+              :key="`assign-staff-${index}`"
+              v-model="newTaskForm.assignedStaffIds[index]"
+              class="rounded-lg border border-gray-300 px-3 py-2"
+            >
+              <option value="">Select staff member</option>
+              <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
+                {{ staff.email }}
+              </option>
+            </select>
+          </div>
+        </div>
 
         <select :value="newTaskForm.requiredStaffCount" class="rounded-lg border border-gray-300 px-3 py-2" @change="updateRequiredStaffCount(Number(($event.target as HTMLSelectElement).value))">
           <option v-for="count in staffCountOptions" :key="count" :value="count">{{ count }} Staff Needed</option>
         </select>
 
-        <input v-model="newTaskForm.dueDate" type="date" class="rounded-lg border border-gray-300 px-3 py-2" />
+        <input v-model="newTaskForm.projectName" type="text" placeholder="Project name" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <input v-model="newTaskForm.title" type="text" placeholder="Task title" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
 
-        <div class="md:col-span-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <select
-            v-for="(_, index) in newTaskForm.assignedStaffIds"
-            :key="`assign-staff-${index}`"
-            v-model="newTaskForm.assignedStaffIds[index]"
-            class="rounded-lg border border-gray-300 px-3 py-2"
-          >
-            <option value="">Select staff member</option>
-            <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
-              {{ staff.email }}
-            </option>
-          </select>
-        </div>
+        <input v-model="newTaskForm.dueDate" type="date" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
 
         <input :value="newTaskForm.location.country" type="text" disabled class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600" />
         <input :value="newTaskForm.location.region" type="text" disabled class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600" />
-        <input v-model="newTaskForm.location.province" type="text" placeholder="Province" class="rounded-lg border border-gray-300 px-3 py-2" />
-        <input v-model="newTaskForm.location.municipality" type="text" placeholder="Municipality" class="rounded-lg border border-gray-300 px-3 py-2" />
-        <input v-model="newTaskForm.location.barangay" type="text" placeholder="Barangay" class="rounded-lg border border-gray-300 px-3 py-2" />
-        <input v-model="newTaskForm.location.house" type="text" placeholder="House / Street" class="rounded-lg border border-gray-300 px-3 py-2" />
+        <input v-model="newTaskForm.location.province" type="text" placeholder="Province" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <input v-model="newTaskForm.location.municipality" type="text" placeholder="Municipality" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <input v-model="newTaskForm.location.barangay" type="text" placeholder="Barangay" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <input v-model="newTaskForm.location.house" type="text" placeholder="House / Street" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
 
         <p v-if="hasDuplicateAssignees" class="md:col-span-2 text-sm text-red-600">Please select different staff for each slot.</p>
 
-        <textarea v-model="newTaskForm.description" rows="3" placeholder="Task description" class="md:col-span-2 rounded-lg border border-gray-300 px-3 py-2" />
+        <textarea v-model="newTaskForm.description" rows="3" placeholder="Task description" :disabled="!!selectedBookingId" class="md:col-span-2 rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
       </div>
 
       <div class="mt-3">

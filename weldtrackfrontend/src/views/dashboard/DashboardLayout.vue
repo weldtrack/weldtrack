@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import api from '../../services/api'
 import { useAuthStore } from '../../stores/auth'
 import { useAdminSectionStore, type AdminSection } from '../../stores/adminSection'
 
@@ -12,15 +12,6 @@ const adminSectionStore = useAdminSectionStore()
 const router = useRouter()
 const isMobileSidebarOpen = ref(false)
 const isLoggingOut = ref(false)
-
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL
-const authApi = axios.create({
-  baseURL: apiBaseURL,
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-})
 
 const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => {
   if (authStore.role === 'admin') {
@@ -48,6 +39,7 @@ const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => 
   if (authStore.role === 'customer') {
     return [
       { id: 'booking', label: 'New Booking' },
+      { id: 'addresses', label: 'Addresses' },
       { id: 'booking-history', label: 'Booking History' },
       { id: 'feedback', label: 'Service Feedback' },
     ]
@@ -79,11 +71,8 @@ function selectSection(section: AdminSection) {
 function handleLogout() {
   isLoggingOut.value = true
 
-  authApi
-    .post('/auth/logout', {
-      token: authStore.token,
-      email: authStore.email,
-    })
+  api
+    .post('/auth/logout')
     .then(() => {
       authStore.logout()
       router.replace({ name: 'login' }).catch(() => {})

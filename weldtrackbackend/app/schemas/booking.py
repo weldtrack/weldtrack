@@ -27,6 +27,7 @@ class MaterialResponse(MaterialBase):
 
 
 class BookingBase(BaseModel):
+    customer_name:  Optional[str]        = None
     project_type:   str
     email:          Optional[EmailStr] = None
     phone:          Optional[str]      = None
@@ -36,6 +37,13 @@ class BookingBase(BaseModel):
     estimated_cost: Optional[float]    = None
     material_cost:  Optional[float]    = None
     total_price:    Optional[float]    = None
+    # location
+    country:       Optional[str] = None
+    region:        Optional[str] = None
+    province:      Optional[str] = None
+    municipality:  Optional[str] = None
+    barangay:      Optional[str] = None
+    house:         Optional[str] = None
 
 
 class BookingCreate(BookingBase):
@@ -43,6 +51,7 @@ class BookingCreate(BookingBase):
 
 
 class BookingUpdate(BaseModel):
+    customer_name:   Optional[str]           = None
     project_type:   Optional[str]           = None
     email:          Optional[EmailStr]      = None
     phone:          Optional[str]           = None
@@ -52,6 +61,13 @@ class BookingUpdate(BaseModel):
     estimated_cost: Optional[float]         = None
     material_cost:  Optional[float]         = None
     total_price:    Optional[float]         = None
+    # location
+    country:       Optional[str] = None
+    region:        Optional[str] = None
+    province:      Optional[str] = None
+    municipality:  Optional[str] = None
+    barangay:      Optional[str] = None
+    house:         Optional[str] = None
     status:         Optional[BookingStatus] = None
     cancel_reason:  Optional[str]           = None
     cancelled_by:   Optional[CancelledBy]   = None

@@ -47,18 +47,18 @@ const cancelledBookings = computed(() => customerBookings.value.filter((b) => b.
       <p class="mt-2 text-gray-600">Track all your welding project bookings and their status</p>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <div class="rounded-lg border border-green-200 bg-green-50 p-4">
-        <p class="text-sm font-medium text-green-700">Completed</p>
-        <p class="mt-1 text-2xl font-bold text-green-900">{{ completedBookings.length }}</p>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="rounded-lg bg-emerald-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Completed</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ completedBookings.length }}</p>
       </div>
-      <div class="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p class="text-sm font-medium text-red-700">Cancelled</p>
+      <div class="rounded-lg bg-red-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-red-600 font-semibold">Cancelled</p>
         <p class="mt-1 text-2xl font-bold text-red-900">{{ cancelledBookings.length }}</p>
       </div>
-      <div class="rounded-lg border border-purple-200 bg-purple-50 p-4">
-        <p class="text-sm font-medium text-purple-700">Total</p>
-        <p class="mt-1 text-2xl font-bold text-purple-900">{{ customerBookings.length }}</p>
+      <div class="rounded-lg bg-purple-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-purple-600 font-semibold">Total</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ customerBookings.length }}</p>
       </div>
     </div>
 

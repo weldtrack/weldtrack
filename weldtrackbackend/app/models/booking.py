@@ -45,6 +45,14 @@ class Booking(Base):
     before_images:  Mapped[list | None]  = mapped_column(JSON, nullable=True, default=list)
     after_images:   Mapped[list | None]  = mapped_column(JSON, nullable=True, default=list)
 
+    # Customer location fields (copied to tasks when creating staff tasks)
+    country:       Mapped[str] = mapped_column(String(8), default="PH", nullable=False)
+    region:        Mapped[str] = mapped_column(String(64), default="Bicol Region (Region V)", nullable=False)
+    province:      Mapped[str] = mapped_column(String(100), nullable=True)
+    municipality:  Mapped[str] = mapped_column(String(100), nullable=True)
+    barangay:      Mapped[str] = mapped_column(String(100), nullable=True)
+    house:         Mapped[str] = mapped_column(String(150), nullable=True)
+
     materials: Mapped[list["RecordMaterial"]] = relationship(
         "RecordMaterial",
         back_populates="booking",

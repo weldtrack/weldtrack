@@ -62,7 +62,6 @@ async function fetchStaffList() {
       return
     }
 
-    console.error('Failed to fetch staff list:', err)
     createStaffError.value = getUserFriendlyApiError(err)
     staffList.value = []
   }

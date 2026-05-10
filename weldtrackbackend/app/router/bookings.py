@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 from app.db import get_db
 from app.models.booking import Booking, BookingStatus, RecordMaterial
+from app.models.customer_address import CustomerAddress
 from app.schemas.booking import BookingCreate, BookingUpdate, BookingResponse, MaterialCreate
 from app.router.user.auth import get_current_user
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.inventory import InventoryItem, StockMovement, MovementType
 from app.schemas.stafftask import TaskMaterialsCreate
 from app.schemas.inventory import StockMovementResponse
@@ -46,10 +47,35 @@ def get_booking(
 @router.post("", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
 def create_booking(
     payload: BookingCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Create a new booking"""
-    booking = Booking(**payload.model_dump(exclude={"materials"}))
+    booking_data = payload.model_dump(exclude={"materials"}, exclude_none=True)
+
+    if current_user.role == UserRole.customer:
+        active_address = db.scalar(
+            select(CustomerAddress).where(
+                CustomerAddress.user_id == current_user.id,
+                CustomerAddress.is_active.is_(True),
+            )
+        )
+        if active_address is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please add and activate an address before creating a booking",
+            )
+
+        booking_data["email"] = current_user.email
+        booking_data["country"] = active_address.country
+        booking_data["region"] = active_address.region
+        booking_data["province"] = active_address.province
+        booking_data["municipality"] = active_address.municipality
+        booking_data["barangay"] = active_address.barangay
+        booking_data["house"] = active_address.house
+        booking_data.setdefault("customer_name", current_user.email)
+
+    booking = Booking(**booking_data)
     db.add(booking)
     db.flush()
     
