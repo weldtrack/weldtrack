@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { Folder } from 'lucide-vue-next'
 import { useBookingsStore } from '../../../stores/bookings'
 import { getUserFriendlyApiError } from '../../../services/errorMessage'
 import HistoryCard from './HistoryCard.vue'
@@ -36,9 +37,14 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
 
 <template>
   <section class="space-y-6">
-    <div>
-      <h3 class="mb-1 text-2xl font-semibold text-gray-900">Project History</h3>
-      <p class="text-sm text-gray-600">Completed and cancelled projects from booking decisions</p>
+    <div class="flex items-start gap-3">
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-emerald-50 to-white ring-1 ring-emerald-100">
+        <Folder class="h-6 w-6 text-emerald-600" />
+      </div>
+      <div>
+        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Project History</h3>
+        <p class="text-sm text-gray-600">Completed and cancelled projects from booking decisions</p>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

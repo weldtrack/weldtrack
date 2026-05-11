@@ -42,6 +42,22 @@ function startCodeTimer() {
   }, 1000)
 }
 
+function validatePassword(password: string) {
+  if (password.length < 8) {
+    return 'Password must be 8 characters or longer.'
+  }
+
+  if (!/\d/.test(password)) {
+    return 'Password must include one number.'
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must include one uppercase letter.'
+  }
+
+  return ''
+}
+
 async function resendCode() {
   signupError.value = ''
   isSubmittingSignup.value = true
@@ -65,6 +81,12 @@ async function resendCode() {
 async function submitSignup() {
   if (!form.email || !form.password || !form.confirm) {
     signupError.value = 'Email, password, and confirmation are required.'
+    return
+  }
+
+  const passwordError = validatePassword(form.password)
+  if (passwordError) {
+    signupError.value = passwordError
     return
   }
 
@@ -127,6 +149,14 @@ async function submitCode() {
   } finally {
     isVerifyingCode.value = false
   }
+}
+
+function handleFormSubmit() {
+  if (step.value === 1) {
+    return submitSignup()
+  }
+
+  return submitCode()
 }
 
 onBeforeRouteLeave((to) => {
@@ -246,7 +276,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <form class="space-y-6" @submit.prevent="submitSignup">
+            <form class="space-y-6" @submit.prevent="handleFormSubmit">
               <div v-if="signupError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {{ signupError }}
               </div>
@@ -272,6 +302,7 @@ onBeforeUnmount(() => {
                     placeholder="Create password"
                     class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
+                  <p class="mt-2 text-xs text-gray-500">Use 8 or more characters with one uppercase letter and one number.</p>
                 </div>
 
                 <div>
@@ -309,6 +340,7 @@ onBeforeUnmount(() => {
                     type="text"
                     placeholder="Enter code"
                     class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    @keydown.enter.prevent="submitCode"
                   />
                 </div>
 

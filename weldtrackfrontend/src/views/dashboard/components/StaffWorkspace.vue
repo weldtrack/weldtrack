@@ -9,8 +9,9 @@ import { getUserFriendlyApiError } from '../../../services/errorMessage'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 import StaffAttendance from './StaffAttendance.vue'
 import StaffTasks from './StaffTasks.vue'
+import ServiceFeedback from './ServiceFeedback.vue'
 
-type StaffTab = 'attendance' | 'tasks' | 'contributions' | 'create'
+type StaffTab = 'attendance' | 'tasks' | 'contributions' | 'feedback' | 'create'
 
 interface StaffMember {
   id: number
@@ -21,21 +22,14 @@ interface StaffMember {
 
 const adminSectionStore = useAdminSectionStore()
 
-const activeTab = computed<StaffTab>({
-  get() {
-    const s = adminSectionStore.section
-    if (s === 'staff-attendance') return 'attendance'
-    if (s === 'staff-tasks') return 'tasks'
-    if (s === 'staff-contributions') return 'contributions'
-    if (s === 'staff-create') return 'create'
-    return 'attendance'
-  },
-  set(val: StaffTab) {
-    if (val === 'attendance') adminSectionStore.setSection('staff-attendance')
-    else if (val === 'tasks') adminSectionStore.setSection('staff-tasks')
-    else if (val === 'contributions') adminSectionStore.setSection('staff-contributions')
-    else if (val === 'create') adminSectionStore.setSection('staff-create')
-  },
+const currentSection = computed<StaffTab>(() => {
+  const s = adminSectionStore.section
+  if (s === 'staff-attendance') return 'attendance'
+  if (s === 'staff-tasks') return 'tasks'
+  if (s === 'staff-contributions') return 'contributions'
+  if (s === 'staff-feedback') return 'feedback'
+  if (s === 'staff-create') return 'create'
+  return 'attendance'
 })
 const authStore = useAuthStore()
 const staffContributionsStore = useStaffContributionsStore()
@@ -206,50 +200,47 @@ onMounted(() => {
 
 <template>
   <section class="space-y-4">
-    <div>
-      
-
-      <div class="flex flex-wrap gap-2 rounded-lg border border-gray-200 bg-white p-2 sm:gap-1">
-        <button
-          type="button"
-          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
-          :class="activeTab === 'attendance' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-          @click="activeTab = 'attendance'"
-        >
-          Attendance
-        </button>
-        <button
-          type="button"
-          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
-          :class="activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-          @click="activeTab = 'tasks'"
-        >
-          Tasks
-        </button>
-        <button
-          type="button"
-          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
-          :class="activeTab === 'contributions' ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-          @click="activeTab = 'contributions'"
-        >
-          Contributions
-        </button>
-        <button
-          v-if="isAdmin"
-          type="button"
-          class="flex-1 min-w-fit rounded-md px-3 py-2 text-xs sm:text-sm font-semibold transition-colors sm:flex-none sm:px-4"
-          :class="activeTab === 'create' ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'"
-          @click="activeTab = 'create'"
-        >
-          Create Staff
-        </button>
-      </div>
+    <!-- Admin-only tabs -->
+    <div v-if="isAdmin" class="flex gap-2 border-b border-gray-200 overflow-x-auto">
+      <button
+        type="button"
+        @click="adminSectionStore.setSection('staff-attendance')"
+        :class="currentSection === 'attendance' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
+      >
+        Attendance
+      </button>
+      <button
+        type="button"
+        @click="adminSectionStore.setSection('staff-tasks')"
+        :class="currentSection === 'tasks' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
+      >
+        Tasks
+      </button>
+      <button
+        type="button"
+        @click="adminSectionStore.setSection('staff-contributions')"
+        :class="currentSection === 'contributions' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
+      >
+        Contributions
+      </button>
+      <button
+        type="button"
+        @click="adminSectionStore.setSection('staff-create')"
+        :class="currentSection === 'create' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
+      >
+        Create Staff
+      </button>
     </div>
 
-    <StaffAttendance v-if="activeTab === 'attendance'" />
-    <StaffTasks v-else-if="activeTab === 'tasks'" />
+    <StaffAttendance v-if="currentSection === 'attendance'" />
+    <StaffTasks v-else-if="currentSection === 'tasks'" />
+    <ServiceFeedback v-else-if="!isAdmin && currentSection === 'feedback'" />
 
-    <section v-else-if="activeTab === 'create'" class="space-y-4">
+    <section v-else-if="isAdmin && currentSection === 'create'" class="space-y-4">
       <div class="rounded-lg border border-gray-200 bg-white p-4">
         <h3 class="mb-2 text-lg font-semibold text-gray-900">Create Staff Account</h3>
         <p class="mb-3 text-sm text-gray-600">Create a staff account directly (no verification required).</p>
@@ -292,7 +283,7 @@ onMounted(() => {
       </div>
     </section>
 
-    <section v-else-if="activeTab === 'contributions'" class="space-y-4">
+    <section v-else-if="currentSection === 'contributions'" class="space-y-4">
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">
           {{ isAdmin ? 'Team Contributions' : 'My Contributions' }}

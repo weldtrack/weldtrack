@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { Clock } from 'lucide-vue-next'
 import { useAuthStore } from '../../../stores/auth'
 import { useBookingsStore } from '../../../stores/bookings'
 import { getUserFriendlyApiError } from '../../../services/errorMessage'
@@ -42,9 +43,14 @@ const cancelledBookings = computed(() => customerBookings.value.filter((b) => b.
 
 <template>
   <div class="space-y-8">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Booking History</h1>
-      <p class="mt-2 text-gray-600">Track all your welding project bookings and their status</p>
+    <div class="mb-6 flex items-start gap-3">
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-purple-50 to-white ring-1 ring-purple-100">
+        <Clock class="h-6 w-6 text-purple-600" />
+      </div>
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Booking History</h1>
+        <p class="mt-2 text-gray-600">Track all your welding project bookings and their status</p>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">

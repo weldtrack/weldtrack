@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Clock } from 'lucide-vue-next'
 import { useInventoryStore } from '../../../stores/inventory'
 import { getLaborPrice } from '../../../constants/pricing'
 
@@ -73,13 +74,18 @@ const grandTotal = computed(() => getGrandTotal(item))
 
 <template>
   <div class="rounded-lg border border-gray-200 bg-white p-4">
-    <div class="flex items-start justify-between">
-      <div class="flex-1">
-        <p class="text-sm text-gray-500">Booking #{{ item.id }}</p>
-        <h4 class="mt-1 text-lg font-medium text-gray-900">{{ item.projectType || item.name || item.projectType }}</h4>
-        <p class="mt-1 text-sm text-gray-500">{{ item.email || item.client || '-' }} · Booked: {{ formatDate(item.createdDate) }}</p>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex items-start gap-3 sm:min-w-0 sm:flex-1">
+        <div class="h-10 w-10 flex items-center justify-center rounded-md bg-slate-100 ring-1 ring-slate-200 shrink-0">
+          <Clock class="h-5 w-5 text-slate-500" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-gray-500">Booking #{{ item.id }}</p>
+          <h4 class="mt-1 text-lg font-medium text-gray-900 wrap-break-word">{{ item.projectType || item.name || item.projectType }}</h4>
+          <p class="mt-1 text-sm text-gray-500 wrap-break-word">{{ item.email || item.client || '-' }} · Booked: {{ formatDate(item.createdDate) }}</p>
+        </div>
       </div>
-      <div class="ml-4 text-right">
+      <div class="text-left sm:text-right sm:shrink-0">
         <p class="text-sm text-gray-500">Schedule</p>
         <p class="mt-1 font-medium text-gray-900">{{ formatDate(item.scheduleDate || item.endDate) }}</p>
         <p class="mt-3 text-sm text-gray-500">Status</p>
@@ -96,8 +102,8 @@ const grandTotal = computed(() => getGrandTotal(item))
       <div>
         <p class="text-gray-600">Material Price Per Item</p>
         <ul class="mt-1 space-y-1">
-          <li v-for="line in materialLines" :key="line.id" class="flex items-center justify-between">
-            <span class="truncate text-gray-700">{{ line.name }} · x{{ line.qty }} @ {{ formatCurrency(line.unitPrice) }}</span>
+          <li v-for="line in materialLines" :key="line.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+            <span class="text-gray-700 wrap-break-word">{{ line.name }} · x{{ line.qty }} @ {{ formatCurrency(line.unitPrice) }}</span>
             <span class="font-medium text-gray-900">{{ formatCurrency(line.subtotal) }}</span>
           </li>
         </ul>

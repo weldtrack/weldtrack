@@ -34,6 +34,22 @@ const resetStepClass = computed(() => ({
   three: resetStep.value >= 3 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
 }))
 
+function validatePassword(password: string) {
+  if (password.length < 8) {
+    return 'Password must be 8 characters or longer.'
+  }
+
+  if (!/\d/.test(password)) {
+    return 'Password must include one number.'
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must include one uppercase letter.'
+  }
+
+  return ''
+}
+
 async function submitLogin() {
   if (!loginForm.email || !loginForm.password) {
     loginError.value = 'Email and password are required.'
@@ -155,6 +171,12 @@ async function verifyCode() {
 async function submitNewPassword() {
   if (!resetForm.newPassword || !resetForm.confirmPassword) {
     resetError.value = 'Enter and confirm your new password.'
+    return
+  }
+
+  const passwordError = validatePassword(resetForm.newPassword)
+  if (passwordError) {
+    resetError.value = passwordError
     return
   }
 
@@ -370,6 +392,7 @@ onBeforeUnmount(() => {
                     type="email"
                     placeholder="Enter email"
                     class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    @keydown.enter.prevent="verifyEmail"
                   />
                 </div>
 
@@ -402,6 +425,7 @@ onBeforeUnmount(() => {
                     type="text"
                     placeholder="Enter code"
                     class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    @keydown.enter.prevent="verifyCode"
                   />
                 </div>
 
@@ -448,6 +472,7 @@ onBeforeUnmount(() => {
                     placeholder="Enter new password"
                     class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                   />
+                  <p class="mt-2 text-xs text-gray-500">Use 8 or more characters with one uppercase letter and one number.</p>
                 </div>
 
                 <div>
@@ -458,6 +483,7 @@ onBeforeUnmount(() => {
                     type="password"
                     placeholder="Confirm new password"
                     class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    @keydown.enter.prevent="submitNewPassword"
                   />
                 </div>
 

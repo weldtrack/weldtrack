@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { Star } from 'lucide-vue-next'
 import { useAuthStore } from '../../../stores/auth'
 import { useFeedbackStore } from '../../../stores/feedback'
 import { useModalStore } from '../../../stores/modal'
@@ -164,10 +165,19 @@ function canManageFeedback(feedbackEmail: string) {
 
 <template>
   <section class="space-y-8">
-    <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">{{ props.isAdmin ? 'Customer Feedback Monitoring' : 'Service Feedback' }}</h1>
-        <p class="mt-2 text-gray-600">{{ props.isAdmin ? 'Monitor and review customer feedback on our welding services' : 'See what our customers say about our welding services' }}</p>
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-pink-50 to-white ring-1 ring-pink-100">
+          <Star class="h-6 w-6 text-pink-600" />
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">
+            {{ props.isAdmin ? 'Customer Feedback Monitoring' : 'Service Feedback' }}
+          </h1>
+          <p class="mt-2 text-gray-600">
+            {{ props.isAdmin ? 'Monitor and review customer feedback on our welding services' : 'See what our customers say about our welding services' }}
+          </p>
+        </div>
       </div>
       <button
         v-if="canSubmitFeedback"

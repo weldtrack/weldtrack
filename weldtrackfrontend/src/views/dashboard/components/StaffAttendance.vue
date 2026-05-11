@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Calendar } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore } from '../../../stores/auth'
 import api from '../../../services/api'
@@ -278,9 +279,14 @@ function formatDuration(hours: number) {
 
 <template>
   <section class="space-y-6">
-    <div>
-      <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Attendance</h3>
-      <p class="text-sm text-gray-600">Track staff check-in/out and overtime</p>
+    <div class="mb-6 flex items-start gap-3">
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-blue-50 to-white ring-1 ring-blue-100">
+        <Calendar class="h-6 w-6 text-blue-600" />
+      </div>
+      <div>
+        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Attendance</h3>
+        <p class="text-sm text-gray-600">Track staff check-in/out and overtime</p>
+      </div>
     </div>
 
     <div v-if="isAdmin" class="grid grid-cols-1 gap-4 sm:grid-cols-3">

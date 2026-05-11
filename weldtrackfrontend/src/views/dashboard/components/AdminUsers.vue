@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { Users } from 'lucide-vue-next'
 import api from '../../../services/api'
 
 type User = {
@@ -109,6 +110,15 @@ onBeforeUnmount(() => {
 <template>
   <div class="overflow-hidden rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
     <div class="mb-4">
+      <div class="mb-4 flex items-start gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-blue-50 to-white ring-1 ring-blue-100">
+          <Users class="h-5 w-5 text-blue-600" />
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-gray-900">Users</h3>
+          <p class="mt-0.5 text-sm text-gray-500">Manage customer and staff accounts</p>
+        </div>
+      </div>
       <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
         <input v-model="search" placeholder="Search users..." class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-slate-900 sm:flex-1" />
 

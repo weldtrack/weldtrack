@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { CalendarCheck } from 'lucide-vue-next'
 import { useBookingsStore, type BookingItem, type BookingStatus } from '../../../stores/bookings'
 import { useInventoryStore } from '../../../stores/inventory'
 import { useModalStore } from '../../../stores/modal'
@@ -239,9 +240,14 @@ function hasStaffMaterialSubmission(bookingId: number) {
 <template>
   <section class="space-y-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div>
-        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Booking Approval</h3>
-        <p class="text-sm text-gray-600">Review customer requests and approve bookings</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-yellow-50 to-yellow-25 ring-1 ring-yellow-100">
+          <CalendarCheck class="h-6 w-6 text-yellow-600" />
+        </div>
+        <div>
+          <h3 class="mb-1 text-2xl font-semibold text-gray-900">Booking Approval</h3>
+          <p class="text-sm text-gray-600">Review customer requests and approve bookings</p>
+        </div>
       </div>
     </div>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { Archive } from 'lucide-vue-next'
 import { useInventoryStore, type InventoryItem } from '../../../stores/inventory'
 import { useModalStore } from '../../../stores/modal'
 import ModalShell from '../../../components/ui/ModalShell.vue'
@@ -181,11 +182,15 @@ function formatDateTime(value?: string) {
 <template>
   <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div>
-        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Inventory Management</h3>
-        <p class="text-sm text-gray-600">Manage materials, stock levels, and supplier records.</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-slate-50 to-white ring-1 ring-slate-100">
+          <Archive class="h-5 w-5 text-slate-600" />
+        </div>
+        <div>
+          <h3 class="mb-1 text-2xl font-semibold text-gray-900">Inventory Management</h3>
+          <p class="text-sm text-gray-600">Manage materials, stock levels, and supplier records.</p>
+        </div>
       </div>
-
       <button
         type="button"
         class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-700"

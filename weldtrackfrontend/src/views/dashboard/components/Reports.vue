@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { BarChart2 } from 'lucide-vue-next'
 import html2pdf from 'html2pdf.js'
 import axios from 'axios'
 import api from '../../../services/api'
@@ -553,9 +554,14 @@ async function generateStaffAttendanceReportPDF() {
 
 <template>
   <section class="space-y-6">
-    <div>
-      <h3 class="mb-1 text-2xl font-semibold text-gray-900">Reports</h3>
-      <p class="text-sm text-gray-600">Generate and export business reports</p>
+    <div class="flex items-start gap-3">
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-indigo-50 to-white ring-1 ring-indigo-100">
+        <BarChart2 class="h-6 w-6 text-indigo-600" />
+      </div>
+      <div>
+        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Reports</h3>
+        <p class="text-sm text-gray-600">Generate and export business reports</p>
+      </div>
     </div>
 
     <div class="rounded-lg border border-gray-200 bg-white p-4">

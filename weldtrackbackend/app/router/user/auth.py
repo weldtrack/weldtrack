@@ -548,10 +548,6 @@ def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)
 				detail="Invalid verification code",
 			)
 		
-		email_verification.verification_code = None
-		email_verification.code_expires_at = None
-		db.commit()
-		
 		return {
 			"success": True,
 			"token": create_access_token(user),

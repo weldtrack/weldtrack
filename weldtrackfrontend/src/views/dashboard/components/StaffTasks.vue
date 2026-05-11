@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { Clipboard } from 'lucide-vue-next'
 import { useAuthStore } from '../../../stores/auth'
 import { useStaffTasksStore, type TaskStatus } from '../../../stores/staffTasks'
 import { useInventoryStore } from '../../../stores/inventory'
@@ -422,9 +423,14 @@ async function confirmRemoveTask() {
 
 <template>
   <section class="space-y-6">
-    <div>
-      <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Tasks</h3>
-      <p class="text-sm text-gray-600">Assigned project tasks and progress tracking</p>
+    <div class="flex items-start gap-3">
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-slate-50 to-white ring-1 ring-slate-100">
+        <Clipboard class="h-6 w-6 text-slate-700" />
+      </div>
+      <div>
+        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Tasks</h3>
+        <p class="text-sm text-gray-600">Assigned project tasks and progress tracking</p>
+      </div>
     </div>
 
     <div v-if="isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">

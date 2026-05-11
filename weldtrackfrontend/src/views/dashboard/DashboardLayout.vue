@@ -12,9 +12,10 @@ const adminSectionStore = useAdminSectionStore()
 const router = useRouter()
 const isMobileSidebarOpen = ref(false)
 const isLoggingOut = ref(false)
+const normalizedRole = computed(() => authStore.role.trim().toLowerCase())
 
 const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => {
-  if (authStore.role === 'admin') {
+  if (normalizedRole.value === 'admin') {
     return [
       { id: 'dashboard', label: 'Dashboard' },
       { id: 'booking', label: 'Booking' },
@@ -27,7 +28,7 @@ const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => 
     ]
   }
 
-  if (authStore.role === 'staff') {
+  if (normalizedRole.value === 'staff') {
     return [
       { id: 'staff-attendance', label: 'Attendance' },
       { id: 'staff-tasks', label: 'Tasks' },
@@ -36,7 +37,7 @@ const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => 
     ]
   }
 
-  if (authStore.role === 'customer') {
+  if (normalizedRole.value === 'customer') {
     return [
       { id: 'booking', label: 'New Booking' },
       { id: 'addresses', label: 'Addresses' },
@@ -49,17 +50,21 @@ const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => 
 })
 
 onMounted(() => {
-  if (authStore.role === 'customer' && adminSectionStore.section !== 'booking') {
+  if (normalizedRole.value === 'admin' && adminSectionStore.section !== 'dashboard') {
+    adminSectionStore.setSection('dashboard')
+  }
+
+  if (normalizedRole.value === 'customer' && !['booking', 'addresses', 'booking-history', 'feedback'].includes(adminSectionStore.section)) {
     adminSectionStore.setSection('booking')
   }
 
-  if (authStore.role === 'staff' && !adminSectionStore.section.startsWith('staff')) {
+  if (normalizedRole.value === 'staff' && !adminSectionStore.section.startsWith('staff')) {
     adminSectionStore.setSection('staff-attendance')
   }
 })
 
 function selectSection(section: AdminSection) {
-  if (authStore.role === 'staff' && section === 'staff') {
+  if (normalizedRole.value === 'staff' && section === 'staff') {
     router.push({ name: 'staff-dashboard' }).catch(() => {})
     return
   }
