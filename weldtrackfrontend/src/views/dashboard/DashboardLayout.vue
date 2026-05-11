@@ -50,8 +50,14 @@ const sidebarItems = computed<Array<{ id: AdminSection; label: string }>>(() => 
 })
 
 onMounted(() => {
-  if (normalizedRole.value === 'admin' && adminSectionStore.section !== 'dashboard') {
-    adminSectionStore.setSection('dashboard')
+  // For admin, only reset to the default if the stored section is not one
+  // of the allowed admin sections. This preserves the previously selected
+  // admin tab across refreshes instead of always forcing `dashboard`.
+  if (normalizedRole.value === 'admin') {
+    const allowedAdminSections = ['dashboard', 'booking', 'inventory', 'staff', 'users', 'reports', 'projects', 'feedback']
+    if (!allowedAdminSections.includes(adminSectionStore.section)) {
+      adminSectionStore.setSection('dashboard')
+    }
   }
 
   if (normalizedRole.value === 'customer' && !['booking', 'addresses', 'booking-history', 'feedback'].includes(adminSectionStore.section)) {
