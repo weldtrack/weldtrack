@@ -5,7 +5,7 @@ import { useAuthStore } from '../../../stores/auth'
 import { useBookingsStore, type BookingItem } from '../../../stores/bookings'
 import { useCustomerAddressesStore } from '../../../stores/customerAddresses'
 import ModalShell from '../../../components/ui/ModalShell.vue'
-import { getLaborPrice } from '../../../constants/pricing'
+import api from '../../../services/api'
 
 const auth = useAuthStore()
 const bookingsStore = useBookingsStore()
@@ -34,23 +34,12 @@ const cancelForm = reactive({
 
 const isSubmitting = ref(false)
 
-const projectTypes = [
-  'Gate Welding',
-  'Metal Railings',
-  'Steel Frame Construction',
-  'Staircase Fabrication',
-  'Metal Doors & Windows',
-  'Pipe & Duct Welding',
-  'Metal Shelving',
-  'Automotive Welding',
-  'Fence Installation',
-  'Tank & Vessel Fabrication',
-  'Repair & Maintenance',
-  'Other',
-]
+const services = ref<Array<{ id: number; name: string; price: number }>>([]);
+const loadingServices = ref(false)
 
 const selectedLaborPrice = computed(() => {
-  return getLaborPrice(formData.projectType)
+  const service = services.value.find((s) => s.name === formData.projectType)
+  return service?.price ?? 0
 })
 
 const selectedTotalCost = computed(() => selectedLaborPrice.value)
@@ -69,9 +58,27 @@ const activeBookings = computed(() =>
 const pendingCount = computed(() => filteredBookings.value.filter((b) => b.status === 'pending').length)
 const confirmedCount = computed(() => filteredBookings.value.filter((b) => b.status === 'confirmed').length)
 
+async function fetchServices() {
+  loadingServices.value = true
+  try {
+    const response = await api.get('/services')
+    services.value = (response.data || []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      price: s.price || 0,
+    }))
+  } catch (error) {
+    console.error('Failed to load services:', error)
+    services.value = []
+  } finally {
+    loadingServices.value = false
+  }
+}
+
 onMounted(() => {
   bookingsStore.fetchBookings()
   addressesStore.fetchMyAddresses()
+  fetchServices()
 })
 
 
@@ -156,7 +163,8 @@ function formatDate(value: string) {
 }
 
 function getLaborCost(projectType: string) {
-  return getLaborPrice(projectType)
+  const service = services.value.find((s) => s.name === projectType)
+  return service?.price ?? 0
 }
 
 function getMaterialCostMessage(booking: BookingItem) {
@@ -372,9 +380,9 @@ function formatActiveAddress() {
 
             <div>
               <label class="block text-sm font-medium text-gray-700" for="projectType">Project Type</label>
-              <select id="projectType" v-model="formData.projectType" required class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
-                <option value="">Select project type</option>
-                <option v-for="type in projectTypes" :key="type" :value="type">{{ type }}</option>
+              <select id="projectType" v-model="formData.projectType" required :disabled="loadingServices || services.length === 0" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                <option value="">{{ loadingServices ? 'Loading services...' : services.length === 0 ? 'No services available' : 'Select project type' }}</option>
+                <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }} — ₱{{ service.price.toLocaleString() }}</option>
               </select>
             </div>
           </div>

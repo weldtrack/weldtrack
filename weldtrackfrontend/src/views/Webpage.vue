@@ -1,5 +1,16 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import api from '../services/api'
+
+interface Service {
+  id: number
+  name: string
+  description: string | null
+  price: number
+  image_url: string | null
+  created_at: string
+  updated_at: string
+}
 
 const features = [
     {
@@ -49,6 +60,45 @@ const heroStats = [
 let observer: IntersectionObserver | null = null
 const isMobileMenuOpen = ref(false)
 
+const services = ref<Service[]>([])
+const currentSlide = ref(0)
+let autoplayTimer: number | null = null
+
+function nextSlide() {
+    if (services.value.length === 0) return
+    currentSlide.value = (currentSlide.value + 1) % services.value.length
+}
+
+function prevSlide() {
+    if (services.value.length === 0) return
+    currentSlide.value = (currentSlide.value - 1 + services.value.length) % services.value.length
+}
+
+async function fetchServices() {
+  try {
+    const response = await api.get('/services')
+    services.value = response.data || []
+    if (services.value.length === 0) {
+      currentSlide.value = 0
+    }
+  } catch (err) {
+    console.error('Failed to fetch services:', err)
+    services.value = []
+  }
+}
+
+onMounted(() => {
+  fetchServices()
+  autoplayTimer = window.setInterval(nextSlide, 4000)
+})
+
+onBeforeUnmount(() => {
+  if (autoplayTimer) {
+    clearInterval(autoplayTimer)
+    autoplayTimer = null
+  }
+})
+
 onMounted(() => {
   const targets = document.querySelectorAll<HTMLElement>('[data-reveal]')
   observer = new IntersectionObserver(
@@ -65,6 +115,11 @@ onMounted(() => {
 
   targets.forEach((el) => observer?.observe(el))
 })
+
+function formatCurrency(value: number) {
+  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+}
+
 
 onBeforeUnmount(() => {
   observer?.disconnect()
@@ -100,6 +155,7 @@ onBeforeUnmount(() => {
                 <div class="hidden flex-wrap items-center gap-6 sm:flex">
                     <a href="#home" class="text-sm font-semibold text-slate-300 transition-colors hover:text-white">Home</a>
                     <a href="#about" class="text-sm font-semibold text-slate-300 transition-colors hover:text-white">About</a>
+                    <a href="#services" class="text-sm font-semibold text-slate-300 transition-colors hover:text-white">Services</a>
                     <a href="#contact" class="text-sm font-semibold text-slate-300 transition-colors hover:text-white">Contact</a>
                 </div>
 
@@ -123,6 +179,7 @@ onBeforeUnmount(() => {
             <div v-if="isMobileMenuOpen" class="mx-auto mt-4 max-w-7xl space-y-3 sm:hidden">
                 <a href="#home" class="block rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-slate-200" @click="isMobileMenuOpen = false">Home</a>
                 <a href="#about" class="block rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-slate-200" @click="isMobileMenuOpen = false">About</a>
+                <a href="#services" class="block rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-slate-200" @click="isMobileMenuOpen = false">Services</a>
                 <a href="#contact" class="block rounded-lg border border-white/10 bg-white/5 px-4 py-2 font-semibold text-slate-200" @click="isMobileMenuOpen = false">Contact</a>
                 <div class="grid grid-cols-2 gap-3 pt-1">
                     <RouterLink
@@ -241,6 +298,48 @@ onBeforeUnmount(() => {
             </div>
         </section>
 
+        <section id="services" class="scroll-mt-24 py-16 sm:py-20">
+            <div class="mx-auto max-w-7xl px-6 sm:px-8">
+                <div class="mx-auto mb-8 max-w-2xl text-center">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Services</p>
+                    <h2 class="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">What We Offer</h2>
+                    <p class="mt-2 text-slate-300">Core service offerings for welding and fabrication.</p>
+                </div>
+
+                <div v-if="services.length === 0" class="mx-auto max-w-4xl rounded-2xl border border-white/10 bg-white/6 p-8 text-center">
+                    <p class="text-slate-300">Loading services...</p>
+                </div>
+
+                <div v-else class="relative mx-auto max-w-4xl">
+                    <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/6 p-4">
+                        <div class="relative h-64 overflow-hidden rounded-xl bg-slate-900 sm:h-80">
+                            <img :key="currentSlide" :src="services[currentSlide]?.image_url || 'https://via.placeholder.com/1200x800'" :alt="services[currentSlide]?.name" class="absolute inset-0 h-full w-full object-cover object-center" width="1200" height="800" />
+                            <div class="absolute bottom-4 left-4 rounded-md bg-black/50 px-4 py-2 text-white">
+                                <h3 class="font-bold">{{ services[currentSlide]?.name }} — {{ formatCurrency(services[currentSlide]?.price || 0) }}</h3>
+                                <p class="text-sm text-slate-200">{{ services[currentSlide]?.description || 'Professional welding and fabrication service' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex items-center justify-between gap-4">
+                            <div class="flex gap-2">
+                                <button @click="prevSlide" class="rounded-lg border border-white/20 px-3 py-2 bg-white/5 text-white">Prev</button>
+                                <button @click="nextSlide" class="rounded-lg border border-white/20 px-3 py-2 bg-white/5 text-white">Next</button>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button
+                                    v-for="(s, i) in services"
+                                    :key="s.id"
+                                    @click="currentSlide = i"
+                                    :class="['h-2 w-8 rounded-full', currentSlide === i ? 'bg-cyan-400' : 'bg-white/20']"
+                                ></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="contact" class="scroll-mt-24 border-t border-white/10 bg-slate-950/70 py-14 sm:py-16">
             <div class="mx-auto max-w-7xl px-6 sm:px-8">
                 <div data-reveal class="reveal mx-auto max-w-3xl rounded-3xl border border-white/10 bg-white/8 p-8 text-center shadow-2xl shadow-slate-950/30 backdrop-blur-xl">
@@ -249,9 +348,9 @@ onBeforeUnmount(() => {
                         Have questions about WeldTrack? Reach out and our team will help you get started.
                     </p>
                     <div class="space-y-2 text-slate-300">
-                        <p><span class="font-semibold text-white">Email:</span> support@weldtrack.com</p>
-                        <p><span class="font-semibold text-white">Phone:</span> +63 912 345 6789</p>
-                        <p><span class="font-semibold text-white">Address:</span> Bicol Region, Philippines</p>
+                        <p><span class="font-semibold text-white">Email:</span> Goboleweldingshopadmin@gmail.com</p>
+                        <p><span class="font-semibold text-white">Phone:</span> +63 935 770 5022</p>
+                        <p><span class="font-semibold text-white">Address:</span> Sta. Remedios Purok - 2 Sampaloc, Bulan Sorsogon</p>
                     </div>
                 </div>
             </div>
@@ -279,5 +378,16 @@ html {
 .reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Services carousel tweaks */
+.carousel-controls button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    .h-64 { height: 18rem; }
 }
 </style>

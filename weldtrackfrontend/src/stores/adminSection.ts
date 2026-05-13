@@ -10,6 +10,7 @@ export type AdminSection =
   | 'booking-history'
   | 'feedback'
   | 'reports'
+  | 'services'
   | 'staff'
   | 'staff-attendance'
   | 'staff-tasks'

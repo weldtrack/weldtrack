@@ -7,6 +7,7 @@ import Reports from './components/Reports.vue'
 import BookingApproval from './components/BookingApproval.vue'
 import StaffWorkspace from './components/StaffWorkspace.vue'
 import ServiceFeedback from './components/ServiceFeedback.vue'
+import ServiceManagement from './components/ServiceManagement.vue'
 import AdminUsers from './components/AdminUsers.vue'
 import { useAdminSectionStore, type AdminSection as AdminSectionType } from '../../stores/adminSection'
 import { useBookingsStore } from '../../stores/bookings'
@@ -310,6 +311,7 @@ const pieStyle = computed(() => {
     </div>
 
     <InventoryManagement v-else-if="currentSection === 'inventory'" />
+    <ServiceManagement v-else-if="currentSection === 'services'" />
     <ProjectHistory v-else-if="currentSection === 'projects'" />
     <BookingApproval v-else-if="currentSection === 'booking'" />
     <ServiceFeedback v-else-if="currentSection === 'feedback'" :is-admin="true" />
