@@ -70,6 +70,11 @@ async function submitCreateStaff() {
     return
   }
 
+  if (createStaffForm.password.length < 8) {
+    createStaffError.value = 'Password must be at least 8 characters long.'
+    return
+  }
+
   if (createStaffForm.password !== createStaffForm.confirm) {
     createStaffError.value = 'Passwords do not match.'
     return

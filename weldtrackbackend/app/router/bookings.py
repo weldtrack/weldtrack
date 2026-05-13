@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 from app.db import get_db
 from app.models.booking import Booking, BookingStatus, RecordMaterial
+from app.models.service import Service
 from app.models.customer_address import CustomerAddress
 from app.schemas.booking import BookingCreate, BookingUpdate, BookingResponse, MaterialCreate
 from app.router.user.auth import get_current_user
@@ -51,7 +52,28 @@ def create_booking(
     db: Session = Depends(get_db),
 ):
     """Create a new booking"""
+    project_type = payload.project_type.strip()
+    if not project_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Project type is required",
+        )
+
+    available_service = db.scalar(select(Service).where(Service.name == project_type))
+    if available_service is None:
+        service_count = db.scalar(select(Service.id).limit(1))
+        if service_count is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No services are currently available for booking",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Selected service is not available",
+        )
+
     booking_data = payload.model_dump(exclude={"materials"}, exclude_none=True)
+    booking_data["project_type"] = project_type
 
     if current_user.role == UserRole.customer:
         active_address = db.scalar(

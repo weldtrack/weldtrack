@@ -97,12 +97,19 @@ function closeDialog() {
 }
 
 function openDialog() {
+  if (loadingServices.value || services.value.length === 0) {
+    return
+  }
   resetForm()
   isDialogOpen.value = true
 }
 
 async function handleSubmit() {
   if (userRole.value === 'customer' && !activeAddress.value) {
+    return
+  }
+  
+  if (loadingServices.value || services.value.length === 0 || !formData.projectType.trim()) {
     return
   }
 
@@ -236,8 +243,8 @@ function formatActiveAddress() {
       <button
         type="button"
         class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
-        :disabled="userRole === 'customer' && !activeAddress"
-        :class="userRole === 'customer' && !activeAddress ? 'cursor-not-allowed opacity-60' : ''"
+          :disabled="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0"
+          :class="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 ? 'cursor-not-allowed opacity-60' : ''"
         @click="openDialog"
       >
         <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -409,7 +416,7 @@ function formatActiveAddress() {
 
           <div class="flex gap-3 pt-4">
             <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting" @click="closeDialog">Cancel</button>
-            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting || (userRole === 'customer' && !activeAddress)">
+            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting || (userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 || !formData.projectType.trim()">
               <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

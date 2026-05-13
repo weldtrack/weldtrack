@@ -60,7 +60,19 @@ def _create_admin_if_missing() -> None:
     finally:
         db.close()
 
+
+def reset_database() -> None:
+    """Drop and recreate all tables.
+
+    Keep this function disabled by default. Uncomment the call below only when you
+    intentionally want to wipe the local database.
+    """
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
 _create_admin_if_missing()
+
+reset_database()
 
 app = FastAPI(title="Weldtrack")
 origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if origin.strip()]

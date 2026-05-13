@@ -467,6 +467,18 @@ async function confirmRemoveTask() {
 
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div class="md:col-span-2">
+          <label class="mb-2 block text-sm font-semibold text-gray-700" for="requiredStaffCount">Staff Needed</label>
+          <select
+            id="requiredStaffCount"
+            :value="newTaskForm.requiredStaffCount"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2"
+            @change="updateRequiredStaffCount(Number(($event.target as HTMLSelectElement).value))"
+          >
+            <option v-for="count in staffCountOptions" :key="count" :value="count">{{ count }} Staff Needed</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
           <p class="mb-2 text-sm font-semibold text-gray-700">Assign Staff Members</p>
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
             <select
@@ -483,9 +495,9 @@ async function confirmRemoveTask() {
           </div>
         </div>
 
-        <select :value="newTaskForm.requiredStaffCount" class="rounded-lg border border-gray-300 px-3 py-2" @change="updateRequiredStaffCount(Number(($event.target as HTMLSelectElement).value))">
-          <option v-for="count in staffCountOptions" :key="count" :value="count">{{ count }} Staff Needed</option>
-        </select>
+        <div class="md:col-span-2 mt-2">
+          <p class="text-sm font-semibold text-gray-700">Project Information</p>
+        </div>
 
         <input v-model="newTaskForm.projectName" type="text" placeholder="Project name" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
         <input v-model="newTaskForm.title" type="text" placeholder="Task title" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />

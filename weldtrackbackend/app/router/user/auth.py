@@ -570,6 +570,9 @@ def admin_create_staff(payload: dict, current_user: User = Depends(get_current_u
 	if not email or not password:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email and password are required")
 
+	if len(password) < 8:
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters long")
+
 	existing = get_user_by_email(db, email)
 	if existing:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already registered")
