@@ -379,6 +379,15 @@ function formatTaskLocation(task: {
 }
 
 async function assignTask() {
+  if (!selectedBookingId.value) {
+    modalStore.open({
+      title: 'Booking required',
+      message: 'Please select a confirmed booking to assign a task.',
+      variant: 'warning',
+    })
+    return
+  }
+
   const { projectName, title, description, assignedStaffIds, requiredStaffCount, dueDate, location } = newTaskForm.value
   if (!projectName || !title || !dueDate) return
   if (!location.province || !location.municipality || !location.barangay || !location.house) return
@@ -401,7 +410,7 @@ async function assignTask() {
     },
   })
 
-    resetNewTaskForm()
+  resetNewTaskForm()
 }
 
 function openRemoveTaskModal(task: { id: string; title: string }) {
@@ -496,28 +505,56 @@ async function confirmRemoveTask() {
         </div>
 
         <div class="md:col-span-2 mt-2">
-          <p class="text-sm font-semibold text-gray-700">Project Information</p>
+          <p class="text-sm font-semibold text-gray-700">Project Information (Auto-filled from booking)</p>
         </div>
 
-        <input v-model="newTaskForm.projectName" type="text" placeholder="Project name" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
-        <input v-model="newTaskForm.title" type="text" placeholder="Task title" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">Project Name</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.projectName || '-' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">Task Title</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.title || '-' }}</p>
+        </div>
 
-        <input v-model="newTaskForm.dueDate" type="date" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <input v-model="newTaskForm.dueDate" type="date" class="rounded-lg border border-gray-300 px-3 py-2" />
 
-        <input :value="newTaskForm.location.country" type="text" disabled class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600" />
-        <input :value="newTaskForm.location.region" type="text" disabled class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600" />
-        <input v-model="newTaskForm.location.province" type="text" placeholder="Province" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
-        <input v-model="newTaskForm.location.municipality" type="text" placeholder="Municipality" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
-        <input v-model="newTaskForm.location.barangay" type="text" placeholder="Barangay" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
-        <input v-model="newTaskForm.location.house" type="text" placeholder="House / Street" :disabled="!!selectedBookingId" class="rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">Country</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.country || '-' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">Region</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.region || '-' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">Province</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.province || '-' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">Municipality</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.municipality || '-' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">Barangay</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.barangay || '-' }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
+          <p class="text-xs text-gray-500">House / Street</p>
+          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.house || '-' }}</p>
+        </div>
 
         <p v-if="hasDuplicateAssignees" class="md:col-span-2 text-sm text-red-600">Please select different staff for each slot.</p>
 
-        <textarea v-model="newTaskForm.description" rows="3" placeholder="Task description" :disabled="!!selectedBookingId" class="md:col-span-2 rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-100 disabled:text-gray-600" />
+        <div class="md:col-span-2 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2">
+          <p class="text-xs text-gray-500">Description</p>
+          <p class="text-sm text-gray-900">{{ newTaskForm.description || '-' }}</p>
+        </div>
       </div>
 
       <div class="mt-3">
-        <button type="button" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300" :disabled="hasDuplicateAssignees" @click="assignTask">Assign Task</button>
+        <button type="button" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300" :disabled="!selectedBookingId || hasDuplicateAssignees" @click="assignTask">Assign Task</button>
+        <p v-if="!selectedBookingId" class="mt-2 text-sm text-amber-600">⚠ Select a confirmed booking first to assign a task</p>
       </div>
 
       <div class="mt-6">
