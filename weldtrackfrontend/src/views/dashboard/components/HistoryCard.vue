@@ -2,14 +2,12 @@
 import { computed } from 'vue'
 import { Clock } from 'lucide-vue-next'
 import { useInventoryStore } from '../../../stores/inventory'
-import { getLaborPrice } from '../../../constants/pricing'
+import { getServicePriceDisplay } from '../../../services/servicePricing'
 
 const { item } = defineProps<{ item: any }>()
 const inventoryStore = useInventoryStore()
 
-function getLaborCost(projectType?: string) {
-  return getLaborPrice(projectType || '')
-}
+
 
 function getMaterialLines(bookingId: number, materials?: any[]) {
   if (Array.isArray(materials) && materials.length > 0) return materials
@@ -44,7 +42,7 @@ function getMaterialsTotal(bookingId: number, materials?: any[]) {
 }
 
 function getGrandTotal(item: any) {
-  const labor = getLaborCost(item.projectType)
+  const labor = getServicePriceDisplay(item.projectType, item.estimatedCost)
   const materials = getMaterialsTotal(item.id, item.materials)
   return item.totalPrice ?? labor + materials
 }
@@ -96,7 +94,7 @@ const grandTotal = computed(() => getGrandTotal(item))
     <div class="mt-3 space-y-2 text-sm">
       <div class="flex items-center justify-between">
         <span class="text-gray-600">Project Price (Labor)</span>
-        <span class="font-medium text-gray-900">{{ formatCurrency(getLaborCost(item.projectType)) }}</span>
+        <span class="font-medium text-gray-900">{{ formatCurrency(getServicePriceDisplay(item.projectType, item.estimatedCost)) }}</span>
       </div>
 
       <div>

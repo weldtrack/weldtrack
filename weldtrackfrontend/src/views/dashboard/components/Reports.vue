@@ -7,8 +7,8 @@ import api from '../../../services/api'
 import { useBookingsStore } from '../../../stores/bookings'
 import { useInventoryStore } from '../../../stores/inventory'
 import { useModalStore } from '../../../stores/modal'
-import { getLaborPrice } from '../../../constants/pricing'
 import { getUserFriendlyApiError } from '../../../services/errorMessage'
+import { getServicePriceDisplay } from '../../../services/servicePricing'
 
 interface AttendanceRecord {
   id: number
@@ -117,18 +117,18 @@ function formatDateTime(dateStr?: string) {
 const projects = computed(() =>
   bookingsStore.bookings
     .filter((b) => b.status !== 'cancelled')
-    .map((b) => ({
-      id: String(b.id),
-      status: b.status === 'completed' ? 'completed' : 'ongoing',
-      materialsCost: Number(b.materialCost ?? 0),
-      laborCost: getLaborPrice(b.projectType),
-      baseCost: Number(
-        b.totalPrice ?? b.estimatedCost ?? getLaborPrice(b.projectType) + Number(b.materialCost ?? 0),
-      ),
-      salesPrice: Number(
-        ((b.totalPrice ?? b.estimatedCost ?? getLaborPrice(b.projectType) + Number(b.materialCost ?? 0)) * (1 + SALES_MARKUP)).toFixed(2),
-      ),
-    })),
+    .map((b) => {
+      const laborCost = getServicePriceDisplay(b.projectType, b.estimatedCost)
+      const baseCost = Number(b.totalPrice ?? laborCost + Number(b.materialCost ?? 0))
+      return {
+        id: String(b.id),
+        status: b.status === 'completed' ? 'completed' : 'ongoing',
+        materialsCost: Number(b.materialCost ?? 0),
+        laborCost,
+        baseCost,
+        salesPrice: Number((baseCost * (1 + SALES_MARKUP)).toFixed(2)),
+      }
+    }),
 )
 
 const totalProjectCosts = computed(() =>

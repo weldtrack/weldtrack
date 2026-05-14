@@ -11,7 +11,7 @@ import ServiceManagement from './components/ServiceManagement.vue'
 import AdminUsers from './components/AdminUsers.vue'
 import { useAdminSectionStore, type AdminSection as AdminSectionType } from '../../stores/adminSection'
 import { useBookingsStore } from '../../stores/bookings'
-import { getLaborPrice } from '../../constants/pricing'
+import { getServicePriceDisplay } from '../../services/servicePricing'
 
 type AdminSection = AdminSectionType
 
@@ -40,12 +40,8 @@ function formatDate(value?: string) {
   })
 }
 
-function getBookingLabor(projectType?: string) {
-  return getLaborPrice(projectType || '')
-}
-
-function getBookingCost(booking: { projectType?: string; materialCost?: number }) {
-  return getBookingLabor(booking.projectType) + Number(booking.materialCost ?? 0)
+function getBookingCost(booking: { projectType?: string; estimatedCost?: number; materialCost?: number }) {
+  return getServicePriceDisplay(booking.projectType || '', booking.estimatedCost) + Number(booking.materialCost ?? 0)
 }
 
 const customers = computed(() => {
@@ -104,7 +100,7 @@ const recentCompletedProjects = computed(() =>
       name: booking.projectType,
       client: booking.customerName || booking.email || '-',
       materialsCost: Number(booking.materialCost ?? 0),
-      laborCost: getBookingLabor(booking.projectType),
+      laborCost: getServicePriceDisplay(booking.projectType, booking.estimatedCost),
       totalCost: getBookingCost(booking),
     }))
     .sort((a, b) => new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime()),

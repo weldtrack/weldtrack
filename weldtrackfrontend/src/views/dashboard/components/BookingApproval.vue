@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { CalendarCheck } from 'lucide-vue-next'
 import { useBookingsStore, type BookingItem, type BookingStatus } from '../../../stores/bookings'
 import { useInventoryStore } from '../../../stores/inventory'
 import { useModalStore } from '../../../stores/modal'
 import ModalShell from '../../../components/ui/ModalShell.vue'
-import { getLaborPrice } from '../../../constants/pricing'
 import { getUserFriendlyApiError } from '../../../services/errorMessage'
+import api from '../../../services/api'
 
 const bookingsStore = useBookingsStore()
 const inventoryStore = useInventoryStore()
@@ -33,10 +33,38 @@ const isCancelModalOpen = ref(false)
 const cancelForm = reactive({
   reason: '',
 })
+const servicePriceMap = ref<Record<string, number>>({})
 
-function getLaborPriceFor(type: string) {
-  return getLaborPrice(type)
+function normalizeServiceName(value: string) {
+  return value.trim().toLowerCase()
 }
+
+function getLaborPriceFor(projectType: string) {
+  return servicePriceMap.value[normalizeServiceName(projectType)] ?? 0
+}
+
+async function loadServicePrices() {
+  try {
+    const response = await api.get('/services')
+    const services = Array.isArray(response.data)
+      ? response.data
+      : response.data?.data ?? response.data?.services ?? []
+
+    servicePriceMap.value = services.reduce((acc: Record<string, number>, service: any) => {
+      const name = String(service.name ?? service.serviceName ?? service.title ?? '').trim()
+      if (!name) return acc
+      acc[normalizeServiceName(name)] = Number(service.price ?? service.laborPrice ?? service.labor_price ?? 0)
+      return acc
+    }, {})
+  } catch (err) {
+    console.error('Failed to fetch service price:', err)
+    servicePriceMap.value = {}
+  }
+}
+
+onMounted(() => {
+  void loadServicePrices()
+})
 
 function getStatusLabel(status: BookingStatus) {
   switch (status) {
@@ -76,9 +104,12 @@ function formatDate(value: string) {
   })
 }
 
-function openApprovalModal(booking: BookingItem) {
+async function openApprovalModal(booking: BookingItem) {
   selectedBooking.value = booking
   approvalForm.scheduleDate = String(booking.scheduleDate ?? booking.preferredDate ?? '')
+  if (!Object.keys(servicePriceMap.value).length) {
+    await loadServicePrices()
+  }
   isApprovalModalOpen.value = true
 }
 
@@ -115,10 +146,9 @@ function closeCancelModal() {
 
 async function confirmApproval() {
   if (!selectedBooking.value) return
-  const laborPrice = getLaborPriceFor(selectedBooking.value.projectType)
   const patch = {
     scheduleDate: approvalForm.scheduleDate,
-    estimatedCost: laborPrice,
+    estimatedCost: getLaborPriceFor(selectedBooking.value.projectType),
     status: 'confirmed' as BookingStatus,
   }
 
@@ -140,7 +170,7 @@ async function cancelBookingAsAdmin() {
 
 const computedCompletionTotal = computed(() => {
   if (!selectedBooking.value) return 0
-  const labor = getLaborPriceFor(selectedBooking.value.projectType)
+  const labor = selectedBooking.value.estimatedCost || getLaborPriceFor(selectedBooking.value.projectType)
   const mat = Number(completionForm.materialCost) || 0
   return labor + mat
 })
@@ -165,7 +195,7 @@ async function confirmComplete() {
 
 async function completeBookingForce() {
   if (!selectedBooking.value) return
-  const labor = getLaborPriceFor(selectedBooking.value.projectType)
+  const labor = selectedBooking.value.estimatedCost || getLaborPriceFor(selectedBooking.value.projectType)
   const material = Number(completionForm.materialCost) || 0
   const patch = {
     status: 'completed' as BookingStatus,
@@ -235,6 +265,10 @@ function hasStaffMaterialSubmission(bookingId: number) {
   const hasImages = Boolean(booking && ((booking.beforeImages && booking.beforeImages.length > 0) || (booking.afterImages && booking.afterImages.length > 0)))
   return hasMovements || hasImages
 }
+
+function getDisplayedLaborCost(booking: BookingItem) {
+  return booking.estimatedCost && booking.estimatedCost > 0 ? booking.estimatedCost : getLaborPriceFor(booking.projectType)
+}
 </script>
 
 <template>
@@ -292,9 +326,9 @@ function hasStaffMaterialSubmission(bookingId: number) {
             <td class="px-4 py-3 text-gray-700">{{ booking.scheduleDate || 'Waiting for approval' }}</td>
             <td class="px-4 py-3 text-gray-900">
               <div class="space-y-1 text-sm">
-                <p>Labor: ₱{{ getLaborPriceFor(booking.projectType).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                <p>Labor: ₱{{ getDisplayedLaborCost(booking).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
                 <p>Material: <span v-if="booking.materialCost != null">₱{{ booking.materialCost.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span><span v-else class="text-gray-500">After completion</span></p>
-                <p class="font-semibold">Total: ₱{{ (getLaborPriceFor(booking.projectType) + (booking.materialCost ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                <p class="font-semibold">Total: ₱{{ (getDisplayedLaborCost(booking) + (booking.materialCost ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
                 <p v-if="booking.status === 'confirmed' && !hasStaffMaterialSubmission(booking.id)" class="text-xs font-semibold text-amber-700">
                   Staff materials not submitted yet
                 </p>
@@ -440,7 +474,7 @@ function hasStaffMaterialSubmission(bookingId: number) {
       <div class="space-y-4">
         <div>
           <p class="text-sm text-gray-600">Labor Cost</p>
-          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ getLaborPriceFor(selectedBooking?.projectType ?? '').toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ (selectedBooking ? getDisplayedLaborCost(selectedBooking) : 0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
         </div>
 
         <div v-if="selectedBooking && !hasStaffMaterialSubmission(selectedBooking.id)" class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">

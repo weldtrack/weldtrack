@@ -6,6 +6,7 @@ import { useBookingsStore, type BookingItem } from '../../../stores/bookings'
 import { useCustomerAddressesStore } from '../../../stores/customerAddresses'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 import api from '../../../services/api'
+import { getServicePriceDisplay } from '../../../services/servicePricing'
 
 const auth = useAuthStore()
 const bookingsStore = useBookingsStore()
@@ -170,7 +171,7 @@ function formatDate(value: string) {
 }
 
 function getLaborCost(projectType: string) {
-  const service = services.value.find((s) => s.name === projectType)
+  const service = services.value.find((s) => s.name.trim().toLowerCase() === projectType.trim().toLowerCase())
   return service?.price ?? 0
 }
 
@@ -187,7 +188,7 @@ function getMaterialCostMessage(booking: BookingItem) {
 }
 
 function getTotalCost(booking: BookingItem) {
-  return getLaborCost(booking.projectType) + (booking.materialCost ?? 0)
+  return getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType)) + (booking.materialCost ?? 0)
 }
 
 function getScheduleMessage(booking: BookingItem) {
@@ -328,7 +329,7 @@ function formatActiveAddress() {
 
           <div class="rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-2">
             <p class="text-xs uppercase tracking-wide text-indigo-600 font-medium">Labor Cost</p>
-            <p class="mt-1 text-gray-900 font-medium">{{ formatCurrency(getLaborCost(booking.projectType)) }}</p>
+            <p class="mt-1 text-gray-900 font-medium">{{ formatCurrency(getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
           </div>
 
           <div class="rounded-lg bg-pink-50 border border-pink-200 px-3 py-2">
