@@ -439,8 +439,8 @@ function hasStaffMaterialSubmission(bookingId: number) {
 
       <div class="space-y-4">
         <div>
-          <p class="text-sm text-gray-600">Labor Cost (fixed)</p>
-          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ getLaborPriceFor(selectedBooking ? selectedBooking.projectType : '').toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+          <p class="text-sm text-gray-600">Labor Cost</p>
+          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ getLaborPriceFor(selectedBooking?.projectType ?? '').toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
         </div>
 
         <div v-if="selectedBooking && !hasStaffMaterialSubmission(selectedBooking.id)" class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
