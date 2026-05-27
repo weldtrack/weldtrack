@@ -12,7 +12,6 @@ from app.db import Base, engine, SessionLocal
 
 
 Base.metadata.create_all(bind=engine)
-# Base.metadata.drop_all(bind=engine)
 
 import base64
 import hashlib
