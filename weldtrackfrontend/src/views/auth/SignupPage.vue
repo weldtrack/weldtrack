@@ -4,10 +4,13 @@ import { useAuthStore } from '../../stores/auth'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useModalStore } from '../../stores/modal'
 import { getUserFriendlyApiError } from '../../services/errorMessage'
+import ThemeToggle from '../../components/ui/ThemeToggle.vue'
+import { useThemeMode } from '../../composables/useThemeMode'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const modalStore = useModalStore()
+const { isDarkMode } = useThemeMode()
 
 const form = reactive({ email: '', password: '', confirm: '', code: '' })
 const step = ref(1)
@@ -21,11 +24,6 @@ const isProgressActive = computed(() => step.value >= 2)
 const leaveWarningMessage = 'Progress data will be deleted if you go back. Leave this page?'
 const pendingRoute = ref<string | null>(null)
 const allowRouteLeave = ref(false)
-
-const stepClass = computed(() => ({
-  one: step.value >= 1 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
-  two: step.value >= 2 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
-}))
 
 function startCodeTimer() {
   if (codeTimer.value !== null) return
@@ -189,173 +187,150 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-slate-950 p-4 text-slate-900 sm:p-6">
+  <div :class="['public-theme-page relative min-h-screen overflow-hidden bg-[#020617] p-4 text-slate-50 sm:p-6 lg:p-10', isDarkMode ? 'theme-dark' : 'theme-light']">
+    <!-- Background Elements -->
     <div class="pointer-events-none absolute inset-0">
-      <div class="absolute -left-20 top-16 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl"></div>
-      <div class="absolute right-0 top-24 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl"></div>
-      <div class="absolute bottom-0 left-1/2 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl"></div>
+      <div class="absolute -left-20 top-16 h-72 w-72 rounded-full bg-cyan-500/10 blur-[100px]"></div>
+      <div class="absolute right-0 top-24 h-96 w-96 rounded-full bg-blue-600/10 blur-[120px]"></div>
+      <div class="absolute bottom-0 left-1/2 h-80 w-80 rounded-full bg-emerald-500/5 blur-[80px]"></div>
+      <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
     </div>
 
-    <div class="relative mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center sm:min-h-[calc(100vh-3rem)]">
-      <div class="grid w-full overflow-hidden rounded-4xl border border-white/10 bg-white/95 shadow-2xl shadow-slate-950/60 backdrop-blur xl:grid-cols-[0.95fr_1.05fr]">
-        <div class="hidden flex-col justify-between bg-linear-to-br from-slate-950 via-blue-950 to-cyan-900 p-8 text-white xl:flex xl:p-10">
-          <div>
-            <div class="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-lg shadow-black/20">
-              <svg class="h-8 w-8 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="relative mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center sm:min-h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-5rem)]">
+      <div class="relative grid w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f172a]/40 shadow-2xl backdrop-blur-2xl xl:grid-cols-[0.95fr_1.05fr]">
+        <ThemeToggle class="absolute right-4 top-4 z-20 sm:right-6 sm:top-6" />
+        <!-- Left Side: Visual/Branding -->
+        <div class="relative hidden min-h-[38rem] overflow-hidden xl:flex">
+          <img
+            src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1600&auto=format&fit=crop"
+            alt="Fabrication workshop"
+            class="absolute inset-0 h-full w-full object-cover"
+          />
+          <div class="absolute inset-0 bg-linear-to-br from-[#020617]/95 via-[#0f172a]/78 to-cyan-950/45"></div>
+          <div class="relative z-10 flex h-full w-full flex-col justify-between p-10">
+            <div>
+              <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-inner border border-white/10 backdrop-blur-sm">
+              <svg class="h-8 w-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
+              </div>
+              <div class="mb-4 inline-block rounded-full bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] text-cyan-300 uppercase backdrop-blur-sm">Getting Started</div>
+              <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight text-white">
+                Elevate your <br> fabrication shop.
+              </h1>
+              <p class="mt-6 max-w-sm text-lg leading-relaxed text-slate-200">
+                Create your account in just two steps and join a community of professionals optimizing their welding workflows.
+              </p>
             </div>
-            <p class="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">Create your account</p>
-            <h1 class="max-w-md text-4xl font-extrabold leading-tight tracking-tight text-white">
-              Join WeldTrack and keep your team organized from day one.
-            </h1>
-            <p class="mt-4 max-w-md text-base leading-7 text-slate-300">
-              Set up a secure workspace for bookings, inventory, attendance, and reporting in a few guided steps.
-            </p>
-          </div>
 
-          <div class="grid grid-cols-1 gap-4 text-sm text-slate-200 lg:grid-cols-3">
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p class="text-2xl font-bold text-white">Step 1</p>
-              <p class="mt-1 text-slate-300">Account details</p>
-            </div>
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p class="text-2xl font-bold text-white">Step 2</p>
-              <p class="mt-1 text-slate-300">Verify email</p>
-            </div>
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p class="text-2xl font-bold text-white">Ready</p>
-              <p class="mt-1 text-slate-300">Start managing</p>
+            <div class="grid grid-cols-3 gap-6 text-sm">
+              <div class="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+                <div :class="['h-1 rounded-full', step >= 1 ? 'bg-cyan-500' : 'bg-white/10']"></div>
+                <div class="font-bold text-white">Step 1</div>
+                <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Details</div>
+              </div>
+              <div class="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+                <div :class="['h-1 rounded-full', step >= 2 ? 'bg-cyan-500' : 'bg-white/10']"></div>
+                <div class="font-bold text-white">Step 2</div>
+                <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Verify</div>
+              </div>
+              <div class="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+                <div class="h-1 rounded-full bg-white/10"></div>
+                <div class="font-bold text-slate-300">Ready</div>
+                <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Access</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="flex items-center justify-center p-6 sm:p-8 xl:p-10">
-          <div class="w-full max-w-md rounded-3xl border border-slate-200/70 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8">
-            <div class="mb-8 text-center">
-              <div class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-600 to-cyan-500 shadow-lg shadow-blue-900/25">
-                <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-
-              <div class="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                Sign up
-              </div>
-
-              <h1 class="mt-4 mb-1 text-3xl font-extrabold tracking-tight text-gray-900">WeldTrack</h1>
-              <p class="text-sm text-gray-500 sm:text-base">Inventory Management System</p>
-            </div>
-
-            <div class="mb-7">
-              <div class="flex items-start">
-                <div class="flex flex-1 justify-center">
-                  <div class="flex flex-col items-center text-center">
-                    <div :class="['flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold', stepClass.one]">1</div>
-                    <div class="mt-2 text-xs text-gray-600">Account</div>
-                  </div>
+        <!-- Right Side: Form -->
+        <div class="flex items-center justify-center p-8 sm:p-12 xl:p-16">
+          <div class="w-full max-w-sm">
+            <div class="mb-10 text-center xl:text-left">
+                <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 p-0.5 xl:hidden">
+                    <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-[#020617] text-xl">⚙️</div>
                 </div>
-
-                <div class="mt-4.5 flex flex-1 items-center">
-                  <div class="h-1 w-full rounded-full bg-gray-200">
-                    <div class="h-1 rounded-full bg-green-500" :style="{ width: step >= 2 ? '100%' : '50%' }"></div>
-                  </div>
-                </div>
-
-                <div class="flex flex-1 justify-center">
-                  <div class="flex flex-col items-center text-center">
-                    <div :class="['flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold', stepClass.two]">2</div>
-                    <div class="mt-2 text-xs text-gray-600">Verify</div>
-                  </div>
-                </div>
-              </div>
+                <h2 class="text-3xl font-black tracking-tight text-white">Create Account</h2>
+                <p class="mt-2 text-slate-400">Join WeldTrack today.</p>
             </div>
 
             <form class="space-y-6" @submit.prevent="handleFormSubmit">
-              <div v-if="signupError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div v-if="signupError" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400">
                 {{ signupError }}
               </div>
 
-              <div v-if="step === 1" class="space-y-4">
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="email">Email</label>
+              <div v-if="step === 1" class="space-y-5">
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="email">Work Email</label>
                   <input
                     id="email"
                     v-model="form.email"
                     type="email"
                     placeholder="you@example.com"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                   />
                 </div>
 
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="password">Password</label>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="password">Create Password</label>
                   <input
                     id="password"
                     v-model="form.password"
                     type="password"
-                    placeholder="Create password"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="••••••••"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                   />
-                  <p class="mt-2 text-xs text-gray-500">Use 8 or more characters with one uppercase letter and one number.</p>
+                  <p class="text-[10px] text-slate-500">8+ chars, 1 uppercase, 1 number.</p>
                 </div>
 
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="confirm">Confirm Password</label>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="confirm">Confirm Password</label>
                   <input
                     id="confirm"
                     v-model="form.confirm"
                     type="password"
-                    placeholder="Confirm password"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    placeholder="••••••••"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  class="h-12 w-full rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 font-semibold text-white transition-all hover:shadow-lg hover:shadow-blue-950/20 disabled:cursor-not-allowed disabled:opacity-70"
+                  class="h-12 w-full rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white active:scale-95 disabled:opacity-70"
                   :disabled="isSubmittingSignup"
                 >
-                  {{ isSubmittingSignup ? 'Creating Account...' : 'Create Account' }}
+                  {{ isSubmittingSignup ? 'Creating...' : 'Continue' }}
                 </button>
               </div>
 
-              <div v-else class="space-y-4">
-                <div class="rounded-2xl bg-blue-50 p-4 text-sm text-gray-700">
-                  <p class="font-medium text-gray-900">Email: {{ form.email || 'you@example.com' }}</p>
-                  <p class="mt-1">We sent a code to your email. Enter it below.</p>
-                  <p v-if="codeTimer !== null" class="mt-2 font-medium text-blue-700">You can request a new code in {{ countdown }}s</p>
+              <div v-else class="space-y-6">
+                <div class="rounded-2xl bg-cyan-500/10 border border-cyan-500/20 p-4 text-sm text-cyan-50/80 text-center">
+                    Verification code sent to <br> <span class="font-bold text-white">{{ form.email }}</span>
                 </div>
 
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="code">Verification Code</label>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="code">Verification Code</label>
                   <input
                     id="code"
                     v-model="form.code"
                     type="text"
-                    placeholder="Enter code"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    @keydown.enter.prevent="submitCode"
+                    placeholder="Enter 6-digit code"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 text-center tracking-[0.5em] font-black"
                   />
                 </div>
 
                 <button
                   type="button"
-                  class="h-12 w-full rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 font-semibold text-white transition-all hover:shadow-lg hover:shadow-blue-950/20 disabled:cursor-not-allowed disabled:opacity-70"
+                  class="h-12 w-full rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white active:scale-95 disabled:opacity-70"
                   :disabled="isVerifyingCode"
                   @click="submitCode"
                 >
-                  {{ isVerifyingCode ? 'Verifying...' : 'Verify Email' }}
+                  {{ isVerifyingCode ? 'Verifying...' : 'Verify & Create Account' }}
                 </button>
 
                 <button
                   type="button"
-                  class="h-12 w-full rounded-2xl border border-blue-200 font-semibold text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-blue-200 disabled:text-blue-300"
+                  class="w-full text-sm font-bold text-slate-500 hover:text-white transition-colors"
                   :disabled="codeTimer !== null || isSubmittingSignup"
                   @click="resendCode"
                 >
@@ -365,11 +340,11 @@ onBeforeUnmount(() => {
               </div>
             </form>
 
-            <div v-if="step === 1" class="mt-8 border-t border-gray-100 pt-6">
-              <div class="flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:whitespace-nowrap">
-                <p class="m-0 text-gray-600">Already have an account?</p>
-                <RouterLink replace to="/login" class="whitespace-nowrap font-semibold text-blue-600 hover:underline">Login</RouterLink>
-              </div>
+            <div v-if="step === 1" class="mt-10 pt-8 border-t border-white/5 text-center">
+                <p class="text-slate-500 text-sm font-medium">
+                    Already have an account? 
+                    <RouterLink replace to="/login" class="ml-1 text-cyan-400 font-bold hover:text-cyan-300 transition-colors">Sign in</RouterLink>
+                </p>
             </div>
           </div>
         </div>

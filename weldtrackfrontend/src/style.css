@@ -1,1 +1,111 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+.public-theme-page {
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.public-theme-page .theme-toggle {
+  border-color: rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(248 250 252);
+}
+
+.public-theme-page .theme-toggle:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.public-theme-page.theme-light,
+.public-theme-page.theme-light .bg-\[\#020617\] {
+  background-color: rgb(248 250 252) !important;
+  color: rgb(15 23 42) !important;
+}
+
+.public-theme-page.theme-light .bg-\[\#020617\]\/50 {
+  background-color: rgb(255 255 255 / 0.72) !important;
+}
+
+.public-theme-page.theme-light .bg-\[\#0f172a\]\/40,
+.public-theme-page.theme-light .bg-\[\#0f172a\]\/50,
+.public-theme-page.theme-light .bg-\[\#0f172a\]\/80 {
+  background-color: rgb(255 255 255 / 0.78) !important;
+}
+
+.public-theme-page.theme-light .from-\[\#020617\] {
+  --tw-gradient-from: #ffffff var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to) !important;
+}
+
+.public-theme-page.theme-light .via-\[\#0f172a\] {
+  --tw-gradient-via: #f8fafc var(--tw-gradient-via-position) !important;
+}
+
+.public-theme-page.theme-light .to-\[\#1e293b\] {
+  --tw-gradient-to: #e2e8f0 var(--tw-gradient-to-position) !important;
+}
+
+.public-theme-page.theme-light .bg-white\/5,
+.public-theme-page.theme-light .bg-white\/10 {
+  background-color: rgb(15 23 42 / 0.05) !important;
+}
+
+.public-theme-page.theme-light .border-white\/5,
+.public-theme-page.theme-light .border-white\/10 {
+  border-color: rgb(15 23 42 / 0.1) !important;
+}
+
+.public-theme-page.theme-light .text-slate-50,
+.public-theme-page.theme-light .text-white {
+  color: rgb(15 23 42) !important;
+}
+
+.public-theme-page.theme-light .text-slate-300,
+.public-theme-page.theme-light .text-slate-400,
+.public-theme-page.theme-light .text-slate-500 {
+  color: rgb(71 85 105) !important;
+}
+
+.public-theme-page.theme-light input {
+  border-color: rgb(15 23 42 / 0.12) !important;
+  background: rgb(255 255 255 / 0.82) !important;
+  color: rgb(15 23 42) !important;
+}
+
+.public-theme-page.theme-light input::placeholder {
+  color: rgb(100 116 139) !important;
+}
+
+.public-theme-page.theme-light .theme-toggle {
+  border-color: rgb(15 23 42 / 0.12);
+  background: rgb(255 255 255 / 0.88);
+  color: rgb(15 23 42);
+  box-shadow: 0 12px 30px rgb(15 23 42 / 0.12);
+}
+
+.public-theme-page.theme-light .theme-toggle:hover {
+  background: rgb(241 245 249);
+}
+
+.public-theme-page.theme-light .public-nav {
+  border-color: rgb(15 23 42 / 0.12) !important;
+  background: rgb(255 255 255 / 0.92) !important;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.08);
+}
+
+.public-theme-page.theme-light .public-mobile-menu {
+  border-color: rgb(15 23 42 / 0.12) !important;
+  background: rgb(255 255 255 / 0.96) !important;
+  box-shadow: 0 20px 40px rgb(15 23 42 / 0.12);
+}

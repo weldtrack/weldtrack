@@ -4,10 +4,13 @@ import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useModalStore } from '../../stores/modal'
 import { getUserFriendlyApiError } from '../../services/errorMessage'
+import ThemeToggle from '../../components/ui/ThemeToggle.vue'
+import { useThemeMode } from '../../composables/useThemeMode'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const modalStore = useModalStore()
+const { isDarkMode } = useThemeMode()
 
 const loginForm = reactive({ email: '', password: '' })
 const forgotPassword = ref(false)
@@ -27,12 +30,6 @@ const isResetActive = computed(() => forgotPassword.value && resetStep.value >= 
 const leaveWarningMessage = 'Progress data will be deleted if you go back. Leave this page?'
 const pendingRoute = ref<string | null>(null)
 const allowRouteLeave = ref(false)
-
-const resetStepClass = computed(() => ({
-  one: resetStep.value >= 1 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
-  two: resetStep.value >= 2 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
-  three: resetStep.value >= 3 ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300',
-}))
 
 function validatePassword(password: string) {
   if (password.length < 8) {
@@ -60,7 +57,6 @@ async function submitLogin() {
   isSubmittingLogin.value = true
 
   try {
-    // Clear stale auth before attempting login
     authStore.logout()
     
     await authStore.login({
@@ -237,272 +233,222 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-slate-950 p-4 text-slate-900 sm:p-6">
+  <div :class="['public-theme-page relative min-h-screen overflow-hidden bg-[#020617] p-4 text-slate-50 sm:p-6 lg:p-10', isDarkMode ? 'theme-dark' : 'theme-light']">
+    <!-- Background Elements -->
     <div class="pointer-events-none absolute inset-0">
-      <div class="absolute -left-20 top-16 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl"></div>
-      <div class="absolute right-0 top-24 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl"></div>
-      <div class="absolute bottom-0 left-1/2 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl"></div>
+      <div class="absolute -left-20 top-16 h-72 w-72 rounded-full bg-cyan-500/10 blur-[100px]"></div>
+      <div class="absolute right-0 top-24 h-96 w-96 rounded-full bg-blue-600/10 blur-[120px]"></div>
+      <div class="absolute bottom-0 left-1/2 h-80 w-80 rounded-full bg-emerald-500/5 blur-[80px]"></div>
+      <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
     </div>
 
-    <div class="relative mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center sm:min-h-[calc(100vh-3rem)]">
-      <div class="grid w-full overflow-hidden rounded-4xl border border-white/10 bg-white/95 shadow-2xl shadow-slate-950/60 backdrop-blur xl:grid-cols-[1.1fr_0.9fr]">
-        <div class="hidden flex-col justify-between bg-linear-to-br from-slate-950 via-blue-950 to-cyan-900 p-8 text-white xl:flex xl:p-10">
-          <div>
-            <div class="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-lg shadow-black/20">
-              <svg class="h-8 w-8 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="relative mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center sm:min-h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-5rem)]">
+      <div class="relative grid w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f172a]/40 shadow-2xl backdrop-blur-2xl xl:grid-cols-[1.1fr_0.9fr]">
+        <ThemeToggle class="absolute right-4 top-4 z-20 sm:right-6 sm:top-6" />
+        <!-- Left Side: Visual/Branding -->
+        <div class="relative hidden min-h-[38rem] overflow-hidden xl:flex">
+          <img
+            src="https://images.pexels.com/photos/15888227/pexels-photo-15888227.jpeg?cs=srgb&dl=pexels-hoang-nc-483165236-15888227.jpg&fm=jpg"
+            alt="Welder creating sparks"
+            class="absolute inset-0 h-full w-full object-cover"
+          />
+          <div class="absolute inset-0 bg-linear-to-br from-[#020617]/95 via-[#0f172a]/78 to-cyan-950/45"></div>
+          <div class="relative z-10 flex h-full w-full flex-col justify-between p-10">
+            <div>
+              <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-inner border border-white/10 backdrop-blur-sm">
+              <svg class="h-8 w-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
+              </div>
+              <div class="mb-4 inline-block rounded-full bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] text-cyan-300 uppercase backdrop-blur-sm">Secure Access</div>
+              <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight text-white">
+                Precision management <br> starts here.
+              </h1>
+              <p class="mt-6 max-w-sm text-lg leading-relaxed text-slate-200">
+                Enter your credentials to access the WeldTrack dashboard and manage your shop with unparalleled efficiency.
+              </p>
             </div>
-            <p class="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">WeldTrack Access</p>
-            <h1 class="max-w-md text-4xl font-extrabold leading-tight tracking-tight text-white">
-              Sign in to manage your workflow with confidence.
-            </h1>
-            <p class="mt-4 max-w-md text-base leading-7 text-slate-300">
-              Track inventory, approve bookings, monitor attendance, and keep operations moving from one secure dashboard.
-            </p>
-          </div>
 
-          <div class="grid grid-cols-1 gap-4 text-sm text-slate-200 lg:grid-cols-3">
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p class="text-2xl font-bold text-white">Fast</p>
-              <p class="mt-1 text-slate-300">Quick sign in</p>
-            </div>
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p class="text-2xl font-bold text-white">Secure</p>
-              <p class="mt-1 text-slate-300">Role-based access</p>
-            </div>
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p class="text-2xl font-bold text-white">Live</p>
-              <p class="mt-1 text-slate-300">Always synced data</p>
+            <div class="grid grid-cols-3 gap-6">
+              <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+              <div class="text-xl font-black text-white">Fast</div>
+              <div class="mt-1 text-xs font-bold text-slate-300 uppercase tracking-widest">Login</div>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+              <div class="text-xl font-black text-white">Safe</div>
+              <div class="mt-1 text-xs font-bold text-slate-300 uppercase tracking-widest">Encrypted</div>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+              <div class="text-xl font-black text-white">Live</div>
+              <div class="mt-1 text-xs font-bold text-slate-300 uppercase tracking-widest">Synced</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="flex items-center justify-center p-6 sm:p-8 xl:p-10">
-          <div class="w-full max-w-md rounded-3xl border border-slate-200/70 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8">
-            <div class="mb-8 text-center">
-              <div class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-600 to-cyan-500 shadow-lg shadow-blue-900/25">
-                <svg class="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-
-              <div class="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                Sign in
-              </div>
-
-              <h1 class="mt-4 mb-1 text-3xl font-extrabold tracking-tight text-gray-900">WeldTrack</h1>
-              <p class="text-sm text-gray-500 sm:text-base">Inventory Management System</p>
+        <!-- Right Side: Form -->
+        <div class="flex items-center justify-center p-8 sm:p-12 xl:p-16">
+          <div class="w-full max-w-sm">
+            <div class="mb-10 text-center xl:text-left">
+                <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 p-0.5 xl:hidden">
+                    <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-[#020617] text-xl">⚙️</div>
+                </div>
+                <h2 class="text-3xl font-black tracking-tight text-white">{{ forgotPassword ? 'Reset Password' : 'Welcome Back' }}</h2>
+                <p class="mt-2 text-slate-400">Please enter your details to continue.</p>
             </div>
 
             <form v-if="!forgotPassword" class="space-y-6" @submit.prevent="submitLogin">
-              <div v-if="loginError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div v-if="loginError" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400">
                 {{ loginError }}
               </div>
 
-              <div>
-                <label class="mb-1 block text-sm font-semibold text-gray-700" for="email">Email</label>
+              <div class="space-y-2">
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="email">Email Address</label>
                 <input
                   id="email"
                   v-model="loginForm.email"
-                  type="text"
-                  placeholder="Enter any email"
-                  class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  type="email"
+                  placeholder="name@company.com"
+                  class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                 />
               </div>
 
-              <div>
-                <label class="mb-1 block text-sm font-semibold text-gray-700" for="password">Password</label>
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="password">Password</label>
+                    <button type="button" class="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors" @click="openForgotPassword">
+                      Forgot?
+                    </button>
+                </div>
                 <input
                   id="password"
                   v-model="loginForm.password"
                   type="password"
-                  placeholder="Enter password"
-                  class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="••••••••"
+                  class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                 />
-                <div class="mt-2 text-right">
-                  <button type="button" class="text-sm font-medium text-blue-600 hover:underline" @click="openForgotPassword">
-                    Forgot password?
-                  </button>
-                </div>
               </div>
 
               <button
                 type="submit"
-                class="h-12 w-full rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 font-semibold text-white transition-all hover:shadow-lg hover:shadow-blue-950/20 disabled:cursor-not-allowed disabled:opacity-70"
+                class="group relative h-12 w-full overflow-hidden rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white hover:shadow-xl hover:shadow-white/10 active:scale-95 disabled:opacity-70 disabled:active:scale-100"
                 :disabled="isSubmittingLogin"
               >
-                {{ isSubmittingLogin ? 'Logging in...' : 'Login' }}
+                {{ isSubmittingLogin ? 'Signing in...' : 'Sign In' }}
               </button>
             </form>
 
-            <div v-else class="space-y-6">
-              <div class="mb-6">
-                <div class="flex items-start">
-                  <div class="flex flex-1 justify-center">
-                    <div class="flex flex-col items-center text-center">
-                      <div :class="['flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold', resetStepClass.one]">1</div>
-                      <div class="mt-2 text-xs text-gray-600">Email</div>
-                    </div>
-                  </div>
-
-                  <div class="mt-4.5 flex flex-1 items-center">
-                    <div class="h-1 w-full rounded-full bg-gray-200">
-                      <div class="h-1 rounded-full bg-green-500" :style="{ width: resetStep >= 2 ? '100%' : '50%' }"></div>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-1 justify-center">
-                    <div class="flex flex-col items-center text-center">
-                      <div :class="['flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold', resetStepClass.two]">2</div>
-                      <div class="mt-2 text-xs text-gray-600">Verify</div>
-                    </div>
-                  </div>
-
-                  <div class="mt-4.5 flex flex-1 items-center">
-                    <div class="h-1 w-full rounded-full bg-gray-200">
-                      <div class="h-1 rounded-full bg-green-500" :style="{ width: resetStep >= 3 ? '100%' : '0%' }"></div>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-1 justify-center">
-                    <div class="flex flex-col items-center text-center">
-                      <div :class="['flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold', resetStepClass.three]">3</div>
-                      <div class="mt-2 text-xs text-gray-600">New Password</div>
-                    </div>
-                  </div>
+            <div v-else class="space-y-8">
+              <div class="flex items-center gap-4 justify-between mb-2">
+                <div v-for="i in 3" :key="i" class="flex-1">
+                    <div :class="['h-1.5 rounded-full transition-all duration-500', resetStep >= i ? 'bg-cyan-500' : 'bg-white/10']"></div>
                 </div>
               </div>
 
-              <div v-if="resetStep === 1" class="space-y-4">
-                <div v-if="resetError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div v-if="resetStep === 1" class="space-y-6">
+                <div v-if="resetError" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
                   {{ resetError }}
                 </div>
-
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="reset-email">Email</label>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="reset-email">Recovery Email</label>
                   <input
                     id="reset-email"
                     v-model="resetForm.email"
                     type="email"
-                    placeholder="Enter email"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    @keydown.enter.prevent="verifyEmail"
+                    placeholder="Enter your email"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                   />
                 </div>
-
                 <button
                   type="button"
-                  class="h-12 w-full rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 font-semibold text-white transition-all hover:shadow-lg hover:shadow-blue-950/20 disabled:cursor-not-allowed disabled:opacity-70"
+                  class="h-12 w-full rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white active:scale-95 disabled:opacity-70"
                   :disabled="isSendingResetEmail"
                   @click="verifyEmail"
                 >
-                  {{ isSendingResetEmail ? 'Sending Code...' : 'Get Code' }}
+                  {{ isSendingResetEmail ? 'Sending Code...' : 'Get Reset Code' }}
                 </button>
               </div>
 
-              <div v-else-if="resetStep === 2" class="space-y-4">
-                <div v-if="resetError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div v-else-if="resetStep === 2" class="space-y-6">
+                <div v-if="resetError" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
                   {{ resetError }}
                 </div>
-
-                <div class="rounded-2xl bg-blue-50 p-4 text-sm text-gray-700">
-                  <p class="font-medium text-gray-900">Email: {{ resetForm.email || 'you@example.com' }}</p>
-                  <p class="mt-1">We sent a reset code to your email. Enter it below.</p>
-                  <p v-if="codeTimer !== null" class="mt-2 font-medium text-blue-700">You can request a new code in {{ countdown }}s</p>
+                <div class="rounded-2xl bg-cyan-500/10 border border-cyan-500/20 p-4 text-sm text-cyan-50/80">
+                  We sent a code to <span class="font-bold text-white">{{ resetForm.email }}</span>.
                 </div>
-
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="reset-code">Verification Code</label>
+                <div class="space-y-2">
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="reset-code">Verification Code</label>
                   <input
                     id="reset-code"
                     v-model="resetForm.code"
                     type="text"
-                    placeholder="Enter code"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    @keydown.enter.prevent="verifyCode"
+                    placeholder="Enter 6-digit code"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                   />
                 </div>
-
                 <button
                   type="button"
-                  class="h-12 w-full rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 font-semibold text-white transition-all hover:shadow-lg hover:shadow-blue-950/20 disabled:cursor-not-allowed disabled:opacity-70"
+                  class="h-12 w-full rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white active:scale-95 disabled:opacity-70"
                   :disabled="isVerifyingResetCode"
                   @click="verifyCode"
                 >
                   {{ isVerifyingResetCode ? 'Verifying...' : 'Verify Code' }}
                 </button>
-
                 <button
                   type="button"
-                  class="h-12 w-full rounded-2xl border border-blue-200 font-semibold text-blue-600 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-blue-200 disabled:text-blue-300"
+                  class="w-full text-sm font-bold text-slate-500 hover:text-white transition-colors"
                   :disabled="codeTimer !== null || isSendingResetEmail"
                   @click="verifyEmail"
                 >
                   <span v-if="codeTimer === null">Resend Code</span>
                   <span v-else>Resend in {{ countdown }}s</span>
                 </button>
-
-                <button type="button" class="text-sm font-medium text-gray-600 hover:underline" @click="closeForgotPassword">
-                  Back to login
-                </button>
               </div>
 
-              <div v-else class="space-y-4">
-                <div v-if="resetError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div v-else class="space-y-6">
+                <div v-if="resetError" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
                   {{ resetError }}
                 </div>
-
-                <div class="rounded-2xl bg-blue-50 p-4 text-sm text-gray-700">
-                  <p class="font-medium text-gray-900">Email: {{ resetForm.email || 'you@example.com' }}</p>
-                  <p class="mt-1">Set your new password below.</p>
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="new-password">New Password</label>
+                      <input
+                        id="new-password"
+                        v-model="resetForm.newPassword"
+                        type="password"
+                        class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                      />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="confirm-password">Confirm Password</label>
+                      <input
+                        id="confirm-password"
+                        v-model="resetForm.confirmPassword"
+                        type="password"
+                        class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                      />
+                    </div>
                 </div>
-
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="new-password">New Password</label>
-                  <input
-                    id="new-password"
-                    v-model="resetForm.newPassword"
-                    type="password"
-                    placeholder="Enter new password"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                  />
-                  <p class="mt-2 text-xs text-gray-500">Use 8 or more characters with one uppercase letter and one number.</p>
-                </div>
-
-                <div>
-                  <label class="mb-1 block text-sm font-semibold text-gray-700" for="confirm-password">Confirm Password</label>
-                  <input
-                    id="confirm-password"
-                    v-model="resetForm.confirmPassword"
-                    type="password"
-                    placeholder="Confirm new password"
-                    class="mt-1 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    @keydown.enter.prevent="submitNewPassword"
-                  />
-                </div>
-
                 <button
                   type="button"
-                  class="h-12 w-full rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 font-semibold text-white transition-all hover:shadow-lg hover:shadow-blue-950/20 disabled:cursor-not-allowed disabled:opacity-70"
+                  class="h-12 w-full rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white active:scale-95"
                   :disabled="isSavingNewPassword"
                   @click="submitNewPassword"
                 >
-                  {{ isSavingNewPassword ? 'Saving...' : 'Save New Password' }}
+                  {{ isSavingNewPassword ? 'Updating...' : 'Update Password' }}
                 </button>
               </div>
+
+              <button type="button" class="w-full text-center text-sm font-bold text-slate-500 hover:text-white transition-colors" @click="closeForgotPassword">
+                Return to Login
+              </button>
             </div>
 
-            <div v-if="!forgotPassword" class="mt-8 border-t border-gray-100 pt-6">
-              <div class="flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:whitespace-nowrap">
-                <p class="m-0 text-gray-600">Don't have an account?</p>
-                <RouterLink replace to="/signup" class="whitespace-nowrap font-semibold text-blue-600 hover:underline">Sign up</RouterLink>
-              </div>
+            <div v-if="!forgotPassword" class="mt-10 pt-8 border-t border-white/5 text-center">
+                <p class="text-slate-500 text-sm font-medium">
+                    Don't have an account? 
+                    <RouterLink replace to="/signup" class="ml-1 text-cyan-400 font-bold hover:text-cyan-300 transition-colors">Create one</RouterLink>
+                </p>
             </div>
           </div>
         </div>
