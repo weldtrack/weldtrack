@@ -1,49 +1,35 @@
 # WeldTrack
 
-WeldTrack is a comprehensive management system specifically designed for welding fabrication shops. It streamlines workflows by integrating inventory management, project tracking, staff task allocation, and customer booking into a single platform.
+WeldTrack is a centralized management system built for welding and fabrication businesses. It handles inventory management, project lifecycle tracking, staff coordination, and customer interactions in a single integrated platform.
 
-## 🚀 Overview
+## Architecture
 
-The project is split into two main components:
-- **Backend**: A robust FastAPI service handling business logic, database interactions, and authentication.
-- **Frontend**: A modern Vue 3 application providing a responsive and intuitive user interface for admins, staff, and customers.
+The system is split into two primary components:
+- **Backend:** A FastAPI service backed by PostgreSQL, handling business logic, automated reporting, and secure authentication.
+- **Frontend:** A Vue 3 SPA providing role-based dashboards for administrators, workshop staff, and customers.
 
-## 🛠 Tech Stack
-
-### Backend
-- **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
-- **ORM**: [SQLAlchemy](https://www.sqlalchemy.org/)
-- **Database**: [PostgreSQL](https://www.postgresql.org/)
-- **Authentication**: JWT (JSON Web Tokens)
-- **Email Service**: SendGrid
-
-### Frontend
-- **Framework**: [Vue 3](https://vuejs.org/) (Composition API)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **State Management**: [Pinia](https://pinia.vuejs.org/)
-- **Icons**: Lucide Vue Next
-
-## 📂 Project Structure
+## Project Structure
 
 ```
 weldtrack/
-├── weldtrackbackend/   # FastAPI application
-├── weldtrackfrontend/  # Vue.js application
-└── diagrams/           # System architecture and ERD diagrams
+├── weldtrackbackend/   # FastAPI / SQLAlchemy API
+├── weldtrackfrontend/  # Vue.js / Tailwind UI
+└── diagrams/           # System architecture and ERD documentation
 ```
 
-## 🚥 Getting Started
+## Quick Start
 
-For detailed setup instructions, please refer to the README files in the respective directories:
-- [Backend Setup](./weldtrackbackend/README.md)
-- [Frontend Setup](./weldtrackfrontend/README.md)
+Detailed setup instructions are provided within each component directory:
 
-## ✨ Key Features
+1.  **[Backend Setup](./weldtrackbackend/README.md):** Configure the Python environment, database, and SendGrid integration.
+2.  **[Frontend Setup](./weldtrackfrontend/README.md):** Install Node.js dependencies and configure the API endpoint.
 
-- **Inventory Management**: Track materials and stock levels.
-- **Project & Task Tracking**: Manage fabrication projects and staff assignments.
-- **Booking System**: Allow customers to book welding services online.
-- **Attendance**: Track staff daily attendance and contributions.
-- **Feedback & Reporting**: Collect customer feedback and generate business reports.
-- **Role-Based Access**: Specialized dashboards for Admins, Staff, and Customers.
+## Core Capabilities
+
+- **Inventory Tracking:** Real-time stock monitoring with low-stock alerts and movement logs.
+- **Project Lifecycle:** End-to-end management from customer booking and admin approval to staff task allocation and final completion.
+- **Role-Based Access Control:** Distinct workflows and data visibility for three primary roles:
+    - **Admins:** Full control over inventory, staff tasks, service pricing, and financial reporting.
+    - **Staff:** Attendance tracking, task updates, and material usage reporting from the field.
+    - **Customers:** Service booking, address management, and feedback submission.
+- **Automated Reporting:** Generates financial summaries, stock-in reports, and staff attendance data in PDF format.
