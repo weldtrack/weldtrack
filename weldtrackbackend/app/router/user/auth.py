@@ -23,7 +23,7 @@ from app.models.verification_code import EmailVerificationCode, EmailVerificatio
 from app.schemas.user import AuthResponse, LoginRequest, SignupRequest, UserRead
 from app.services.email import send_verification_email
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
 def get_user_response(user: User) -> UserRead:

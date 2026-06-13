@@ -6,7 +6,7 @@ from app.db import get_db
 from app.models.staffcontribution import StaffContributionSnapshot
 from app.models.stafftask import StaffTask, TaskStatus
 
-router = APIRouter(prefix="/staff-contributions", tags=["staff-contributions"])
+router = APIRouter(prefix="/api/staff-contributions", tags=["staff-contributions"])
 
 
 def backfill_missing_snapshots(db: Session) -> None:

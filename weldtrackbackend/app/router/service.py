@@ -10,7 +10,7 @@ from app.schemas.service import (
     ServiceResponse,
 )
 
-router = APIRouter(prefix="/services", tags=["services"])
+router = APIRouter(prefix="/api/services", tags=["services"])
 
 
 @router.get("", response_model=list[ServiceResponse])

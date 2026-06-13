@@ -8,7 +8,7 @@ from app.models.user import User, UserRole
 from app.schemas.attendance import AttendanceCheckIn, AttendanceCheckOut, AttendanceResponse
 from app.router.user.auth import get_current_user
 
-router = APIRouter(prefix="/attendance", tags=["attendance"])
+router = APIRouter(prefix="/api/attendance", tags=["attendance"])
 
 
 @router.get("", response_model=list[AttendanceResponse])

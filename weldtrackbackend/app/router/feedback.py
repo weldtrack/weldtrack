@@ -7,7 +7,7 @@ from app.models.user import User, UserRole
 from app.router.user.auth import get_current_user
 from app.schemas.feedback import FeedbackCreate, FeedbackUpdate, FeedbackResponse
 
-router = APIRouter(prefix="/feedbacks", tags=["feedbacks"])
+router = APIRouter(prefix="/api/feedbacks", tags=["feedbacks"])
 
 
 def ensure_customer_feedback_owner(feedback: Feedback, current_user: User) -> None:
