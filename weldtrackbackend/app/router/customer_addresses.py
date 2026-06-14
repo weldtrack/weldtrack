@@ -12,7 +12,7 @@ from app.schemas.customer_address import (
     CustomerAddressUpdate,
 )
 
-router = APIRouter(prefix="/api/customer-addresses", tags=["customer-addresses"])
+router = APIRouter(prefix="/customer-addresses", tags=["customer-addresses"])
 
 
 def require_customer(current_user: User) -> User:

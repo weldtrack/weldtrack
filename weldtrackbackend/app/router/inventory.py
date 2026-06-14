@@ -13,7 +13,7 @@ from app.schemas.inventory import (
     StockMovementResponse,
 )
 
-router = APIRouter(prefix="/api/inventory", tags=["inventory"])
+router = APIRouter(prefix="/inventory", tags=["inventory"])
 
 
 @router.get("", response_model=list[InventoryItemResponse])

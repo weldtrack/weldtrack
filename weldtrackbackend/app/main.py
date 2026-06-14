@@ -19,7 +19,8 @@ from app.bootstrap.admin import create_initial_admin
 # Run one-time admin bootstrap if appropriate
 create_initial_admin()
 
-app = FastAPI(title="Weldtrack")
+app = FastAPI(title="Weldtrack",root_path="/api")
+
 origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,

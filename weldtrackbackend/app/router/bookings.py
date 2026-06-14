@@ -12,7 +12,7 @@ from app.models.inventory import InventoryItem, StockMovement, MovementType
 from app.schemas.stafftask import TaskMaterialsCreate
 from app.schemas.inventory import StockMovementResponse
 
-router = APIRouter(prefix="/api/bookings", tags=["bookings"])
+router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
 @router.get("", response_model=list[BookingResponse])

@@ -8,7 +8,7 @@ from app.models.staffcontribution import StaffContributionSnapshot
 from app.schemas.stafftask import TaskCreate, TaskStatusUpdate, TaskOut
 from datetime import datetime
 
-router = APIRouter(prefix="/api/staff-tasks", tags=["staff-tasks"])
+router = APIRouter(prefix="/staff-tasks", tags=["staff-tasks"])
 
 
 def serialize_task(task: StaffTask) -> dict:
