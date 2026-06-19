@@ -1,8 +1,16 @@
 version: '3.8'
 
 services:
+  frontend:
+    image: ghcr.io/ruzzgd/weldtrack/frontend:latest
+    restart: always
+    ports:
+      - "8081:80"
+    networks:
+      - shared_network
+
   backend:
-    build: ./weldtrackbackend
+    image: ghcr.io/ruzzgd/weldtrack/backend:latest
     restart: always
     ports:
       - "8000:8000"
