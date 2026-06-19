@@ -37,6 +37,12 @@ app.add_middleware(
 
 app.include_router(router)
 
+@app.get("/")
+def root():
+    return {
+        "name": "weldtrack",
+        "status": "online"
+    }
 
 if __name__ == "__main__":
     import uvicorn
