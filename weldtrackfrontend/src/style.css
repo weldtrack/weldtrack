@@ -38,8 +38,94 @@ body {
 
 .public-theme-page.theme-light .bg-\[\#0f172a\]\/40,
 .public-theme-page.theme-light .bg-\[\#0f172a\]\/50,
+.public-theme-page.theme-light .bg-\[\#0f172a\]\/70,
 .public-theme-page.theme-light .bg-\[\#0f172a\]\/80 {
   background-color: rgb(255 255 255 / 0.78) !important;
+}
+
+.public-theme-page.theme-light .public-contact-panel {
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.96) 0%, rgb(241 245 249 / 0.96) 100%) !important;
+  border-color: rgb(15 23 42 / 0.12) !important;
+  box-shadow: 0 24px 80px rgb(15 23 42 / 0.12) !important;
+}
+
+.public-theme-page.theme-light .public-contact-overlay {
+  background: linear-gradient(135deg, rgb(224 242 254 / 0.7) 0%, rgb(255 255 255 / 0.9) 70%) !important;
+}
+
+.public-theme-page.theme-light .public-contact-noise {
+  opacity: 0.08 !important;
+  mix-blend-mode: multiply !important;
+}
+
+.public-theme-page.theme-light .public-contact-chip {
+  border-color: rgb(14 165 233 / 0.25) !important;
+  background: rgb(14 165 233 / 0.1) !important;
+  color: rgb(2 132 199) !important;
+}
+
+.public-theme-page.theme-light .public-contact-title {
+  color: rgb(15 23 42) !important;
+}
+
+.public-theme-page.theme-light .public-contact-copy {
+  color: rgb(51 65 85) !important;
+}
+
+.public-theme-page.theme-light .public-contact-card,
+.public-theme-page.theme-light .public-contact-bottom {
+  background: rgb(255 255 255 / 0.88) !important;
+  border-color: rgb(15 23 42 / 0.12) !important;
+}
+
+.public-theme-page.theme-light .public-contact-card:hover {
+  background: rgb(255 255 255 / 0.98) !important;
+}
+
+.public-theme-page.theme-light .public-contact-card .text-white,
+.public-theme-page.theme-light .public-contact-bottom .text-white {
+  color: rgb(15 23 42) !important;
+}
+
+.public-theme-page.theme-light .public-contact-card .text-slate-400,
+.public-theme-page.theme-light .public-contact-bottom .text-slate-500 {
+  color: rgb(71 85 105) !important;
+}
+
+.public-theme-page.theme-light .public-hero-title {
+  color: rgb(15 23 42) !important;
+}
+
+.public-theme-page.theme-light .public-hero-copy {
+  color: rgb(51 65 85) !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual {
+  filter: saturate(0.98) brightness(1.02);
+}
+
+.public-theme-page.theme-light .public-hero-visual .bg-\[\#0f172a\]\/75,
+.public-theme-page.theme-light .public-hero-visual .bg-slate-950\/70 {
+  background-color: rgb(255 255 255 / 0.9) !important;
+  border-color: rgb(15 23 42 / 0.1) !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .text-white {
+  color: rgb(15 23 42) !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .text-slate-300,
+.public-theme-page.theme-light .public-hero-visual .text-slate-400 {
+  color: rgb(71 85 105) !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .bg-cyan-500\/15 {
+  background-color: rgb(14 165 233 / 0.12) !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .bg-\[\#0f172a\]\/75 img,
+.public-theme-page.theme-light .public-hero-visual .bg-\[\#0f172a\]\/75 .public-hero-image {
+  filter: contrast(1.02) saturate(1.02);
 }
 
 .public-theme-page.theme-light .from-\[\#020617\] {

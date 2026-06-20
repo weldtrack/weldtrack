@@ -261,12 +261,12 @@ onBeforeUnmount(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               </div>
-              <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] !text-cyan-200 uppercase backdrop-blur-md">Secure Access</div>
+              <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] !text-cyan-200 uppercase backdrop-blur-md">Customer Access</div>
               <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight !text-white">
-                Precision management <br> starts here.
+                Access your <br> booking account.
               </h1>
               <p class="mt-6 max-w-sm text-lg leading-relaxed !text-slate-200">
-                Enter your credentials to access the WeldTrack dashboard and manage your shop with unparalleled efficiency.
+                Sign in to view your bookings, update your details, and continue your service requests.
               </p>
             </div>
 

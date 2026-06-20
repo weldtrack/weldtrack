@@ -215,12 +215,12 @@ onBeforeUnmount(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               </div>
-              <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] !text-cyan-200 uppercase backdrop-blur-md">Getting Started</div>
+              <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] !text-cyan-200 uppercase backdrop-blur-md">Create Your Account</div>
               <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight !text-white">
-                Elevate your <br> fabrication shop.
+                Book welding services <br> without the hassle.
               </h1>
               <p class="mt-6 max-w-sm text-lg leading-relaxed !text-slate-200">
-                Create your account in just two steps and join a community of professionals optimizing their welding workflows.
+                Create your customer account in just two steps, then book welding services and keep track of your requests in one place.
               </p>
             </div>
 
@@ -247,13 +247,13 @@ onBeforeUnmount(() => {
         <!-- Right Side: Form -->
         <div class="flex items-center justify-center p-8 sm:p-12 xl:p-16">
           <div class="w-full max-w-sm">
-            <div class="mb-10 text-center xl:text-left">
-                <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 p-0.5 xl:hidden">
-                    <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-[#020617] text-xl">⚙️</div>
-                </div>
+                <div class="mb-10 text-center xl:text-left">
+                    <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 p-0.5 xl:hidden">
+                        <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-[#020617] text-xl">⚙️</div>
+                    </div>
                 <h2 class="text-3xl font-black tracking-tight text-white">Create Account</h2>
-                <p class="mt-2 text-slate-400">Join WeldTrack today.</p>
-            </div>
+                <p class="mt-2 text-slate-400">Create your customer account to book welding services.</p>
+                </div>
 
             <form class="space-y-6" @submit.prevent="handleFormSubmit">
               <div v-if="signupError" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400">
@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
 
               <div v-if="step === 1" class="space-y-5">
                 <div class="space-y-2">
-                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="email">Work Email</label>
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="email">Email Address</label>
                   <input
                     id="email"
                     v-model="form.email"
