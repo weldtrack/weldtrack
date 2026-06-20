@@ -6,11 +6,11 @@ export type AdminSection =
   | 'projects'
   | 'booking'
   | 'addresses'
+  | 'services'
   | 'users'
   | 'booking-history'
   | 'feedback'
   | 'reports'
-  | 'services'
   | 'staff'
   | 'staff-attendance'
   | 'staff-tasks'
@@ -33,6 +33,13 @@ export const useAdminSectionStore = defineStore('admin-section', {
   state: () => ({
     section: getInitialSection() as AdminSection,
     selectedMaterial: null as null | { id: number; name: string; price: number; requestedQuantity?: number },
+    selectedService: null as null | {
+      id: number
+      name: string
+      description?: string | null
+      price: number
+      image_url?: string | null
+    },
   }),
   actions: {
     setSection(section: AdminSection) {
@@ -44,8 +51,14 @@ export const useAdminSectionStore = defineStore('admin-section', {
     setSelectedMaterial(payload: { id: number; name: string; price: number; requestedQuantity?: number }) {
       this.selectedMaterial = payload
     },
+    setSelectedService(payload: { id: number; name: string; description?: string | null; price: number; image_url?: string | null }) {
+      this.selectedService = payload
+    },
     clearSelectedMaterial() {
       this.selectedMaterial = null
+    },
+    clearSelectedService() {
+      this.selectedService = null
     },
   },
 })

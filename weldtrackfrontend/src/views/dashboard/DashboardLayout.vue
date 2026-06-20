@@ -66,6 +66,7 @@ const sidebarItems = computed<SidebarItem[]>(() => {
 
   if (normalizedRole.value === 'customer') {
     return [
+      { id: 'services', label: 'Services', icon: Briefcase },
       { id: 'booking', label: 'New Booking', icon: Calendar },
       { id: 'addresses', label: 'Addresses', icon: MapPin },
       { id: 'booking-history', label: 'Booking History', icon: Folder },
@@ -98,8 +99,8 @@ onMounted(() => {
     }
   }
 
-  if (normalizedRole.value === 'customer' && !['booking', 'addresses', 'booking-history', 'feedback'].includes(adminSectionStore.section)) {
-    adminSectionStore.setSection('booking')
+  if (normalizedRole.value === 'customer' && !['services', 'booking', 'addresses', 'booking-history', 'feedback'].includes(adminSectionStore.section)) {
+    adminSectionStore.setSection('services')
   }
 
   if (normalizedRole.value === 'staff' && !adminSectionStore.section.startsWith('staff')) {

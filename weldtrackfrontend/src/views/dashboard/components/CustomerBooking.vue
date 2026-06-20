@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Calendar } from 'lucide-vue-next'
 import { useAuthStore } from '../../../stores/auth'
+import { useAdminSectionStore } from '../../../stores/adminSection'
 import { useBookingsStore, type BookingItem } from '../../../stores/bookings'
 import { useCustomerAddressesStore } from '../../../stores/customerAddresses'
 import ModalShell from '../../../components/ui/ModalShell.vue'
@@ -9,6 +10,7 @@ import api from '../../../services/api'
 import { getServicePriceDisplay } from '../../../services/servicePricing'
 
 const auth = useAuthStore()
+const adminSectionStore = useAdminSectionStore()
 const bookingsStore = useBookingsStore()
 const addressesStore = useCustomerAddressesStore()
 
@@ -76,10 +78,23 @@ async function fetchServices() {
   }
 }
 
-onMounted(() => {
-  bookingsStore.fetchBookings()
-  addressesStore.fetchMyAddresses()
-  fetchServices()
+function prefillFromSelectedService() {
+  const selectedService = adminSectionStore.selectedService
+  if (!selectedService) return
+  if (loadingServices.value || services.value.length === 0) return
+
+  openDialogForService(selectedService.name, selectedService.description || '')
+  adminSectionStore.clearSelectedService()
+}
+
+onMounted(async () => {
+  await Promise.all([
+    bookingsStore.fetchBookings(),
+    addressesStore.fetchMyAddresses(),
+    fetchServices(),
+  ])
+
+  prefillFromSelectedService()
 })
 
 
@@ -102,6 +117,17 @@ function openDialog() {
     return
   }
   resetForm()
+  isDialogOpen.value = true
+}
+
+function openDialogForService(serviceName: string, description = '') {
+  if (loadingServices.value || services.value.length === 0) {
+    return
+  }
+
+  resetForm()
+  formData.projectType = serviceName
+  formData.description = description
   isDialogOpen.value = true
 }
 
