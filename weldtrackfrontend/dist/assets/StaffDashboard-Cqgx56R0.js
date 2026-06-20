@@ -1,1 +1,0 @@
-import{C as e,N as t,k as n,v as r,w as i}from"./index-DktyP7v0.js";import{i as a}from"./ServiceFeedback-B9w21RXq.js";import{t as o}from"./StaffWorkspace-BYULN24X.js";var s=i({__name:`StaffDashboard`,setup(i){return(i,s)=>(n(),r(a,{title:`Staff Dashboard`},{default:t(()=>[e(o)]),_:1}))}});export{s as default};

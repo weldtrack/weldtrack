@@ -35,7 +35,7 @@ const authStore = useAuthStore()
 const staffContributionsStore = useStaffContributionsStore()
 const isAdmin = computed(() => authStore.role === 'admin')
 
-const createStaffForm = reactive({ email: '', password: '', confirm: '' })
+const createStaffForm = reactive({ email: '', password: '', confirmPassword: '', confirm: false })
 const creatingStaff = ref(false)
 const createStaffError = ref('')
 const createStaffSuccess = ref('')
@@ -65,18 +65,18 @@ async function submitCreateStaff() {
   createStaffError.value = ''
   createStaffSuccess.value = ''
 
-  if (!createStaffForm.email || !createStaffForm.password || !createStaffForm.confirm) {
-    createStaffError.value = 'Email, password, and confirmation are required.'
+  if (!createStaffForm.email || !createStaffForm.password || !createStaffForm.confirmPassword || !createStaffForm.confirm) {
+    createStaffError.value = 'Email, password, confirmation, and acknowledgement are required.'
+    return
+  }
+
+  if (createStaffForm.password !== createStaffForm.confirmPassword) {
+    createStaffError.value = 'Passwords do not match.'
     return
   }
 
   if (createStaffForm.password.length < 8) {
     createStaffError.value = 'Password must be at least 8 characters long.'
-    return
-  }
-
-  if (createStaffForm.password !== createStaffForm.confirm) {
-    createStaffError.value = 'Passwords do not match.'
     return
   }
 
@@ -91,7 +91,8 @@ async function submitCreateStaff() {
       createStaffSuccess.value = 'Staff account created successfully.'
       createStaffForm.email = ''
       createStaffForm.password = ''
-      createStaffForm.confirm = ''
+      createStaffForm.confirmPassword = ''
+      createStaffForm.confirm = false
       await fetchStaffList()
     } else {
       createStaffError.value = data?.message || 'Unable to create staff account.'
@@ -255,8 +256,38 @@ onMounted(() => {
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <input v-model="createStaffForm.email" type="email" placeholder="staff@example.com" class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 sm:col-span-2" />
-          <input v-model="createStaffForm.password" type="password" placeholder="Password" class="min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
-          <input v-model="createStaffForm.confirm" type="password" placeholder="Confirm" class="min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
+          <div class="space-y-2 min-w-0">
+            <label class="text-xs font-bold uppercase tracking-widest text-gray-500" for="create-staff-password">Create Password</label>
+            <div class="group relative">
+              <input v-model="createStaffForm.password" id="create-staff-password" type="password" placeholder="••••••••" class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 pr-11" />
+              <div class="absolute inset-y-0 right-3 flex items-center">
+                <div class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-black text-gray-500 shadow-sm transition group-hover:border-green-500 group-hover:text-green-700 group-focus-within:border-green-500 group-focus-within:text-green-700">
+                  !
+                  <div class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-gray-200 bg-white px-3 py-2 text-left text-[11px] leading-snug text-gray-700 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
+                    Password must be 8+ characters and include 1 uppercase letter and 1 number.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2 min-w-0">
+            <label class="text-xs font-bold uppercase tracking-widest text-gray-500" for="create-staff-confirm-password">Confirm Password</label>
+            <input
+              v-model="createStaffForm.confirmPassword"
+              id="create-staff-confirm-password"
+              type="password"
+              placeholder="••••••••"
+              class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2"
+            />
+          </div>
+          <label class="flex min-w-0 items-start gap-3 rounded-xl border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700 sm:col-span-2">
+            <input
+              v-model="createStaffForm.confirm"
+              type="checkbox"
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span>I confirm this account creation.</span>
+          </label>
           <button :disabled="creatingStaff" @click="submitCreateStaff" class="mt-1 h-10 rounded-xl bg-green-600 px-4 font-semibold text-white hover:bg-green-700 disabled:opacity-60 sm:col-span-2">{{ creatingStaff ? 'Creating...' : 'Create Staff' }}</button>
         </div>
       </div>

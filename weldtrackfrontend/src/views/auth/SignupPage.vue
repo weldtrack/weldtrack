@@ -200,44 +200,45 @@ onBeforeUnmount(() => {
       <div class="relative grid w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f172a]/40 shadow-2xl backdrop-blur-2xl xl:grid-cols-[0.95fr_1.05fr]">
         <ThemeToggle class="absolute right-4 top-4 z-20 sm:right-6 sm:top-6" />
         <!-- Left Side: Visual/Branding -->
-        <div class="relative hidden min-h-[38rem] overflow-hidden xl:flex">
+        <div class="relative isolate hidden min-h-[38rem] overflow-hidden bg-slate-950 xl:flex">
           <img
             src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1600&auto=format&fit=crop"
             alt="Fabrication workshop"
             class="absolute inset-0 h-full w-full object-cover"
           />
-          <div class="absolute inset-0 bg-linear-to-br from-[#020617]/95 via-[#0f172a]/78 to-cyan-950/45"></div>
-          <div class="relative z-10 flex h-full w-full flex-col justify-between p-10">
+          <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(2,6,23,0.98)_0%,rgba(15,23,42,0.88)_48%,rgba(8,47,73,0.72)_100%)]"></div>
+          <div class="absolute inset-0 bg-slate-950/30 mix-blend-multiply"></div>
+          <div class="relative z-10 flex h-full w-full flex-col justify-between p-10 text-white">
             <div>
-              <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-inner border border-white/10 backdrop-blur-sm">
-              <svg class="h-8 w-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+              <svg class="h-8 w-8 !text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               </div>
-              <div class="mb-4 inline-block rounded-full bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] text-cyan-300 uppercase backdrop-blur-sm">Getting Started</div>
-              <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight text-white">
+              <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] !text-cyan-200 uppercase backdrop-blur-md">Getting Started</div>
+              <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight !text-white">
                 Elevate your <br> fabrication shop.
               </h1>
-              <p class="mt-6 max-w-sm text-lg leading-relaxed text-slate-200">
+              <p class="mt-6 max-w-sm text-lg leading-relaxed !text-slate-200">
                 Create your account in just two steps and join a community of professionals optimizing their welding workflows.
               </p>
             </div>
 
             <div class="grid grid-cols-3 gap-6 text-sm">
-              <div class="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
-                <div :class="['h-1 rounded-full', step >= 1 ? 'bg-cyan-500' : 'bg-white/10']"></div>
-                <div class="font-bold text-white">Step 1</div>
-                <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Details</div>
+              <div class="flex flex-col gap-2 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+                <div :class="['h-1 rounded-full', step >= 1 ? 'bg-cyan-400' : 'bg-white/10']"></div>
+                <div class="font-bold !text-white">Step 1</div>
+                <div class="text-[10px] font-bold !text-slate-300 uppercase tracking-widest">Details</div>
               </div>
-              <div class="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
-                <div :class="['h-1 rounded-full', step >= 2 ? 'bg-cyan-500' : 'bg-white/10']"></div>
-                <div class="font-bold text-white">Step 2</div>
-                <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Verify</div>
+              <div class="flex flex-col gap-2 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
+                <div :class="['h-1 rounded-full', step >= 2 ? 'bg-cyan-400' : 'bg-white/10']"></div>
+                <div class="font-bold !text-white">Step 2</div>
+                <div class="text-[10px] font-bold !text-slate-300 uppercase tracking-widest">Verify</div>
               </div>
-              <div class="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md">
+              <div class="flex flex-col gap-2 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
                 <div class="h-1 rounded-full bg-white/10"></div>
-                <div class="font-bold text-slate-300">Ready</div>
-                <div class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Access</div>
+                <div class="font-bold !text-slate-200">Ready</div>
+                <div class="text-[10px] font-bold !text-slate-300 uppercase tracking-widest">Access</div>
               </div>
             </div>
           </div>
@@ -273,14 +274,23 @@ onBeforeUnmount(() => {
 
                 <div class="space-y-2">
                   <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="password">Create Password</label>
-                  <input
-                    id="password"
-                    v-model="form.password"
-                    type="password"
-                    placeholder="••••••••"
-                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
-                  />
-                  <p class="text-[10px] text-slate-500">8+ chars, 1 uppercase, 1 number.</p>
+                  <div class="group relative">
+                    <input
+                      id="password"
+                      v-model="form.password"
+                      type="password"
+                      placeholder="••••••••"
+                      class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-11 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                    />
+                    <div class="absolute inset-y-0 right-3 flex items-center">
+                      <div class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-white/20 bg-white/5 text-[11px] font-black text-slate-300 shadow-sm transition group-hover:border-cyan-400/60 group-hover:text-cyan-200 group-focus-within:border-cyan-400/60 group-focus-within:text-cyan-200">
+                        !
+                        <div class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-left text-[11px] leading-snug text-slate-200 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
+                          Password must be 8+ characters and include 1 uppercase letter and 1 number.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="space-y-2">
@@ -296,7 +306,7 @@ onBeforeUnmount(() => {
 
                 <button
                   type="submit"
-                  class="h-12 w-full rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white active:scale-95 disabled:opacity-70"
+                  class="h-12 w-full rounded-xl border border-white/10 !bg-slate-900 font-bold !text-white shadow-lg shadow-slate-950/20 transition-all hover:!bg-slate-800 active:scale-95 disabled:opacity-70"
                   :disabled="isSubmittingSignup"
                 >
                   {{ isSubmittingSignup ? 'Creating...' : 'Continue' }}
@@ -321,7 +331,7 @@ onBeforeUnmount(() => {
 
                 <button
                   type="button"
-                  class="h-12 w-full rounded-xl bg-slate-50 font-bold text-[#020617] transition-all hover:bg-white active:scale-95 disabled:opacity-70"
+                  class="h-12 w-full rounded-xl border border-white/10 !bg-slate-900 font-bold !text-white shadow-lg shadow-slate-950/20 transition-all hover:!bg-slate-800 active:scale-95 disabled:opacity-70"
                   :disabled="isVerifyingCode"
                   @click="submitCode"
                 >
