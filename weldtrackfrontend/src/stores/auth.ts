@@ -1,13 +1,18 @@
 import { defineStore } from 'pinia'
-import api from '../services/api'
-import { requestEmailCode, verifyEmailCode } from '../services/emailAuth'
+import {
+  loginApi,
+  sendVerificationCodeApi,
+  signupApi,
+  confirmVerificationCodeApi,
+  fetchStaffDirectoryApi,
+  resetPasswordApi,
+} from '../services/auth'
+import type {
+  StaffDirectoryEntry,
+  StoredAuthState,
+} from '../types/auth'
 
 const AUTH_STORAGE_KEY = 'weldtrack-auth'
-
-type StaffDirectoryEntry = {
-  id: string
-  email: string
-}
 
 function readAuthState() {
   if (typeof window === 'undefined') {
@@ -31,12 +36,7 @@ function readAuthState() {
   }
 }
 
-function writeAuthState(state: {
-  token: string
-  email: string
-  role: string
-  isLoggedIn: boolean
-}) {
+function writeAuthState(state: StoredAuthState) {
   if (typeof window === 'undefined') {
     return
   }
@@ -62,10 +62,7 @@ export const useAuthStore = defineStore('auth', {
   }),
   actions: {
     async login(payload: { email: string; password: string }) {
-      const { data } = await api.post('/auth/login', {
-        email: payload.email,
-        password: payload.password,
-      })
+      const data = await loginApi(payload)
 
       this.setSession({
         token: data.access_token || '',
@@ -73,52 +70,24 @@ export const useAuthStore = defineStore('auth', {
         role: data.user?.role || 'customer',
       })
 
-      return data as {
-        success?: boolean
-        access_token?: string
-        user?: {
-          id?: number
-          email?: string
-          role?: string
-        }
-      }
+      return data
     },
 
     async sendVerificationCode(email: string) {
-      const { data } = await requestEmailCode(api, { email })
-      return data as { success?: boolean }
+      return await sendVerificationCodeApi(email)
     },
 
     async signup(payload: { email: string; password: string; role?: string }) {
-      const body: Record<string, string> = {
-        email: payload.email,
-        password: payload.password,
-      }
-      if (payload.role) body.role = payload.role
-
-      const { data } = await api.post('/auth/signup', body)
-      return data as { success?: boolean }
+      return await signupApi(payload)
     },
 
     async confirmVerificationCode(payload: { email: string; code: string; password?: string; action: 'changepassword' | 'createaccount' }) {
-      const { data } = await verifyEmailCode(api, payload)
-      return data as { 
-        success?: boolean
-        token?: string
-        email?: string
-        role?: string
-        access_token?: string
-        user?: {
-          id?: number
-          email?: string
-          role?: string
-        }
-      }
+      return await confirmVerificationCodeApi(payload)
     },
 
     async fetchStaffDirectory() {
       try {
-        const { data } = await api.get('/auth/staff')
+        const data = await fetchStaffDirectoryApi()
         this.staffDirectory = Array.isArray(data)
           ? data.map((user: { id?: number; email?: string }) => ({
               id: String(user.id ?? ''),
@@ -142,15 +111,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async resetPassword(payload: { email: string; code: string; password: string; password_confirmation?: string; passwordConfirmation?: string; confirm?: string }) {
-      const body: Record<string, string> = {
-        email: payload.email,
-        code: payload.code,
-        password: payload.password,
-        password_confirmation: payload.password_confirmation || payload.passwordConfirmation || payload.confirm || '',
-      }
-
-      const { data } = await api.post('/auth/forgot-password/reset', body)
-      return data as { success?: boolean }
+      return await resetPasswordApi(payload)
     },
 
     setSession(payload: {
