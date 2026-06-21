@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Clock } from 'lucide-vue-next'
-import { useAuthStore } from '../../../stores/auth'
-import { useBookingsStore } from '../../../stores/bookings'
-import { getUserFriendlyApiError } from '../../../services/errorMessage'
+import { useAuthStore } from '../../../../stores/auth'
+import { useBookingsStore } from '../../../../stores/bookings'
+import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import HistoryCard from './HistoryCard.vue'
 
 const authStore = useAuthStore()

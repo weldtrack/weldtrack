@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { Briefcase } from 'lucide-vue-next'
-import api from '../../../api/api'
-import { useAdminSectionStore } from '../../../stores/adminSection'
+import api from '../../../../api/api'
+import { useAdminSectionStore } from '../../../../stores/adminSection'
 
 interface Service {
   id: number

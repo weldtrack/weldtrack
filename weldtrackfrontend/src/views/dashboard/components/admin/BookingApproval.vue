@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { CalendarCheck } from 'lucide-vue-next'
-import { useBookingsStore } from '../../../stores/bookings'
-import { type BookingItem, type BookingStatus } from '../../../types/bookings'
-import { useInventoryStore } from '../../../stores/inventory'
-import { useModalStore } from '../../../stores/modal'
-import ModalShell from '../../../components/ui/ModalShell.vue'
-import { getUserFriendlyApiError } from '../../../services/errorMessage'
-import api from '../../../api/api'
+import { useBookingsStore } from '../../../../stores/bookings'
+import { type BookingItem, type BookingStatus } from '../../../../types/bookings'
+import { useInventoryStore } from '../../../../stores/inventory'
+import { useModalStore } from '../../../../stores/modal'
+import ModalShell from '../../../../components/ui/ModalShell.vue'
+import { getUserFriendlyApiError } from '../../../../services/errorMessage'
+import api from '../../../../api/api'
 
 const bookingsStore = useBookingsStore()
 const inventoryStore = useInventoryStore()

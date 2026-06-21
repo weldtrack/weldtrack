@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Briefcase } from 'lucide-vue-next'
-import api from '../../../api/api'
-import { useModalStore } from '../../../stores/modal'
-import ModalShell from '../../../components/ui/ModalShell.vue'
+import api from '../../../../api/api'
+import { useModalStore } from '../../../../stores/modal'
+import ModalShell from '../../../../components/ui/ModalShell.vue'
 
 interface Service {
   id: number

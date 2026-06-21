@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Calendar } from 'lucide-vue-next'
-import { useAuthStore } from '../../../stores/auth'
-import { useAdminSectionStore } from '../../../stores/adminSection'
-import { useBookingsStore } from '../../../stores/bookings'
-import { type BookingItem } from '../../../types/bookings'
-import { useCustomerAddressesStore } from '../../../stores/customerAddresses'
-import ModalShell from '../../../components/ui/ModalShell.vue'
-import api from '../../../api/api'
-import { getServicePriceDisplay } from '../../../services/servicePricing'
+import { useAuthStore } from '../../../../stores/auth'
+import { useAdminSectionStore } from '../../../../stores/adminSection'
+import { useBookingsStore } from '../../../../stores/bookings'
+import { type BookingItem } from '../../../../types/bookings'
+import { useCustomerAddressesStore } from '../../../../stores/customerAddresses'
+import ModalShell from '../../../../components/ui/ModalShell.vue'
+import api from '../../../../api/api'
+import { getServicePriceDisplay } from '../../../../services/servicePricing'
 
 const auth = useAuthStore()
 const adminSectionStore = useAdminSectionStore()

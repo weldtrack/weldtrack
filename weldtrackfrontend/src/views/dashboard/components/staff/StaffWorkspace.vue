@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import axios from 'axios'
-import { useAdminSectionStore } from '../../../stores/adminSection'
-import { useAuthStore } from '../../../stores/auth'
-import { useStaffContributionsStore } from '../../../stores/staffContributions'
-import api from '../../../api/api'
-import { getUserFriendlyApiError } from '../../../services/errorMessage'
-import ModalShell from '../../../components/ui/ModalShell.vue'
+import { useAdminSectionStore } from '../../../../stores/adminSection'
+import { useAuthStore } from '../../../../stores/auth'
+import { useStaffContributionsStore } from '../../../../stores/staffContributions'
+import api from '../../../../api/api'
+import { getUserFriendlyApiError } from '../../../../services/errorMessage'
+import ModalShell from '../../../../components/ui/ModalShell.vue'
 import StaffAttendance from './StaffAttendance.vue'
 import StaffTasks from './StaffTasks.vue'
-import ServiceFeedback from './ServiceFeedback.vue'
+import ServiceFeedback from '../shared/ServiceFeedback.vue'
 
 type StaffTab = 'attendance' | 'tasks' | 'contributions' | 'feedback' | 'create'
 

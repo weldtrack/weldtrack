@@ -12,11 +12,11 @@
 
 <script setup lang="ts">
 import Layout from './DashboardLayout.vue'
-import CustomerServicesBrowse from './components/CustomerServicesBrowse.vue'
-import CustomerBooking from './components/CustomerBooking.vue'
-import CustomerAddresses from './components/CustomerAddresses.vue'
-import BookingHistory from './components/BookingHistory.vue'
-import ServiceFeedback from './components/ServiceFeedback.vue'
+import CustomerServicesBrowse from './components/customer/CustomerServicesBrowse.vue'
+import CustomerBooking from './components/customer/CustomerBooking.vue'
+import CustomerAddresses from './components/customer/CustomerAddresses.vue'
+import BookingHistory from './components/customer/BookingHistory.vue'
+import ServiceFeedback from './components/shared/ServiceFeedback.vue'
 import { useAdminSectionStore } from '../../stores/adminSection'
 
 const adminSectionStore = useAdminSectionStore()

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Clock } from 'lucide-vue-next'
-import { useInventoryStore } from '../../../stores/inventory'
-import { getServicePriceDisplay } from '../../../services/servicePricing'
+import { useInventoryStore } from '../../../../stores/inventory'
+import { getServicePriceDisplay } from '../../../../services/servicePricing'
 
 const { item } = defineProps<{ item: any }>()
 const inventoryStore = useInventoryStore()

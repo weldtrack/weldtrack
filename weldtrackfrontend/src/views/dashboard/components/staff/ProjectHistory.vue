@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Folder } from 'lucide-vue-next'
-import { useBookingsStore } from '../../../stores/bookings'
-import { getUserFriendlyApiError } from '../../../services/errorMessage'
-import HistoryCard from './HistoryCard.vue'
+import { useBookingsStore } from '../../../../stores/bookings'
+import { getUserFriendlyApiError } from '../../../../services/errorMessage'
+import HistoryCard from '../customer/HistoryCard.vue'
 
 const bookingsStore = useBookingsStore()
 const loadError = ref('')

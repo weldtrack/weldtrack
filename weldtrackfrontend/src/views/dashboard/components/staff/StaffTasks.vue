@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Clipboard } from 'lucide-vue-next'
-import { useAuthStore } from '../../../stores/auth'
-import { useStaffTasksStore } from '../../../stores/staffTasks'
-import { type TaskStatus } from '../../../types/staffTasks'
-import { useInventoryStore } from '../../../stores/inventory'
-import api from '../../../api/api'
-import { useBookingsStore } from '../../../stores/bookings'
-import { useModalStore } from '../../../stores/modal'
-import ModalShell from '../../../components/ui/ModalShell.vue'
+import { useAuthStore } from '../../../../stores/auth'
+import { useStaffTasksStore } from '../../../../stores/staffTasks'
+import { type TaskStatus } from '../../../../types/staffTasks'
+import { useInventoryStore } from '../../../../stores/inventory'
+import api from '../../../../api/api'
+import { useBookingsStore } from '../../../../stores/bookings'
+import { useModalStore } from '../../../../stores/modal'
+import ModalShell from '../../../../components/ui/ModalShell.vue'
 
 interface StaffMember {
   id: string

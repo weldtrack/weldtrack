@@ -3,12 +3,12 @@ import { computed, onMounted, ref } from 'vue'
 import { BarChart2 } from 'lucide-vue-next'
 import html2pdf from 'html2pdf.js'
 import axios from 'axios'
-import api from '../../../api/api'
-import { useBookingsStore } from '../../../stores/bookings'
-import { useInventoryStore } from '../../../stores/inventory'
-import { useModalStore } from '../../../stores/modal'
-import { getUserFriendlyApiError } from '../../../services/errorMessage'
-import { getServicePriceDisplay } from '../../../services/servicePricing'
+import api from '../../../../api/api'
+import { useBookingsStore } from '../../../../stores/bookings'
+import { useInventoryStore } from '../../../../stores/inventory'
+import { useModalStore } from '../../../../stores/modal'
+import { getUserFriendlyApiError } from '../../../../services/errorMessage'
+import { getServicePriceDisplay } from '../../../../services/servicePricing'
 
 interface AttendanceRecord {
   id: number

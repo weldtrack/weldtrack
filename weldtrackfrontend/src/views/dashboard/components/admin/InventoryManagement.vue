@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Archive } from 'lucide-vue-next'
-import { useInventoryStore } from '../../../stores/inventory'
-import { type InventoryItem } from '../../../types/inventory'
-import { useModalStore } from '../../../stores/modal'
-import ModalShell from '../../../components/ui/ModalShell.vue'
+import { useInventoryStore } from '../../../../stores/inventory'
+import { type InventoryItem } from '../../../../types/inventory'
+import { useModalStore } from '../../../../stores/modal'
+import ModalShell from '../../../../components/ui/ModalShell.vue'
 
 const store = useInventoryStore()
 const modalStore = useModalStore()

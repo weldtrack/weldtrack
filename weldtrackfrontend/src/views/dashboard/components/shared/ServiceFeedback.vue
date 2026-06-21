@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Star } from 'lucide-vue-next'
-import { useAuthStore } from '../../../stores/auth'
-import { useFeedbackStore } from '../../../stores/feedback'
-import { useModalStore } from '../../../stores/modal'
-import ModalShell from '../../../components/ui/ModalShell.vue'
+import { useAuthStore } from '../../../../stores/auth'
+import { useFeedbackStore } from '../../../../stores/feedback'
+import { useModalStore } from '../../../../stores/modal'
+import ModalShell from '../../../../components/ui/ModalShell.vue'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
