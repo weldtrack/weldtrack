@@ -199,11 +199,26 @@ function handleLogout() {
           <component :is="isSidebarMetaCollapsed ? ChevronDown : ChevronUp" class="h-4 w-4 text-slate-300" />
         </button>
 
-        <div v-show="!isSidebarMetaCollapsed" class="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
-          <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">{{ roleLabel }}</p>
-          <p class="mt-1 text-sm font-medium text-white">{{ roleHint }}</p>
+        <div v-show="!isSidebarMetaCollapsed" class="mt-4 space-y-4">
+          <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
+            <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">{{ roleLabel }}</p>
+            <p class="mt-1 text-sm font-medium text-white">{{ roleHint }}</p>
+          </div>
         </div>
       </div>
+      
+      <div v-show="!isSidebarMetaCollapsed" class="px-5 py-4 mt-auto">
+        <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold text-white">
+              {{ authStore.email?.slice(0, 1).toUpperCase() || 'U' }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-white" :title="authStore.email || 'Guest'">{{ authStore.email || 'Guest' }}</p>
+              <p class="truncate text-xs text-slate-400 capitalize">{{ authStore.role || 'customer' }}</p>
+            </div>
+        </div>
+      </div>
+
 
       <div v-show="!isSidebarMetaCollapsed" class="border-b border-white/10 px-5 py-4 lg:px-6">
         <p class="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Current Dashboard</p>
@@ -213,6 +228,7 @@ function handleLogout() {
           Signed in as <span class="capitalize text-white">{{ authStore.role || 'customer' }}</span>
         </div>
       </div>
+
 
       <nav v-if="sidebarItems.length" class="sidebar-nav min-h-0 flex-1 overflow-y-auto px-4 py-4 lg:px-5">
         <div class="mb-3 flex items-center justify-between px-2">
@@ -249,16 +265,6 @@ function handleLogout() {
       </nav>
 
       <div class="border-t border-white/10 px-5 py-5 lg:px-6 lg:pb-6">
-        <div class="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold text-white">
-            {{ authStore.email?.slice(0, 1).toUpperCase() || 'U' }}
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium text-white">{{ authStore.email || 'Guest' }}</p>
-            <p class="truncate text-xs text-slate-400 capitalize">{{ authStore.role || 'customer' }}</p>
-          </div>
-        </div>
-
         <button
           type="button"
           class="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-rose-400/20 hover:bg-rose-500/10 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
