@@ -1,22 +1,5 @@
 import { defineStore } from 'pinia'
-
-export type AdminSection =
-  | 'dashboard'
-  | 'inventory'
-  | 'projects'
-  | 'booking'
-  | 'addresses'
-  | 'services'
-  | 'users'
-  | 'booking-history'
-  | 'feedback'
-  | 'reports'
-  | 'staff'
-  | 'staff-attendance'
-  | 'staff-tasks'
-  | 'staff-contributions'
-  | 'staff-feedback'
-  | 'staff-create'
+import type { AdminSection } from '../types/adminSection'
 
 const STORAGE_KEY = 'weldtrack-admin-section'
 

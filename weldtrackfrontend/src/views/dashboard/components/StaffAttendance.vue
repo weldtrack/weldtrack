@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Calendar } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore } from '../../../stores/auth'
-import api from '../../../services/api'
+import api from '../../../api/api'
 import { getUserFriendlyApiError } from '../../../services/errorMessage'
 import ModalShell from '../../../components/ui/ModalShell.vue'
 

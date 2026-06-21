@@ -1,5 +1,5 @@
 import api from './api'
-import { requestEmailCode, verifyEmailCode } from './emailAuth'
+import { requestEmailCode, verifyEmailCode } from '../services/emailAuth'
 import type {
   LoginPayload,
   LoginResponse,

@@ -6,7 +6,7 @@ import {
   confirmVerificationCodeApi,
   fetchStaffDirectoryApi,
   resetPasswordApi,
-} from '../services/auth'
+} from '../api/auth'
 import type {
   StaffDirectoryEntry,
   StoredAuthState,

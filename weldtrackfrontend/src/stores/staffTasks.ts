@@ -1,73 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import api from '../services/api'
-
-export type TaskStatus = 'pending' | 'in-progress' | 'done'
-
-export interface StaffTask {
-  id: string
-  bookingId: number | null
-  projectName: string
-  title: string
-  description: string
-  assignedStaffIds: string[]
-  assignedStaffEmails: string[]
-  assignedAt: string
-  dueDate: string
-  status: TaskStatus
-  location: {
-    country: 'PH'
-    region: 'Bicol Region (Region V)'
-    province: string
-    municipality: string
-    barangay: string
-    house: string
-  }
-}
-
-type BackendStaffTask = {
-  id: string
-  bookingId?: number | null
-  projectName: string
-  title: string
-  description?: string | null
-  assignedStaffIds: number[]
-  assignedStaffEmails?: string[]
-  assignedAt: string
-  dueDate: string
-  status: TaskStatus
-  location: {
-    country?: 'PH'
-    region?: 'Bicol Region (Region V)'
-    province: string
-    municipality: string
-    barangay: string
-    house: string
-  }
-}
-
-function toStaffTask(task: BackendStaffTask): StaffTask {
-  return {
-    id: task.id,
-    bookingId: task.bookingId ?? null,
-    projectName: task.projectName,
-    title: task.title,
-    description: task.description ?? '',
-    assignedStaffIds: Array.isArray(task.assignedStaffIds) ? task.assignedStaffIds.map(String) : [],
-    assignedStaffEmails: Array.isArray(task.assignedStaffEmails) ? task.assignedStaffEmails.filter(Boolean) : [],
-    assignedAt: task.assignedAt,
-    dueDate: task.dueDate,
-    status: task.status,
-    location: {
-      country: task.location.country ?? 'PH',
-      region: task.location.region ?? 'Bicol Region (Region V)',
-      province: task.location.province,
-      municipality: task.location.municipality,
-      barangay: task.location.barangay,
-      house: task.location.house,
-    },
-  }
-}
+import type { StaffTask, TaskStatus } from '../types/staffTasks'
+import * as staffTaskService from '../api/staffTasks'
 
 export const useStaffTasksStore = defineStore('staff-tasks', {
   state: () => ({
@@ -76,13 +10,7 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
   actions: {
     async fetchTasks(params?: { status?: TaskStatus }) {
       try {
-        const { data } = await api.get<BackendStaffTask[]>('/staff-tasks', {
-          params: {
-            status: params?.status,
-          },
-        })
-
-        this.tasks = Array.isArray(data) ? data.map(toStaffTask) : []
+        this.tasks = await staffTaskService.fetchTasks(params)
         return this.tasks
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -107,29 +35,13 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
         house: string
       }
     }) {
-      const { data } = await api.post<BackendStaffTask>('/staff-tasks', {
-        bookingId: payload.bookingId ?? null,
-        projectName: payload.projectName,
-        title: payload.title,
-        description: payload.description,
-        assignedStaffIds: payload.assignedStaffIds.map((id) => Number(id)),
-        dueDate: payload.dueDate,
-        location: {
-          province: payload.location.province,
-          municipality: payload.location.municipality,
-          barangay: payload.location.barangay,
-          house: payload.location.house,
-        },
-      })
-
-      const created = toStaffTask(data)
+      const created = await staffTaskService.assignTask(payload)
       this.tasks.unshift(created)
       return created
     },
 
     async updateTaskStatus(taskId: string, status: TaskStatus) {
-      const { data } = await api.put<BackendStaffTask>(`/staff-tasks/${taskId}/status`, { status })
-      const updated = toStaffTask(data)
+      const updated = await staffTaskService.updateTaskStatus(taskId, status)
       const index = this.tasks.findIndex((item) => item.id === taskId)
       if (index !== -1) {
         this.tasks[index] = updated
@@ -138,7 +50,7 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
     },
 
     async removeTask(taskId: string) {
-      await api.delete(`/staff-tasks/${taskId}`)
+      await staffTaskService.removeTask(taskId)
       this.tasks = this.tasks.filter((item) => item.id !== taskId)
     },
   },

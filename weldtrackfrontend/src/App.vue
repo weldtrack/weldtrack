@@ -12,7 +12,7 @@
 import { onMounted } from 'vue'
 import GlobalLoading from './components/ui/GlobalLoading.vue'
 import GlobalModal from './components/ui/GlobalModal.vue'
-import api from './services/api'
+import api from './api/api'
 import { useAuthStore } from './stores/auth'
 import { useRouter } from 'vue-router'
 

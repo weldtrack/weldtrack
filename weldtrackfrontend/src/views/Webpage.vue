@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import api from '../services/api'
+import api from '../api/api'
 import ThemeToggle from '../components/ui/ThemeToggle.vue'
 import { useThemeMode } from '../composables/useThemeMode'
 

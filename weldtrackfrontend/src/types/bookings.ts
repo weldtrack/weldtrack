@@ -1,0 +1,75 @@
+export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
+
+export interface BookingItem {
+  id: number
+  customerName?: string
+  projectType: string
+  email?: string
+  phone?: string
+  createdDate?: string
+  preferredDate?: string
+  scheduleDate?: string
+  estimatedCost?: number
+  materialCost?: number
+  totalPrice?: number
+  description?: string
+  cancelReason?: string
+  cancelledBy?: 'admin' | 'customer'
+  status: BookingStatus
+  materials?: Array<{
+    id?: string
+    itemId: string
+    name: string
+    qty: number
+    unitPrice: number
+    subtotal: number
+  }>
+  beforeImages?: string[]
+  afterImages?: string[]
+  location?: {
+    country?: string
+    region?: string
+    province?: string
+    municipality?: string
+    barangay?: string
+    house?: string
+  }
+}
+
+export type BackendMaterial = {
+  id?: number
+  booking_id?: number
+  item_id: string
+  name: string
+  qty: number
+  unit_price: number
+  subtotal: number
+  is_temp?: boolean
+}
+
+export type BackendBooking = {
+  id: number
+  customer_name?: string
+  project_type: string
+  email?: string
+  phone?: string
+  created_date?: string
+  preferred_date?: string
+  schedule_date?: string
+  estimated_cost?: number
+  material_cost?: number
+  total_price?: number
+  description?: string
+  cancel_reason?: string
+  cancelled_by?: 'admin' | 'customer'
+  status: BookingStatus
+  materials?: BackendMaterial[]
+  before_images?: string[]
+  after_images?: string[]
+  country?: string
+  region?: string
+  province?: string
+  municipality?: string
+  barangay?: string
+  house?: string
+}

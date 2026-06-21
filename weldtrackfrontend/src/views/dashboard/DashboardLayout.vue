@@ -20,9 +20,10 @@ import {
   Users,
   X,
 } from 'lucide-vue-next'
-import api from '../../services/api'
+import api from '../../api/api'
 import { useAuthStore } from '../../stores/auth'
-import { useAdminSectionStore, type AdminSection } from '../../stores/adminSection'
+import { useAdminSectionStore } from '../../stores/adminSection'
+import { type AdminSection } from '../../types/adminSection'
 
 const props = defineProps<{ title: string }>()
 

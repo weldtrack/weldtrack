@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import ModalShell from '../../../components/ui/ModalShell.vue'
-import { useCustomerAddressesStore, type CustomerAddressItem } from '../../../stores/customerAddresses'
+import { useCustomerAddressesStore } from '../../../stores/customerAddresses'
+import { type CustomerAddressItem } from '../../../types/customerAddresses'
 import { Plus, MapPin, Check, Edit2, Trash2 } from 'lucide-vue-next'
 
 const addressesStore = useCustomerAddressesStore()

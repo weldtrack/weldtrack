@@ -1,4 +1,4 @@
-import api from './api'
+import api from '../api/api'
 
 let cachedServicePriceMap: Record<string, number> | null = null
 let loadingPromise: Promise<Record<string, number>> | null = null

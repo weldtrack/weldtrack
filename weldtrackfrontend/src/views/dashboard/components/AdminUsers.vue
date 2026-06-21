@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Users } from 'lucide-vue-next'
-import api from '../../../services/api'
+import api from '../../../api/api'
 
 type User = {
   id: number
