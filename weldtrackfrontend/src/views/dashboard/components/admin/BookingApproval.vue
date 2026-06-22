@@ -36,6 +36,22 @@ const cancelForm = reactive({
 })
 const servicePriceMap = ref<Record<string, number>>({})
 
+// --- DATE RESTRICTION LOGIC ---
+
+// Blocks any date before today
+const minDate = computed(() => {
+  return new Date().toISOString().split('T')[0]
+})
+
+// Blocks any date further than 1 month from today
+const maxDate = computed(() => {
+  const date = new Date()
+  date.setMonth(date.getMonth() + 1)
+  return date.toISOString().split('T')[0]
+})
+
+// ------------------------------
+
 function normalizeServiceName(value: string) {
   return value.trim().toLowerCase()
 }
@@ -85,15 +101,15 @@ function getStatusLabel(status: BookingStatus) {
 function getStatusClass(status: BookingStatus) {
   switch (status) {
     case 'pending':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'bg-yellow-50 text-yellow-800 ring-yellow-600/20'
     case 'confirmed':
-      return 'bg-blue-100 text-blue-800'
+      return 'bg-blue-50 text-blue-800 ring-blue-600/20'
     case 'completed':
-      return 'bg-green-100 text-green-800'
+      return 'bg-green-50 text-green-800 ring-green-600/20'
     case 'cancelled':
-      return 'bg-red-100 text-red-800'
+      return 'bg-red-50 text-red-800 ring-red-600/10'
     default:
-      return 'bg-gray-100 text-gray-700'
+      return 'bg-gray-50 text-gray-700 ring-gray-600/10'
   }
 }
 
@@ -147,6 +163,26 @@ function closeCancelModal() {
 
 async function confirmApproval() {
   if (!selectedBooking.value) return
+
+  // Guard Clauses for strict date enforcement
+  if (!approvalForm.scheduleDate) {
+    modalStore.open({
+      title: 'Missing Date',
+      message: 'Please pick a schedule date before confirming.',
+      variant: 'error',
+    })
+    return
+  }
+
+  if (approvalForm.scheduleDate < minDate.value || approvalForm.scheduleDate > maxDate.value) {
+    modalStore.open({
+      title: 'Invalid Date Choice',
+      message: 'The selected date falls outside the allowed limits (Today up to 1 month ahead).',
+      variant: 'error',
+    })
+    return
+  }
+
   const patch = {
     scheduleDate: approvalForm.scheduleDate,
     estimatedCost: getLaborPriceFor(selectedBooking.value.projectType),
@@ -178,7 +214,7 @@ const computedCompletionTotal = computed(() => {
 
 async function confirmComplete() {
   if (!selectedBooking.value) return
-  
+
   if (!hasStaffMaterialSubmission(selectedBooking.value.id)) {
     modalStore.open({
       title: 'No materials recorded',
@@ -190,7 +226,7 @@ async function confirmComplete() {
     })
     return
   }
-  
+
   completeBookingForce()
 }
 
@@ -212,7 +248,7 @@ async function completeBookingForce() {
 async function loadMaterialsForBooking() {
   if (!selectedBooking.value) return
   const bookingId = Number(selectedBooking.value.id)
-  
+
   try {
     const remote = await bookingsStore.getBooking(bookingId)
     if (remote && Array.isArray(remote.materials)) {
@@ -246,7 +282,7 @@ async function loadMaterialsForBooking() {
     return
   }
   const movements = inventoryStore.getMovementsForBooking(bookingId)
-  
+
   let total = 0
   movements.forEach((m) => {
     if (m.type === 'stock-out') {
@@ -276,7 +312,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
   <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
           <CalendarCheck class="h-5 w-5 text-sky-600" />
         </div>
         <div>
@@ -301,69 +338,68 @@ function getDisplayedLaborCost(booking: BookingItem) {
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-lg border border-gray-200">
+    <div class="overflow-hidden rounded-xl border border-gray-200">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-245 table-fixed">
-          <thead class="bg-gray-50">
-            <tr class="border-b border-gray-200 text-left">
-              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Email/Contact No.</th>
-              <th class="w-3/12 px-6 py-4 text-sm font-semibold text-gray-700">Service</th>
-              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Booked On</th>
-              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Schedule</th>
-              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Cost Summary</th>
-              <th class="w-1/12 px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
-              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+        <table class="w-full min-w-300 divide-y divide-gray-200">
+          <thead class="bg-gray-50/70">
+            <tr class="text-left">
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Email/Contact No.</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Service</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Booked On</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Schedule</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Cost Summary</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Status</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="booking in activeBookings" :key="booking.id" class="border-b border-gray-100 hover:bg-gray-50">
-              <td class="px-6 py-4 font-medium text-gray-900 wrap-break-word">{{ booking.email }}<p class="text-xs text-gray-500">{{ booking.phone }}</p></td>
-              <td class="px-6 py-4 text-gray-700 wrap-break-word">
-                <div class="space-y-1">
-                  <p>{{ booking.projectType }}</p>
-                </div>
+          <tbody class="divide-y divide-gray-100 bg-white">
+            <tr v-for="booking in activeBookings" :key="booking.id" class="transition-colors hover:bg-slate-50/80">
+              <td class="px-6 py-4 font-medium text-gray-900 wrap-break-word">{{ booking.email }}<p
+                  class="mt-0.5 text-xs text-gray-500">{{ booking.phone }}</p>
               </td>
-              <td class="px-6 py-4 text-gray-700">{{ formatDate(booking.createdDate ?? '') }}</td>
-              <td class="px-6 py-4 text-gray-700">{{ booking.scheduleDate || 'Waiting for approval' }}</td>
+              <td class="px-6 py-4 text-gray-700 whitespace-nowrap">
+                <p>{{ booking.projectType }}</p>
+              </td>
+              <td class="px-6 py-4 text-gray-600 whitespace-nowrap">{{ formatDate(booking.createdDate ?? '') }}</td>
+              <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ booking.scheduleDate || 'Waiting for approval' }}
+              </td>
               <td class="px-6 py-4 text-gray-900">
                 <div class="space-y-1 text-sm">
-                  <p>Labor: ₱{{ getDisplayedLaborCost(booking).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
-                  <p>Material: <span v-if="booking.materialCost != null">₱{{ booking.materialCost.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span><span v-else class="text-gray-500">After completion</span></p>
-                  <p class="font-semibold">Total: ₱{{ (getDisplayedLaborCost(booking) + (booking.materialCost ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
-                  <p v-if="booking.status === 'confirmed' && !hasStaffMaterialSubmission(booking.id)" class="text-xs font-semibold text-amber-700">
+                  <p>Labor: ₱{{ getDisplayedLaborCost(booking).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}
+                  </p>
+                  <p>Material: <span v-if="booking.materialCost != null">₱{{
+                    booking.materialCost.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span><span v-else
+                      class="text-gray-500">After completion</span></p>
+                  <p class="font-semibold">Total: ₱{{ (getDisplayedLaborCost(booking) + (booking.materialCost ??
+                    0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                  <p v-if="booking.status === 'confirmed' && !hasStaffMaterialSubmission(booking.id)"
+                    class="text-xs font-semibold text-amber-700">
                     Staff materials not submitted yet
                   </p>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="getStatusClass(booking.status)">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset whitespace-nowrap"
+                  :class="getStatusClass(booking.status)">
                   {{ getStatusLabel(booking.status) }}
                 </span>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex flex-wrap gap-2">
-                  <button
-                    v-if="booking.status === 'pending'"
-                    type="button"
+                  <button v-if="booking.status === 'pending'" type="button"
                     class="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition-colors"
-                    @click="openApprovalModal(booking)"
-                  >
+                    @click="openApprovalModal(booking)">
                     Approve
                   </button>
-                  <button
-                    v-if="booking.status === 'confirmed'"
-                    type="button"
+                  <button v-if="booking.status === 'confirmed'" type="button"
                     class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
-                    @click="openCompleteModal(booking)"
-                  >
+                    @click="openCompleteModal(booking)">
                     Complete
                   </button>
-                  <button
-                    v-if="booking.status !== 'cancelled'"
-                    type="button"
+                  <button v-if="booking.status !== 'cancelled'" type="button"
                     class="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
-                    @click="openCancelModal(booking)"
-                  >
+                    @click="openCancelModal(booking)">
                     Cancel
                   </button>
                 </div>
@@ -374,21 +410,21 @@ function getDisplayedLaborCost(booking: BookingItem) {
       </div>
     </div>
 
-    <ModalShell
-      :show="isApprovalModalOpen"
-      title="Approve Booking"
-      subtitle="Review booking details"
-      tone="blue"
-      size="xl"
-      @close="closeApprovalModal"
-    >
-      <div v-if="selectedBooking" class="mb-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+    <ModalShell :show="isApprovalModalOpen" title="Approve Booking" subtitle="Review booking details" tone="blue"
+      size="xl" @close="closeApprovalModal">
+      <div v-if="selectedBooking"
+        class="mb-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
         <p><span class="font-semibold text-slate-900">Email:</span> {{ selectedBooking.email }}</p>
         <p><span class="font-semibold text-slate-900">Service:</span> {{ selectedBooking.projectType }}</p>
         <p><span class="font-semibold text-slate-900">Contact:</span> {{ selectedBooking.phone }}</p>
-        <div v-if="selectedBooking.location && (selectedBooking.location.province || selectedBooking.location.municipality || selectedBooking.location.barangay || selectedBooking.location.house)" class="mt-2">
+        <div
+          v-if="selectedBooking.location && (selectedBooking.location.province || selectedBooking.location.municipality || selectedBooking.location.barangay || selectedBooking.location.house)"
+          class="mt-2">
           <p class="font-semibold text-slate-900">Customer Address</p>
-          <p class="text-sm text-slate-700">{{ selectedBooking.location.house ? selectedBooking.location.house + ', ' : '' }}{{ selectedBooking.location.barangay ? selectedBooking.location.barangay + ', ' : '' }}{{ selectedBooking.location.municipality ? selectedBooking.location.municipality + ', ' : '' }}{{ selectedBooking.location.province ? selectedBooking.location.province : '' }}</p>
+          <p class="text-sm text-slate-700">{{ selectedBooking.location.house ? selectedBooking.location.house + ', ' :
+            '' }}{{ selectedBooking.location.barangay ? selectedBooking.location.barangay + ', ' : '' }}{{
+              selectedBooking.location.municipality ? selectedBooking.location.municipality + ', ' : '' }}{{
+              selectedBooking.location.province ? selectedBooking.location.province : '' }}</p>
         </div>
         <div v-if="selectedBooking.beforeImages?.length || selectedBooking.afterImages?.length" class="mt-3">
           <p class="font-semibold text-slate-900">Field Images</p>
@@ -396,7 +432,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
             <div v-if="selectedBooking.beforeImages?.length">
               <p class="text-xs text-slate-600">Before</p>
               <div class="mt-1 flex flex-wrap gap-2">
-                <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`before-${idx}`" :href="img" target="_blank" rel="noreferrer">
+                <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`before-${idx}`" :href="img" target="_blank"
+                  rel="noreferrer">
                   <img :src="img" class="h-20 w-28 rounded-xl border border-slate-200 object-cover shadow-sm" />
                 </a>
               </div>
@@ -405,7 +442,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
             <div v-if="selectedBooking.afterImages?.length">
               <p class="text-xs text-slate-600">After</p>
               <div class="mt-1 flex flex-wrap gap-2">
-                <a v-for="(img, idx) in selectedBooking.afterImages" :key="`after-${idx}`" :href="img" target="_blank" rel="noreferrer">
+                <a v-for="(img, idx) in selectedBooking.afterImages" :key="`after-${idx}`" :href="img" target="_blank"
+                  rel="noreferrer">
                   <img :src="img" class="h-20 w-28 rounded-xl border border-slate-200 object-cover shadow-sm" />
                 </a>
               </div>
@@ -417,46 +455,43 @@ function getDisplayedLaborCost(booking: BookingItem) {
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700" for="scheduleDate">Schedule Date</label>
-          <input
-            id="scheduleDate"
-            v-model="approvalForm.scheduleDate"
-            type="date"
-            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          />
+          <input id="scheduleDate" v-model="approvalForm.scheduleDate" type="date" :min="minDate" :max="maxDate"
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
         </div>
       </div>
 
       <template #footer>
-        <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeApprovalModal">
+        <button type="button"
+          class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          @click="closeApprovalModal">
           Cancel
         </button>
-        <button type="button" class="rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800" @click="confirmApproval">
+        <button type="button"
+          class="rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800"
+          @click="confirmApproval">
           Approve Booking
         </button>
       </template>
     </ModalShell>
 
-    <ModalShell
-      :show="isCompleteModalOpen"
-      title="Complete Booking"
-      subtitle="Finalize costs and status"
-      tone="green"
-      size="lg"
-      @close="closeCompleteModal"
-    >
-      <div v-if="selectedBooking" class="mb-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+    <ModalShell :show="isCompleteModalOpen" title="Complete Booking" subtitle="Finalize costs and status" tone="green"
+      size="lg" @close="closeCompleteModal">
+      <div v-if="selectedBooking"
+        class="mb-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
         <p><span class="font-semibold text-slate-900">Email:</span> {{ selectedBooking.email }}</p>
         <p><span class="font-semibold text-slate-900">Service:</span> {{ selectedBooking.projectType }}</p>
         <p><span class="font-semibold text-slate-900">Contact:</span> {{ selectedBooking.phone }}</p>
       </div>
 
-      <div v-if="selectedBooking && (selectedBooking.beforeImages?.length || selectedBooking.afterImages?.length)" class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+      <div v-if="selectedBooking && (selectedBooking.beforeImages?.length || selectedBooking.afterImages?.length)"
+        class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
         <p class="font-semibold text-slate-900">Field Images</p>
         <div class="mt-2 grid grid-cols-2 gap-2">
           <div v-if="selectedBooking.beforeImages?.length">
             <p class="text-xs text-slate-600">Before</p>
             <div class="mt-1 flex flex-wrap gap-2">
-              <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`c-before-${idx}`" :href="img" target="_blank" rel="noreferrer">
+              <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`c-before-${idx}`" :href="img" target="_blank"
+                rel="noreferrer">
                 <img :src="img" class="h-20 w-28 rounded-xl border border-slate-200 object-cover shadow-sm" />
               </a>
             </div>
@@ -464,7 +499,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
           <div v-if="selectedBooking.afterImages?.length">
             <p class="text-xs text-slate-600">After</p>
             <div class="mt-1 flex flex-wrap gap-2">
-              <a v-for="(img, idx) in selectedBooking.afterImages" :key="`c-after-${idx}`" :href="img" target="_blank" rel="noreferrer">
+              <a v-for="(img, idx) in selectedBooking.afterImages" :key="`c-after-${idx}`" :href="img" target="_blank"
+                rel="noreferrer">
                 <img :src="img" class="h-20 w-28 rounded-xl border border-slate-200 object-cover shadow-sm" />
               </a>
             </div>
@@ -475,69 +511,67 @@ function getDisplayedLaborCost(booking: BookingItem) {
       <div class="space-y-4">
         <div>
           <p class="text-sm text-gray-600">Labor Cost</p>
-          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ (selectedBooking ? getDisplayedLaborCost(selectedBooking) : 0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ (selectedBooking ?
+            getDisplayedLaborCost(selectedBooking) :
+            0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
         </div>
 
-        <div v-if="selectedBooking && !hasStaffMaterialSubmission(selectedBooking.id)" class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+        <div v-if="selectedBooking && !hasStaffMaterialSubmission(selectedBooking.id)"
+          class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
           Staff has not submitted materials for this booking yet.
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700" for="materialCost">Material Cost</label>
           <div class="flex gap-2">
-            <input
-              id="materialCost"
-              v-model="completionForm.materialCost"
-              type="number"
-              min="0"
-              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-            />
-            <button type="button" class="mt-1 rounded-xl bg-amber-100 px-3 py-2 font-semibold text-amber-800 hover:bg-amber-200" @click="loadMaterialsForBooking">Load from recorded materials</button>
+            <input id="materialCost" v-model="completionForm.materialCost" type="number" min="0"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+            <button type="button"
+              class="mt-1 rounded-xl bg-amber-100 px-3 py-2 font-semibold text-amber-800 hover:bg-amber-200"
+              @click="loadMaterialsForBooking">Load from recorded materials</button>
           </div>
         </div>
 
         <div>
           <p class="text-sm text-gray-600">Total Price</p>
-          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ computedCompletionTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+          <p class="mt-1 text-lg font-medium text-gray-900">₱{{ computedCompletionTotal.toLocaleString('en-PH', {
+            minimumFractionDigits: 2 }) }}</p>
         </div>
       </div>
 
       <template #footer>
-        <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeCompleteModal">
+        <button type="button"
+          class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          @click="closeCompleteModal">
           Cancel
         </button>
-        <button type="button" class="rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700" @click="confirmComplete">
+        <button type="button"
+          class="rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700"
+          @click="confirmComplete">
           Mark Completed
         </button>
       </template>
     </ModalShell>
 
-    <ModalShell
-      :show="isCancelModalOpen"
-      title="Cancel Booking"
-      subtitle="Provide a cancellation reason"
-      tone="red"
-      size="lg"
-      @close="closeCancelModal"
-    >
+    <ModalShell :show="isCancelModalOpen" title="Cancel Booking" subtitle="Provide a cancellation reason" tone="red"
+      size="lg" @close="closeCancelModal">
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700" for="cancelReason">Cancel Reason</label>
-          <textarea
-            id="cancelReason"
-            v-model="cancelForm.reason"
-            rows="4"
-            placeholder="Enter cancellation reason..."
-            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-200"
-          />
+          <textarea id="cancelReason" v-model="cancelForm.reason" rows="4" placeholder="Enter cancellation reason..."
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-200" />
         </div>
       </div>
 
       <template #footer>
-        <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeCancelModal">
+        <button type="button"
+          class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+          @click="closeCancelModal">
           Back
         </button>
-        <button type="button" class="rounded-xl bg-linear-to-r from-red-600 to-rose-600 px-4 py-3 font-semibold text-white shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!cancelForm.reason.trim()" @click="cancelBookingAsAdmin">
+        <button type="button"
+          class="rounded-xl bg-linear-to-r from-red-600 to-rose-600 px-4 py-3 font-semibold text-white shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="!cancelForm.reason.trim()" @click="cancelBookingAsAdmin">
           Confirm Cancel
         </button>
       </template>

@@ -357,23 +357,23 @@ function formatDate(value: string) {
       <p class="text-gray-600">{{ searchTerm ? 'No matching services found.' : 'No services yet. Add one to get started!' }}</p>
     </div>
 
-    <div v-else class="overflow-hidden rounded-lg border border-gray-200">
+    <div v-else class="overflow-hidden rounded-xl border border-gray-200">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-180">
-          <thead class="bg-gray-50">
-            <tr class="border-b border-gray-200 text-left">
-              <th class="px-6 py-4 text-sm font-semibold text-gray-700">Image</th>
-              <th class="px-6 py-4 text-sm font-semibold text-gray-700">Service Name</th>
-              <th class="px-6 py-4 text-sm font-semibold text-gray-700">Description</th>
-              <th class="px-6 py-4 text-sm font-semibold text-gray-700">Labor Price</th>
-              <th class="px-6 py-4 text-sm font-semibold text-gray-700">Created</th>
-              <th class="px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+        <table class="w-full min-w-180 divide-y divide-gray-200">
+          <thead class="bg-gray-50/70">
+            <tr class="text-left">
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Image</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Service Name</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Description</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Labor Price</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Created</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="service in filteredServices" :key="service.id" class="border-b border-gray-100 hover:bg-gray-50">
-              <td class="px-6 py-4">
-                <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+          <tbody class="divide-y divide-gray-100 bg-white">
+            <tr v-for="service in filteredServices" :key="service.id" class="transition-colors hover:bg-slate-50/80">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-xs">
                   <img
                     v-if="service.image_url"
                     :src="service.image_url"
@@ -383,17 +383,17 @@ function formatDate(value: string) {
                   <span v-else class="text-xs font-medium text-gray-500">No image</span>
                 </div>
               </td>
-              <td class="px-6 py-4 font-medium text-gray-900">{{ service.name }}</td>
+              <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ service.name }}</td>
               <td class="px-6 py-4 text-sm text-gray-600">
                 {{ service.description ? service.description.substring(0, 50) + (service.description.length > 50 ? '...' : '') : '-' }}
               </td>
-              <td class="px-6 py-4 font-semibold text-gray-900">{{ formatCurrency(service.price) }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ formatDate(service.created_at) }}</td>
-              <td class="px-6 py-4">
-                <div class="flex gap-2">
+              <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(service.price) }}</td>
+              <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(service.created_at) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex gap-3 justify-end">
                   <button
                     @click="openEditDialog(service)"
-                    class="text-blue-600 transition-colors hover:text-blue-800"
+                    class="text-sky-600 transition-colors hover:text-sky-800"
                   >
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

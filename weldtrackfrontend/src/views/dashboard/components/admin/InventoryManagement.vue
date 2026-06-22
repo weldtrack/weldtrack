@@ -59,6 +59,7 @@ function openEditDialog(item: InventoryItem) {
   formData.name = item.name
   formData.unitPrice = String(item.unitPrice)
   formData.supplier = item.supplier
+  // Always reset to current system date when opening edit state
   formData.dateAdded = new Date().toISOString().split('T')[0]
   formData.lowStockThreshold = String(item.lowStockThreshold)
   isDialogOpen.value = true
@@ -119,19 +120,26 @@ async function applyStockAdjustment() {
 async function handleSubmit() {
   isSubmitting.value = true
   try {
-    const payload = {
-      name: formData.name,
-      quantity: editingItem.value?.quantity || 0,
-      unitPrice: Number.parseFloat(formData.unitPrice) || 0,
-      supplier: formData.supplier,
-      dateAdded: formData.dateAdded,
-      lowStockThreshold: Number.parseInt(formData.lowStockThreshold, 10) || 0,
-    }
+    const currentDateString = new Date().toISOString().split('T')[0]
 
     if (editingItem.value) {
-      await store.updateItem(editingItem.value.id, payload)
+      await store.updateItem(editingItem.value.id, {
+        name: formData.name,
+        quantity: editingItem.value.quantity,
+        unitPrice: Number.parseFloat(formData.unitPrice) || 0,
+        supplier: formData.supplier,
+        lowStockThreshold: Number.parseInt(formData.lowStockThreshold, 10) || 0,
+        dateAdded: editingItem.value.dateAdded,
+      })
     } else {
-      await store.addItem(payload)
+      await store.addItem({
+        name: formData.name,
+        quantity: 0,
+        unitPrice: Number.parseFloat(formData.unitPrice) || 0,
+        supplier: formData.supplier,
+        lowStockThreshold: Number.parseInt(formData.lowStockThreshold, 10) || 0,
+        dateAdded: currentDateString,
+      })
     }
 
     closeDialog()
@@ -241,62 +249,62 @@ function formatDateTime(value?: string) {
       </button>
     </div>
 
-    <div class="overflow-hidden rounded-lg border border-gray-200">
+    <div class="overflow-hidden rounded-xl border border-gray-200">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-275">
-          <thead class="bg-gray-50">
-            <tr class="border-b border-gray-200 text-left">
-              <th class="px-6 py-4 text-gray-700">
+        <table class="w-full min-w-275 divide-y divide-gray-200">
+          <thead class="bg-gray-50/70">
+            <tr class="text-left">
+              <th class="w-12 px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">
                 <input
                   type="checkbox"
                   :checked="allSelected"
-                  class="h-4 w-4 cursor-pointer rounded border-gray-300"
+                  class="h-4 w-4 cursor-pointer rounded border-gray-300 text-sky-600 focus:ring-sky-500"
                   @change="toggleSelectAll"
                 />
               </th>
-              <th class="px-6 py-4 text-gray-700">Material Name</th>
-              <th class="px-6 py-4 text-gray-700">Quantity</th>
-              <th class="px-6 py-4 text-gray-700">Unit Price</th>
-              <th class="px-6 py-4 text-gray-700">Total Value</th>
-              <th class="px-6 py-4 text-gray-700">Supplier</th>
-              <th class="px-6 py-4 text-gray-700">Date Added</th>
-              <th class="px-6 py-4 text-gray-700">Status</th>
-              <th class="px-6 py-4 text-gray-700">Actions</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Material Name</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Quantity</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Unit Price</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Total Value</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Supplier</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Date Added</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Status</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="item in filteredInventory" :key="item.id" class="border-b border-gray-100 hover:bg-gray-50">
-              <td class="px-6 py-4">
+          <tbody class="divide-y divide-gray-100 bg-white">
+            <tr v-for="item in filteredInventory" :key="item.id" class="transition-colors hover:bg-slate-50/80">
+              <td class="px-6 py-4 whitespace-nowrap">
                 <input
                   type="checkbox"
                   :checked="selectedItems.has(item.id)"
-                  class="h-4 w-4 cursor-pointer rounded border-gray-300"
+                  class="h-4 w-4 cursor-pointer rounded border-gray-300 text-sky-600 focus:ring-sky-500"
                   @change="toggleItemSelection(item.id)"
                 />
               </td>
-              <td class="px-6 py-4 text-gray-900">{{ item.name }}</td>
-              <td class="px-6 py-4 text-gray-700">{{ item.quantity }}</td>
-              <td class="px-6 py-4 text-gray-700">{{ formatCurrency(item.unitPrice) }}</td>
-              <td class="px-6 py-4 text-gray-900">{{ formatCurrency(item.quantity * item.unitPrice) }}</td>
-              <td class="px-6 py-4 text-gray-700">{{ item.supplier }}</td>
-              <td class="px-6 py-4 text-gray-700">{{ formatDate(item.dateAdded) }}</td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ item.name }}</td>
+              <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ item.quantity }}</td>
+              <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ formatCurrency(item.unitPrice) }}</td>
+              <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(item.quantity * item.unitPrice) }}</td>
+              <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ item.supplier }}</td>
+              <td class="px-6 py-4 text-gray-600 whitespace-nowrap">{{ formatDate(item.dateAdded) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
                 <span
                   v-if="item.quantity <= item.lowStockThreshold"
-                  class="inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-orange-800"
+                  class="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700 ring-1 ring-inset ring-orange-600/10 whitespace-nowrap"
                 >
-                  <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="mr-1 h-3.5 w-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   Low Stock
                 </span>
-                <span v-else class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-green-800">
+                <span v-else class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-600/20 whitespace-nowrap">
                   In Stock
                 </span>
               </td>
-              <td class="px-6 py-4">
-                <div class="flex gap-2">
-                  <button type="button" class="text-blue-600 transition-colors hover:text-blue-800" @click="openEditDialog(item)">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex gap-3 justify-end">
+                  <button type="button" class="text-sky-600 transition-colors hover:text-sky-800" @click="openEditDialog(item)">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -360,13 +368,15 @@ function formatDateTime(value?: string) {
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-gray-700" for="dateAdded">Date Added</label>
+              <label class="block text-sm font-medium text-gray-700" for="dateAdded">
+                {{ editingItem ? 'Date Updated' : 'Date Added' }}
+              </label>
               <input
                 id="dateAdded"
                 v-model="formData.dateAdded"
                 type="date"
-                required
-                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                disabled
+                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 cursor-not-allowed px-4 py-3 shadow-sm outline-none transition text-gray-500"
               />
             </div>
 

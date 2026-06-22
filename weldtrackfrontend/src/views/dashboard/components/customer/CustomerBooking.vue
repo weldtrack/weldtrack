@@ -38,7 +38,7 @@ const cancelForm = reactive({
 
 const isSubmitting = ref(false)
 
-const services = ref<Array<{ id: number; name: string; price: number }>>([]);
+const services = ref<Array<{ id: number; name: string; price: number }>>([])
 const loadingServices = ref(false)
 
 const selectedLaborPrice = computed(() => {
@@ -98,7 +98,6 @@ onMounted(async () => {
   prefillFromSelectedService()
 })
 
-
 function resetForm() {
   formData.customerName = userRole.value === 'customer' ? currentUser.value : ''
   formData.email = userRole.value === 'customer' ? currentEmail.value : ''
@@ -141,12 +140,21 @@ async function handleSubmit() {
     return
   }
 
+  // Enforce validation formatting on client side execution
+  const cleanPhone = formData.phone.trim().replace(/\D/g, '')
+  const phPhoneRegex = /^9\d{9}$/
+  
+  if (!phPhoneRegex.test(cleanPhone)) {
+    alert('Please enter a valid 10-digit Philippine phone number starting with 9 (e.g., 9123456789)')
+    return
+  }
+
   isSubmitting.value = true
   try {
     await bookingsStore.createBooking({
       customerName: formData.customerName,
       email: formData.email,
-      phone: formData.phone,
+      phone: `+63${cleanPhone}`,
       projectType: formData.projectType,
       description: formData.description,
       status: 'pending',
@@ -155,6 +163,7 @@ async function handleSubmit() {
     })
     closeDialog()
   } catch (error) {
+    console.error('Booking submission failed:', error)
   } finally {
     isSubmitting.value = false
   }
@@ -259,8 +268,8 @@ function formatActiveAddress() {
   <section class="space-y-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-blue-50 to-white ring-1 ring-blue-100">
-          <Calendar class="h-6 w-6 text-blue-600" />
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
+          <Calendar class="h-6 w-6 text-sky-600" />
         </div>
         <div>
           <h3 class="mb-1 text-2xl font-semibold text-gray-900">My Bookings</h3>
@@ -271,8 +280,8 @@ function formatActiveAddress() {
       <button
         type="button"
         class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
-          :disabled="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0"
-          :class="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 ? 'cursor-not-allowed opacity-60' : ''"
+        :disabled="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0"
+        :class="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 ? 'cursor-not-allowed opacity-60' : ''"
         @click="openDialog"
       >
         <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,7 +302,7 @@ function formatActiveAddress() {
       </div>
       <div class="rounded-lg border border-sky-200 bg-sky-50 p-4">
         <p class="text-sm font-medium text-sky-700">Total</p>
-        <p class="mt-1 text-2xl font-bold text-sky-900">{{ filteredBookings.length }}</p>
+        <p class="mt-1 text-2xl font-bold text-gray-900">{{ filteredBookings.length }}</p>
       </div>
     </div>
 
@@ -314,19 +323,18 @@ function formatActiveAddress() {
           <div class="flex-1">
             <div class="flex items-center gap-3">
               <h3 class="text-lg font-semibold text-gray-900">{{ booking.projectType }}</h3>
-              <span :class="['rounded-full border px-3 py-1 text-xs font-medium capitalize', booking.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : booking.status === 'confirmed' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200']">
+              <span :class="['rounded-full border px-3 py-1 text-xs font-medium capitalize', booking.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : booking.status === 'confirmed' ? 'bg-sky-50 text-sky-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-green-200']">
                 {{ booking.status }}
               </span>
             </div>
             <p class="mt-2 text-sm text-gray-600">{{ booking.description }}</p>
-            <p class="mt-1 text-sm text-gray-500">Booking #{{ booking.id }}</p>
           </div>
         </div>
 
         <div class="grid gap-3 text-sm sm:grid-cols-2">
-          <div class="rounded-lg bg-gray-50 border border-gray-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-gray-600 font-medium">Booking ID</p>
-            <p class="mt-1 text-gray-900 font-medium">#{{ booking.id }}</p>
+          <div class="rounded-lg bg-sky-200 border border-sky-900 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-700 font-medium">Booking ID</p>
+            <p class="mt-1 text-gray-800 font-medium">#{{ booking.id }}</p>
           </div>
 
           <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
@@ -410,7 +418,23 @@ function formatActiveAddress() {
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="block text-sm font-medium text-gray-700" for="phone">Phone Number</label>
-              <input id="phone" v-model="formData.phone" type="tel" required class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" />
+              <div class="mt-1 flex rounded-xl border border-slate-200 bg-slate-50 shadow-sm overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition">
+                <span class="inline-flex items-center px-4 bg-slate-200 text-gray-600 font-semibold text-sm border-r border-slate-300 select-none">
+                  +63
+                </span>
+                <input 
+                  id="phone" 
+                  v-model="formData.phone" 
+                  type="tel" 
+                  required 
+                  maxlength="10"
+                  placeholder="9123456789"
+                  pattern="9\d{9}"
+                  title="Must be a 10-digit number starting with 9 (e.g., 9123456789)"
+                  class="w-full bg-transparent px-4 py-3 outline-none text-gray-900" 
+                />
+              </div>
+              <p class="mt-1 text-xs text-gray-500">Format: +63 followed by 10 digits (e.g., 9171234567)</p>
             </div>
 
             <div>
