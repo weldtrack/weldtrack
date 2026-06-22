@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Users } from 'lucide-vue-next'
 import api from '../../../../api/api'
+import { useModalStore } from '../../../../stores/modal'
 
 type User = {
   id: number
@@ -19,6 +20,7 @@ const roleFilter = ref<'all' | 'customers' | 'staff'>('all')
 const search = ref('')
 const loading = ref(false)
 const refreshInterval = ref<number | null>(null)
+const modalStore = useModalStore()
 
 async function fetchUsers() {
   loading.value = true
@@ -45,28 +47,44 @@ async function refresh() {
   else await fetchUsers()
 }
 
-async function banUser(id: number) {
-  if (!confirm('Ban this user?')) return
-  loading.value = true
-  try {
-    await api.post(`/auth/admin/ban/${id}`, {}, { skipGlobalLoading: true } as any)
-    await refresh()
-  } catch (e) {
-  } finally {
-    loading.value = false
-  }
+function banUser(id: number) {
+  modalStore.open({
+    title: 'Confirm Ban',
+    message: 'Are you sure you want to ban this user?',
+    variant: 'error',
+    confirmLabel: 'Ban',
+    cancelLabel: 'Cancel',
+    onConfirm: async () => {
+      loading.value = true
+      try {
+        await api.post(`/auth/admin/ban/${id}`, {}, { skipGlobalLoading: true } as any)
+        await refresh()
+      } catch (e) {
+      } finally {
+        loading.value = false
+      }
+    },
+  })
 }
 
-async function unbanUser(id: number) {
-  if (!confirm('Unban this user?')) return
-  loading.value = true
-  try {
-    await api.post(`/auth/admin/unban/${id}`, {}, { skipGlobalLoading: true } as any)
-    await refresh()
-  } catch (e) {
-  } finally {
-    loading.value = false
-  }
+function unbanUser(id: number) {
+  modalStore.open({
+    title: 'Confirm Unban',
+    message: 'Are you sure you want to unban this user?',
+    variant: 'warning',
+    confirmLabel: 'Unban',
+    cancelLabel: 'Cancel',
+    onConfirm: async () => {
+      loading.value = true
+      try {
+        await api.post(`/auth/admin/unban/${id}`, {}, { skipGlobalLoading: true } as any)
+        await refresh()
+      } catch (e) {
+      } finally {
+        loading.value = false
+      }
+    },
+  })
 }
 
 function isOnline(user: User) {

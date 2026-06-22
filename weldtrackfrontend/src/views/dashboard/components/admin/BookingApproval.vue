@@ -273,104 +273,104 @@ function getDisplayedLaborCost(booking: BookingItem) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-yellow-50 to-yellow-25 ring-1 ring-yellow-100">
-          <CalendarCheck class="h-6 w-6 text-yellow-600" />
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+          <CalendarCheck class="h-5 w-5 text-sky-600" />
         </div>
         <div>
-          <h3 class="mb-1 text-2xl font-semibold text-gray-900">Booking Approval</h3>
-          <p class="text-sm text-gray-600">Review customer requests and approve bookings</p>
+          <h2 class="text-2xl font-semibold text-gray-900">Booking Approval</h2>
+          <p class="mt-1 text-gray-600">Review customer requests and approve bookings</p>
         </div>
       </div>
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="rounded-lg bg-yellow-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-yellow-600">Pending</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600">Pending</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ pendingCount }}</p>
       </div>
-      <div class="rounded-lg bg-blue-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-blue-600">Confirmed</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600">Confirmed</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ confirmedCount }}</p>
       </div>
-      <div class="rounded-lg bg-emerald-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-emerald-600">Completed</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600">Completed</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ completedCount }}</p>
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <div class="overflow-hidden rounded-lg border border-gray-200">
       <div class="overflow-x-auto">
-      <table class="min-w-245 table-fixed divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="w-2/12 px-4 py-3 text-left text-sm font-semibold text-gray-700">Email/Contact No.</th>
-            <th class="w-3/12 px-4 py-3 text-left text-sm font-semibold text-gray-700">Service</th>
-            <th class="w-2/12 px-4 py-3 text-left text-sm font-semibold text-gray-700">Booked On</th>
-            <th class="w-2/12 px-4 py-3 text-left text-sm font-semibold text-gray-700">Schedule</th>
-            <th class="w-2/12 px-4 py-3 text-left text-sm font-semibold text-gray-700">Cost Summary</th>
-            <th class="w-1/12 px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-            <th class="w-2/12 px-4 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-          <tr v-for="booking in activeBookings" :key="booking.id">
-            <td class="px-4 py-3 font-medium text-gray-900 wrap-break-word">{{ booking.email }}<p class="text-xs text-gray-500">{{ booking.phone }}</p></td>
-            <td class="px-4 py-3 text-gray-700 wrap-break-word">
-              <div class="space-y-1">
-                <p>{{ booking.projectType }}</p>
-              </div>
-            </td>
-            <td class="px-4 py-3 text-gray-700">{{ formatDate(booking.createdDate ?? '') }}</td>
-            <td class="px-4 py-3 text-gray-700">{{ booking.scheduleDate || 'Waiting for approval' }}</td>
-            <td class="px-4 py-3 text-gray-900">
-              <div class="space-y-1 text-sm">
-                <p>Labor: ₱{{ getDisplayedLaborCost(booking).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
-                <p>Material: <span v-if="booking.materialCost != null">₱{{ booking.materialCost.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span><span v-else class="text-gray-500">After completion</span></p>
-                <p class="font-semibold">Total: ₱{{ (getDisplayedLaborCost(booking) + (booking.materialCost ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
-                <p v-if="booking.status === 'confirmed' && !hasStaffMaterialSubmission(booking.id)" class="text-xs font-semibold text-amber-700">
-                  Staff materials not submitted yet
-                </p>
-              </div>
-            </td>
-            <td class="px-4 py-3">
-              <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="getStatusClass(booking.status)">
-                {{ getStatusLabel(booking.status) }}
-              </span>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-if="booking.status === 'pending'"
-                  type="button"
-                  class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  @click="openApprovalModal(booking)"
-                >
-                  Approve
-                </button>
-                <button
-                  v-if="booking.status === 'confirmed'"
-                  type="button"
-                  class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
-                  @click="openCompleteModal(booking)"
-                >
-                  Complete
-                </button>
-                <button
-                  v-if="booking.status !== 'cancelled'"
-                  type="button"
-                  class="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
-                  @click="openCancelModal(booking)"
-                >
-                  Cancel
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <table class="w-full min-w-245 table-fixed">
+          <thead class="bg-gray-50">
+            <tr class="border-b border-gray-200 text-left">
+              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Email/Contact No.</th>
+              <th class="w-3/12 px-6 py-4 text-sm font-semibold text-gray-700">Service</th>
+              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Booked On</th>
+              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Schedule</th>
+              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Cost Summary</th>
+              <th class="w-1/12 px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+              <th class="w-2/12 px-6 py-4 text-sm font-semibold text-gray-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="booking in activeBookings" :key="booking.id" class="border-b border-gray-100 hover:bg-gray-50">
+              <td class="px-6 py-4 font-medium text-gray-900 wrap-break-word">{{ booking.email }}<p class="text-xs text-gray-500">{{ booking.phone }}</p></td>
+              <td class="px-6 py-4 text-gray-700 wrap-break-word">
+                <div class="space-y-1">
+                  <p>{{ booking.projectType }}</p>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-gray-700">{{ formatDate(booking.createdDate ?? '') }}</td>
+              <td class="px-6 py-4 text-gray-700">{{ booking.scheduleDate || 'Waiting for approval' }}</td>
+              <td class="px-6 py-4 text-gray-900">
+                <div class="space-y-1 text-sm">
+                  <p>Labor: ₱{{ getDisplayedLaborCost(booking).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                  <p>Material: <span v-if="booking.materialCost != null">₱{{ booking.materialCost.toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span><span v-else class="text-gray-500">After completion</span></p>
+                  <p class="font-semibold">Total: ₱{{ (getDisplayedLaborCost(booking) + (booking.materialCost ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
+                  <p v-if="booking.status === 'confirmed' && !hasStaffMaterialSubmission(booking.id)" class="text-xs font-semibold text-amber-700">
+                    Staff materials not submitted yet
+                  </p>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="getStatusClass(booking.status)">
+                  {{ getStatusLabel(booking.status) }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-if="booking.status === 'pending'"
+                    type="button"
+                    class="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition-colors"
+                    @click="openApprovalModal(booking)"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    v-if="booking.status === 'confirmed'"
+                    type="button"
+                    class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
+                    @click="openCompleteModal(booking)"
+                  >
+                    Complete
+                  </button>
+                  <button
+                    v-if="booking.status !== 'cancelled'"
+                    type="button"
+                    class="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                    @click="openCancelModal(booking)"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -430,7 +430,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
         <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeApprovalModal">
           Cancel
         </button>
-        <button type="button" class="rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700" @click="confirmApproval">
+        <button type="button" class="rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800" @click="confirmApproval">
           Approve Booking
         </button>
       </template>
@@ -490,7 +490,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
               v-model="completionForm.materialCost"
               type="number"
               min="0"
-              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
             />
             <button type="button" class="mt-1 rounded-xl bg-amber-100 px-3 py-2 font-semibold text-amber-800 hover:bg-amber-200" @click="loadMaterialsForBooking">Load from recorded materials</button>
           </div>

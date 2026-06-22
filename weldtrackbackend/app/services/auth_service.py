@@ -12,6 +12,7 @@ from app.core.config import (
     AUTH_COOKIE_SAMESITE,
     AUTH_COOKIE_SECURE,
 )
+
 from app.core.jwt import create_access_token
 from app.models.user import User
 from app.schemas.user import AuthResponse, UserRead

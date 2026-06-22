@@ -4,7 +4,7 @@ import { Clock } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
-import HistoryCard from './HistoryCard.vue'
+import HistoryCard from '../shared/HistoryCard.vue'
 
 const authStore = useAuthStore()
 const bookingsStore = useBookingsStore()
@@ -44,8 +44,8 @@ const cancelledBookings = computed(() => customerBookings.value.filter((b) => b.
 <template>
   <div class="space-y-8">
     <div class="mb-6 flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-purple-50 to-white ring-1 ring-purple-100">
-        <Clock class="h-6 w-6 text-purple-600" />
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
+        <Clock class="h-6 w-6 text-sky-600" />
       </div>
       <div>
         <h1 class="text-3xl font-bold text-gray-900">Booking History</h1>
@@ -54,16 +54,16 @@ const cancelledBookings = computed(() => customerBookings.value.filter((b) => b.
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="rounded-lg bg-emerald-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Completed</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Completed</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ completedBookings.length }}</p>
       </div>
       <div class="rounded-lg bg-red-50 p-4">
         <p class="text-xs uppercase tracking-wide text-red-600 font-semibold">Cancelled</p>
         <p class="mt-1 text-2xl font-bold text-red-900">{{ cancelledBookings.length }}</p>
       </div>
-      <div class="rounded-lg bg-purple-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-purple-600 font-semibold">Total</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Total</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ customerBookings.length }}</p>
       </div>
     </div>

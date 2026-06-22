@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Folder } from 'lucide-vue-next'
-import { useBookingsStore } from '../../../../stores/bookings'
-import { getUserFriendlyApiError } from '../../../../services/errorMessage'
-import HistoryCard from '../customer/HistoryCard.vue'
+import { useBookingsStore } from '../../../../stores/bookings.ts'
+import { getUserFriendlyApiError } from '../../../../services/errorMessage.ts'
+import HistoryCard from './HistoryCard.vue'
 
 const bookingsStore = useBookingsStore()
 const loadError = ref('')
@@ -38,8 +38,8 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
 <template>
   <section class="space-y-6">
     <div class="flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-emerald-50 to-white ring-1 ring-emerald-100">
-        <Folder class="h-6 w-6 text-emerald-600" />
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+        <Folder class="h-6 w-6 text-sky-600" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Project History</h3>
@@ -48,8 +48,8 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div class="rounded-lg bg-emerald-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Completed Projects</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Completed Projects</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ completedCount }}</p>
       </div>
       <div class="rounded-lg bg-red-50 p-4">

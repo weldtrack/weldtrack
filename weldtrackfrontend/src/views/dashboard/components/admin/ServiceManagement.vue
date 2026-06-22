@@ -226,8 +226,8 @@ function formatDate(value: string) {
   <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-slate-50 to-white ring-1 ring-slate-100">
-          <Briefcase class="h-5 w-5 text-slate-600" />
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+          <Briefcase class="h-5 w-5 text-sky-600" />
         </div>
         <div>
           <h2 class="text-2xl font-semibold text-gray-900">Services Management</h2>

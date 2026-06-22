@@ -434,8 +434,8 @@ async function confirmRemoveTask() {
 <template>
   <section class="space-y-6">
     <div class="flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-slate-50 to-white ring-1 ring-slate-100">
-        <Clipboard class="h-6 w-6 text-slate-700" />
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+        <Clipboard class="h-6 w-6 text-sky-600" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Tasks</h3>

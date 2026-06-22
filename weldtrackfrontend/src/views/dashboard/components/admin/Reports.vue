@@ -555,8 +555,8 @@ async function generateStaffAttendanceReportPDF() {
 <template>
   <section class="space-y-6">
     <div class="flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-indigo-50 to-white ring-1 ring-indigo-100">
-        <BarChart2 class="h-6 w-6 text-indigo-600" />
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+        <BarChart2 class="h-6 w-6 text-sky-600" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Reports</h3>
@@ -577,7 +577,7 @@ async function generateStaffAttendanceReportPDF() {
         <div class="lg:col-span-2 flex items-end gap-2">
           <button
             type="button"
-            class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
+            class="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
             :disabled="hasInvalidDateRange || isExporting"
             @click="updateDateRange"
           >
@@ -599,8 +599,8 @@ async function generateStaffAttendanceReportPDF() {
       <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Stock-In Report</h3>
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
+            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -617,7 +617,7 @@ async function generateStaffAttendanceReportPDF() {
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Low Stock Items:</span>
-            <span class="text-orange-600">{{ lowStockCount }}</span>
+            <span class="text-sky-600">{{ lowStockCount }}</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Total Stock Value:</span>
@@ -626,7 +626,7 @@ async function generateStaffAttendanceReportPDF() {
         </div>
         <button
           type="button"
-          class="mt-auto w-full rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
+          class="mt-auto w-full rounded-lg bg-sky-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
           :disabled="isExporting"
           @click="generateStockInReportPDF"
         >
@@ -645,8 +645,8 @@ async function generateStaffAttendanceReportPDF() {
       <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Financial Summary</h3>
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
-            <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
+            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -693,7 +693,7 @@ async function generateStaffAttendanceReportPDF() {
         <div class="flex gap-2 mt-auto">
           <button
             type="button"
-            class="flex-1 rounded-lg bg-purple-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-purple-700 disabled:bg-gray-400"
+            class="flex-1 rounded-lg bg-sky-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
             :disabled="isExporting"
             @click="generateFinancialReportPDF"
           >
@@ -713,8 +713,8 @@ async function generateStaffAttendanceReportPDF() {
       <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Staff Attendance</h3>
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100">
-            <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
+            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -746,7 +746,7 @@ async function generateStaffAttendanceReportPDF() {
         </div>
         <button
           type="button"
-          class="mt-auto w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-indigo-700 disabled:bg-gray-400"
+          class="mt-auto w-full rounded-lg bg-sky-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
           :disabled="isExporting"
           @click="generateStaffAttendanceReportPDF"
         >

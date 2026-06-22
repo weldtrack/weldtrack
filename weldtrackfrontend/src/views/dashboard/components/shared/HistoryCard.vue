@@ -74,8 +74,8 @@ const grandTotal = computed(() => getGrandTotal(item))
   <div class="rounded-lg border border-gray-200 bg-white p-4">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div class="flex items-start gap-3 sm:min-w-0 sm:flex-1">
-        <div class="h-10 w-10 flex items-center justify-center rounded-md bg-slate-100 ring-1 ring-slate-200 shrink-0">
-          <Clock class="h-5 w-5 text-slate-500" />
+        <div class="h-10 w-10 flex items-center justify-center rounded-md bg-sky-100 ring-1 ring-sky-200 shrink-0">
+          <Clock class="h-5 w-5 text-sky-500" />
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-sm text-gray-500">Booking #{{ item.id }}</p>

@@ -283,17 +283,17 @@ function formatActiveAddress() {
     </div>
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-        <p class="text-sm font-medium text-yellow-700">Pending</p>
-        <p class="mt-1 text-2xl font-bold text-yellow-900">{{ pendingCount }}</p>
+      <div class="rounded-lg border border-sky-200 bg-sky-50 p-4">
+        <p class="text-sm font-medium text-sky-700">Pending</p>
+        <p class="mt-1 text-2xl font-bold text-sky-900">{{ pendingCount }}</p>
       </div>
-      <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p class="text-sm font-medium text-blue-700">Approved</p>
-        <p class="mt-1 text-2xl font-bold text-blue-900">{{ confirmedCount }}</p>
+      <div class="rounded-lg border border-sky-200 bg-sky-50 p-4">
+        <p class="text-sm font-medium text-sky-700">Approved</p>
+        <p class="mt-1 text-2xl font-bold text-sky-900">{{ confirmedCount }}</p>
       </div>
-      <div class="rounded-lg border border-purple-200 bg-purple-50 p-4">
-        <p class="text-sm font-medium text-purple-700">Total</p>
-        <p class="mt-1 text-2xl font-bold text-purple-900">{{ filteredBookings.length }}</p>
+      <div class="rounded-lg border border-sky-200 bg-sky-50 p-4">
+        <p class="text-sm font-medium text-sky-700">Total</p>
+        <p class="mt-1 text-2xl font-bold text-sky-900">{{ filteredBookings.length }}</p>
       </div>
     </div>
 
@@ -329,44 +329,44 @@ function formatActiveAddress() {
             <p class="mt-1 text-gray-900 font-medium">#{{ booking.id }}</p>
           </div>
 
-          <div class="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-blue-600 font-medium">Email</p>
+          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Email</p>
             <p class="mt-1 text-gray-900 font-medium">{{ booking.email }}</p>
           </div>
 
-          <div class="rounded-lg bg-green-50 border border-green-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-green-600 font-medium">Phone</p>
+          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Phone</p>
             <p class="mt-1 text-gray-900 font-medium">{{ booking.phone }}</p>
           </div>
 
-          <div v-if="booking.location && (booking.location.province || booking.location.municipality || booking.location.barangay || booking.location.house)" class="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-emerald-600 font-medium">Address</p>
+          <div v-if="booking.location && (booking.location.province || booking.location.municipality || booking.location.barangay || booking.location.house)" class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Address</p>
             <p class="mt-1 text-gray-900 font-medium text-sm">{{ formatBookingAddress(booking) }}</p>
           </div>
 
-          <div class="rounded-lg bg-purple-50 border border-purple-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-purple-600 font-medium">Schedule</p>
+          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Schedule</p>
             <p class="mt-1 text-gray-900 font-medium">{{ getScheduleMessage(booking) }}</p>
           </div>
 
-          <div class="rounded-lg bg-orange-50 border border-orange-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-orange-600 font-medium">Booked On</p>
+          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Booked On</p>
             <p class="mt-1 text-gray-900 font-medium">{{ formatCreatedDate(booking.createdDate) }}</p>
           </div>
 
-          <div class="rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-indigo-600 font-medium">Labor Cost</p>
+          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Labor Cost</p>
             <p class="mt-1 text-gray-900 font-medium">{{ formatCurrency(getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
           </div>
 
-          <div class="rounded-lg bg-pink-50 border border-pink-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-pink-600 font-medium">Material Cost</p>
+          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Material Cost</p>
             <p class="mt-1 text-gray-900 font-medium text-xs">{{ getMaterialCostMessage(booking) }}</p>
           </div>
 
-          <div class="rounded-lg bg-cyan-50 border border-cyan-200 px-3 py-2 sm:col-span-2">
-            <p class="text-xs uppercase tracking-wide text-cyan-600 font-medium">Total Cost</p>
-            <p class="mt-1 text-lg font-bold text-cyan-900">{{ formatCurrency(getTotalCost(booking)) }}</p>
+          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2 sm:col-span-2">
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Total Cost</p>
+            <p class="mt-1 text-lg font-bold text-sky-900">{{ formatCurrency(getTotalCost(booking)) }}</p>
           </div>
         </div>
 

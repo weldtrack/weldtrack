@@ -280,8 +280,8 @@ function formatDuration(hours: number) {
 <template>
   <section class="space-y-6">
     <div class="mb-6 flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-blue-50 to-white ring-1 ring-blue-100">
-        <Calendar class="h-6 w-6 text-blue-600" />
+      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
+        <Calendar class="h-6 w-6 text-sky-600" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Attendance</h3>
@@ -290,33 +290,33 @@ function formatDuration(hours: number) {
     </div>
 
     <div v-if="isAdmin" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="rounded-lg bg-blue-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">Present Today</p>
+      <div class="rounded-lg bg-sky-50 p-6">
+        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Present Today</p>
         <p class="mt-2 text-2xl font-bold text-gray-900">{{ presentToday }}</p>
       </div>
 
-      <div class="rounded-lg bg-emerald-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Total Staff Hours</p>
+      <div class="rounded-lg bg-sky-50 p-6">
+        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Total Staff Hours</p>
         <p class="mt-2 text-2xl font-bold text-gray-900">{{ totalStaffHours.toFixed(1) }}h</p>
       </div>
 
-      <div class="rounded-lg bg-orange-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-orange-600 font-semibold">Total Overtime</p>
+      <div class="rounded-lg bg-sky-50 p-6">
+        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Total Overtime</p>
         <p class="mt-2 text-2xl font-bold text-gray-900">{{ totalOvertimeHours.toFixed(1) }}h</p>
       </div>
     </div>
 
     <div v-if="!isAdmin" class="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="rounded-lg border border-blue-200 bg-blue-50 p-6">
+      <div class="rounded-lg border border-sky-200 bg-sky-50 p-6">
         <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
+            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <p class="text-2xl font-semibold text-blue-900">{{ myHoursWorkedToday.toFixed(1) }}h</p>
-            <p class="text-sm text-blue-700">My Total Hours Today</p>
+            <p class="text-2xl font-semibold text-sky-900">{{ myHoursWorkedToday.toFixed(1) }}h</p>
+            <p class="text-sm text-sky-700">My Total Hours Today</p>
           </div>
         </div>
       </div>
@@ -335,16 +335,16 @@ function formatDuration(hours: number) {
         </div>
       </div>
 
-      <div class="rounded-lg border border-orange-200 bg-orange-50 p-6">
+      <div class="rounded-lg border border-sky-200 bg-sky-50 p-6">
         <div class="flex items-center gap-3">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100">
-            <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
+            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
           <div>
-            <p class="text-2xl font-semibold text-orange-900">{{ myOvertimeHours.toFixed(1) }}h</p>
-            <p class="text-sm text-orange-700">My Overtime (After 8h)</p>
+            <p class="text-2xl font-semibold text-sky-900">{{ myOvertimeHours.toFixed(1) }}h</p>
+            <p class="text-sm text-sky-700">My Overtime (After 8h)</p>
           </div>
         </div>
       </div>
@@ -356,7 +356,7 @@ function formatDuration(hours: number) {
         <button
           type="button"
           class="w-full rounded-lg px-4 py-3 font-semibold text-white transition-colors"
-          :class="isTimeButtonDisabled ? 'cursor-not-allowed bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'"
+          :class="isTimeButtonDisabled ? 'cursor-not-allowed bg-gray-400' : 'bg-sky-600 hover:bg-sky-700'"
           :disabled="isTimeButtonDisabled"
           @click="openCheckInModal(currentUserEmail)"
         >
@@ -408,7 +408,7 @@ function formatDuration(hours: number) {
                 </div>
                 <div>
                   <span class="text-gray-600">Overtime:</span>
-                  <p class="text-orange-600 font-semibold">{{ record.overtimeHours }}h</p>
+                  <p class="text-sky-600 font-semibold">{{ record.overtimeHours }}h</p>
                 </div>
               </div>
             </div>
@@ -422,26 +422,26 @@ function formatDuration(hours: number) {
       :show="showCheckInModal"
       :title="checkInAction === 'checkin' ? 'Check In' : 'Check Out'"
       subtitle="Attendance capture"
-      :tone="checkInAction === 'checkin' ? 'green' : 'amber'"
+      tone="blue"
       size="sm"
       @close="closeCheckInModal"
     >
       <div class="mb-6 space-y-4">
-        <div class="rounded-2xl bg-blue-50 p-4">
+        <div class="rounded-2xl bg-sky-50 p-4">
           <p class="text-sm text-gray-600">Staff Member</p>
           <p class="text-lg font-semibold text-gray-900">{{ currentStaffLabel }}</p>
         </div>
 
-        <div class="rounded-2xl bg-emerald-50 p-4">
+        <div class="rounded-2xl bg-sky-50 p-4">
           <p class="text-sm text-gray-600">{{ checkInAction === 'checkin' ? 'Check In Time' : 'Check Out Time' }}</p>
-          <p class="text-2xl font-semibold text-emerald-600">{{ formatTime(new Date().toISOString()) }}</p>
+          <p class="text-2xl font-semibold text-sky-600">{{ formatTime(new Date().toISOString()) }}</p>
           <p class="mt-1 text-xs text-gray-500">System time (auto-captured)</p>
         </div>
       </div>
 
       <template #footer>
         <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeCheckInModal">Cancel</button>
-        <button type="button" :class="['rounded-xl px-4 py-3 font-semibold text-white shadow-lg', checkInAction === 'checkin' ? 'bg-linear-to-r from-green-600 to-emerald-600 shadow-green-600/20 hover:from-green-700 hover:to-emerald-700' : 'bg-linear-to-r from-orange-600 to-amber-600 shadow-orange-600/20 hover:from-orange-700 hover:to-amber-700']" @click="saveAttendance">
+        <button type="button" class="rounded-xl bg-linear-to-r from-sky-600 to-sky-700 shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 px-4 py-3 font-semibold text-white shadow-lg" @click="saveAttendance">
           Confirm {{ checkInAction === 'checkin' ? 'Check In' : 'Check Out' }}
         </button>
       </template>

@@ -10,7 +10,7 @@ import ModalShell from '../../../../components/ui/ModalShell.vue'
 import StaffAttendance from './StaffAttendance.vue'
 import StaffTasks from './StaffTasks.vue'
 import ServiceFeedback from '../shared/ServiceFeedback.vue'
-
+import { User } from 'lucide-vue-next'
 type StaffTab = 'attendance' | 'tasks' | 'contributions' | 'feedback' | 'create'
 
 interface StaffMember {
@@ -208,36 +208,24 @@ onMounted(() => {
   <section class="space-y-4">
     <!-- Admin-only tabs -->
     <div v-if="isAdmin" class="flex gap-2 border-b border-gray-200 overflow-x-auto">
-      <button
-        type="button"
-        @click="adminSectionStore.setSection('staff-attendance')"
+      <button type="button" @click="adminSectionStore.setSection('staff-attendance')"
         :class="currentSection === 'attendance' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
-        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
-      >
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap">
         Attendance
       </button>
-      <button
-        type="button"
-        @click="adminSectionStore.setSection('staff-tasks')"
+      <button type="button" @click="adminSectionStore.setSection('staff-tasks')"
         :class="currentSection === 'tasks' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
-        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
-      >
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap">
         Tasks
       </button>
-      <button
-        type="button"
-        @click="adminSectionStore.setSection('staff-contributions')"
+      <button type="button" @click="adminSectionStore.setSection('staff-contributions')"
         :class="currentSection === 'contributions' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
-        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
-      >
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap">
         Contributions
       </button>
-      <button
-        type="button"
-        @click="adminSectionStore.setSection('staff-create')"
+      <button type="button" @click="adminSectionStore.setSection('staff-create')"
         :class="currentSection === 'create' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600 hover:text-gray-900'"
-        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap"
-      >
+        class="px-4 py-2 font-semibold transition-colors whitespace-nowrap">
         Create Staff
       </button>
     </div>
@@ -248,22 +236,39 @@ onMounted(() => {
 
     <section v-else-if="isAdmin && currentSection === 'create'" class="space-y-4">
       <div class="rounded-lg border border-gray-200 bg-white p-4">
-        <h3 class="mb-2 text-lg font-semibold text-gray-900">Create Staff Account</h3>
-        <p class="mb-3 text-sm text-gray-600">Create a staff account directly (no verification required).</p>
-
-        <div v-if="createStaffError" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ createStaffError }}</div>
-        <div v-if="createStaffSuccess" class="mb-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">{{ createStaffSuccess }}</div>
+        <div class="flex items-start gap-3 pb-4">
+          <div
+            class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+            <User class="h-6 w-6 text-sky-600" />
+          </div>
+          <div>
+            <h3 class="mb-1 text-2xl font-semibold text-gray-900">Create Staff Account</h3>
+            <p class="text-sm text-gray-600">Create a staff account directly (no verification required).</p>
+          </div>
+        </div>
+        <div v-if="createStaffError"
+          class="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ createStaffError }}
+        </div>
+        <div v-if="createStaffSuccess"
+          class="mb-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">{{
+            createStaffSuccess }}</div>
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <input v-model="createStaffForm.email" type="email" placeholder="staff@example.com" class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 sm:col-span-2" />
+          <input v-model="createStaffForm.email" type="email" placeholder="staff@example.com"
+            class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 sm:col-span-2" />
           <div class="space-y-2 min-w-0">
-            <label class="text-xs font-bold uppercase tracking-widest text-gray-500" for="create-staff-password">Create Password</label>
+            <label class="text-xs font-bold uppercase tracking-widest text-gray-500" for="create-staff-password">Create
+              Password</label>
             <div class="group relative">
-              <input v-model="createStaffForm.password" id="create-staff-password" type="password" placeholder="••••••••" class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 pr-11" />
+              <input v-model="createStaffForm.password" id="create-staff-password" type="password"
+                placeholder="••••••••"
+                class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 pr-11" />
               <div class="absolute inset-y-0 right-3 flex items-center">
-                <div class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-black text-gray-500 shadow-sm transition group-hover:border-green-500 group-hover:text-green-700 group-focus-within:border-green-500 group-focus-within:text-green-700">
+                <div
+                  class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-black text-gray-500 shadow-sm transition group-hover:border-green-500 group-hover:text-green-700 group-focus-within:border-green-500 group-focus-within:text-green-700">
                   !
-                  <div class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-gray-200 bg-white px-3 py-2 text-left text-[11px] leading-snug text-gray-700 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
+                  <div
+                    class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-gray-200 bg-white px-3 py-2 text-left text-[11px] leading-snug text-gray-700 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
                     Password must be 8+ characters and include 1 uppercase letter and 1 number.
                   </div>
                 </div>
@@ -271,24 +276,20 @@ onMounted(() => {
             </div>
           </div>
           <div class="space-y-2 min-w-0">
-            <label class="text-xs font-bold uppercase tracking-widest text-gray-500" for="create-staff-confirm-password">Confirm Password</label>
-            <input
-              v-model="createStaffForm.confirmPassword"
-              id="create-staff-confirm-password"
-              type="password"
-              placeholder="••••••••"
-              class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2"
-            />
+            <label class="text-xs font-bold uppercase tracking-widest text-gray-500"
+              for="create-staff-confirm-password">Confirm Password</label>
+            <input v-model="createStaffForm.confirmPassword" id="create-staff-confirm-password" type="password"
+              placeholder="••••••••" class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
           </div>
-          <label class="flex min-w-0 items-start gap-3 rounded-xl border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700 sm:col-span-2">
-            <input
-              v-model="createStaffForm.confirm"
-              type="checkbox"
-              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-            />
+          <label
+            class="flex min-w-0 items-start gap-3 rounded-xl border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700 sm:col-span-2">
+            <input v-model="createStaffForm.confirm" type="checkbox"
+              class="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
             <span>I confirm this account creation.</span>
           </label>
-          <button :disabled="creatingStaff" @click="submitCreateStaff" class="mt-1 h-10 rounded-xl bg-green-600 px-4 font-semibold text-white hover:bg-green-700 disabled:opacity-60 sm:col-span-2">{{ creatingStaff ? 'Creating...' : 'Create Staff' }}</button>
+          <button :disabled="creatingStaff" @click="submitCreateStaff"
+            class="mt-1 h-10 rounded-xl bg-green-600 px-4 font-semibold text-white hover:bg-green-700 disabled:opacity-60 sm:col-span-2">{{
+              creatingStaff ? 'Creating...' : 'Create Staff' }}</button>
         </div>
       </div>
 
@@ -300,18 +301,16 @@ onMounted(() => {
         </div>
 
         <div v-else class="space-y-2">
-          <div v-for="staff in staffList" :key="staff.id" class="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+          <div v-for="staff in staffList" :key="staff.id"
+            class="flex items-center justify-between rounded-lg bg-gray-50 p-3">
             <div class="flex-1">
               <p class="font-semibold text-gray-900">{{ staff.email }}</p>
               <p class="text-xs text-gray-600">
                 Created: {{ new Date(staff.created_at).toLocaleDateString('en-PH') }}
               </p>
             </div>
-            <button
-              type="button"
-              @click="openDeleteModal(staff)"
-              class="ml-3 rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-            >
+            <button type="button" @click="openDeleteModal(staff)"
+              class="ml-3 rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50">
               Delete
             </button>
           </div>
@@ -320,13 +319,15 @@ onMounted(() => {
     </section>
 
     <section v-else-if="currentSection === 'contributions'" class="space-y-4">
-      <div>
-        <h3 class="mb-1 text-2xl font-semibold text-gray-900">
-          {{ isAdmin ? 'Team Contributions' : 'My Contributions' }}
-        </h3>
-        <p class="text-sm text-gray-600">
-          {{ isAdmin ? 'Completed tasks from all staff members' : "Projects you've completed tasks on" }}
-        </p>
+      <div class="flex items-start gap-3">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+          <User class="h-6 w-6 text-sky-600" />
+        </div>
+        <div>
+          <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Contributions</h3>
+          <p class="text-sm text-gray-600">See recently completed tasks and their contributors.</p>
+        </div>
       </div>
 
       <div v-if="completedContributions.length === 0" class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">
@@ -334,18 +335,16 @@ onMounted(() => {
       </div>
 
       <div v-else class="space-y-3">
-        <div v-for="proj in completedContributions" :key="proj.projectName" class="rounded-lg border border-gray-200 bg-white p-4">
+        <div v-for="proj in completedContributions" :key="proj.projectName"
+          class="rounded-lg border border-gray-200 bg-white p-4">
           <div class="flex items-center justify-between">
             <div>
               <p class="font-semibold text-gray-900">{{ proj.projectName }}</p>
               <p class="text-sm text-gray-600">Completed tasks: {{ proj.doneCount }}</p>
               <div class="mt-1 flex flex-wrap gap-2">
-                <span
-                  v-for="name in proj.contributors"
-                  :key="`${proj.projectName}-${name}`"
+                <span v-for="name in proj.contributors" :key="`${proj.projectName}-${name}`"
                   class="rounded-full px-2 py-0.5 text-xs"
-                  :class="isCurrentUserContributor(name) ? 'bg-blue-100 font-semibold text-blue-700' : 'bg-gray-100 text-gray-600'"
-                >
+                  :class="isCurrentUserContributor(name) ? 'bg-blue-100 font-semibold text-blue-700' : 'bg-gray-100 text-gray-600'">
                   {{ name }}
                   <span v-if="isCurrentUserContributor(name)">(You)</span>
                 </span>
@@ -357,17 +356,12 @@ onMounted(() => {
       </div>
     </section>
 
-    <ModalShell
-      :show="showDeleteModal"
-      title="Delete Staff Member"
-      subtitle="Confirm deletion"
-      tone="red"
-      size="lg"
-      @close="closeDeleteModal"
-    >
+    <ModalShell :show="showDeleteModal" title="Delete Staff Member" subtitle="Confirm deletion" tone="red" size="lg"
+      @close="closeDeleteModal">
       <div class="space-y-4">
         <p class="text-gray-700">
-          Are you sure you want to delete <strong>{{ selectedStaffToDelete?.email }}</strong>? This action cannot be undone.
+          Are you sure you want to delete <strong>{{ selectedStaffToDelete?.email }}</strong>? This action cannot be
+          undone.
         </p>
         <div v-if="deleteError" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {{ deleteError }}
@@ -375,15 +369,14 @@ onMounted(() => {
       </div>
 
       <template #footer>
-        <button type="button" class="rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50" @click="closeDeleteModal">
+        <button type="button"
+          class="rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+          @click="closeDeleteModal">
           Cancel
         </button>
-        <button
-          type="button"
-          :disabled="isDeleting"
+        <button type="button" :disabled="isDeleting"
           class="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-          @click="confirmDeleteStaff"
-        >
+          @click="confirmDeleteStaff">
           {{ isDeleting ? 'Deleting...' : 'Delete' }}
         </button>
       </template>

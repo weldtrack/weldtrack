@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import Layout from './DashboardLayout.vue'
 import InventoryManagement from './components/admin/InventoryManagement.vue'
-import ProjectHistory from './components/staff/ProjectHistory.vue'
+import ProjectHistory from './components/shared/ProjectHistory.vue'
 import Reports from './components/admin/Reports.vue'
 import BookingApproval from './components/admin/BookingApproval.vue'
 import StaffWorkspace from './components/staff/StaffWorkspace.vue'
@@ -194,41 +194,46 @@ const pieStyle = computed(() => {
 })
 
 
-
+import { LayoutDashboard } from 'lucide-vue-next'
 
 </script>
 
 <template>
   <Layout title="Admin Dashboard">
     <div v-if="currentSection === 'dashboard'" class="space-y-6">
-      <div>
-        <h2 class="mb-1 text-2xl font-semibold text-gray-900">Admin Dashboard</h2>
-        <p class="text-gray-600">Project progress, expenses, and customer information</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-50 to-sky-25 ring-1 ring-sky-100">
+          <LayoutDashboard class="h-6 w-6 text-sky-600" />
+        </div>
+        <div>
+          <h3 class="mb-1 text-2xl font-semibold text-gray-900">Booking Approval</h3>
+          <p class="text-sm text-gray-600">Review customer requests and approve bookings</p>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="rounded-lg bg-emerald-50 p-6">
-          <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Completed Projects</p>
+        <div class="rounded-lg bg-sky-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Completed Projects</p>
           <p class="mt-2 text-2xl font-bold text-gray-900">{{ completedProjects }}</p>
         </div>
 
-        <div class="rounded-lg bg-purple-50 p-6">
-          <p class="text-xs uppercase tracking-wide text-purple-600 font-semibold">Ongoing Projects</p>
+        <div class="rounded-lg bg-sky-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Ongoing Projects</p>
           <p class="mt-2 text-2xl font-bold text-gray-900">{{ ongoingProjects }}</p>
         </div>
 
-        <div class="rounded-lg bg-blue-50 p-6">
-          <p class="text-xs uppercase tracking-wide text-blue-600 font-semibold">Total Project Value</p>
+        <div class="rounded-lg bg-sky-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Total Project Value</p>
           <p class="mt-2 text-2xl font-bold text-gray-900">{{ formatCurrency(totalProjectValue) }}</p>
         </div>
 
-        <div class="rounded-lg bg-indigo-50 p-6">
-          <p class="text-xs uppercase tracking-wide text-indigo-600 font-semibold">Total Customers</p>
+        <div class="rounded-lg bg-sky-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Total Customers</p>
           <p class="mt-2 text-2xl font-bold text-gray-900">{{ totalCustomers }}</p>
         </div>
 
-        <div class="rounded-lg bg-orange-50 p-6">
-          <p class="text-xs uppercase tracking-wide text-orange-600 font-semibold">New Customers This Month</p>
+        <div class="rounded-lg bg-sky-50 p-6">
+          <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">New Customers This Month</p>
           <p class="mt-2 text-2xl font-bold text-gray-900">{{ newCustomersThisMonth }}</p>
         </div>
       </div>

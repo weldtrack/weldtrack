@@ -184,8 +184,8 @@ function formatDateTime(value?: string) {
   <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-slate-50 to-white ring-1 ring-slate-100">
-          <Archive class="h-5 w-5 text-slate-600" />
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+          <Archive class="h-5 w-5 text-sky-600" />
         </div>
         <div>
           <h3 class="mb-1 text-2xl font-semibold text-gray-900">Inventory Management</h3>
@@ -194,7 +194,7 @@ function formatDateTime(value?: string) {
       </div>
       <button
         type="button"
-        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
+        class="inline-flex items-center justify-center rounded-lg bg-sky-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-sky-700"
         @click="openAddDialog"
       >
         <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,16 +205,16 @@ function formatDateTime(value?: string) {
     </div>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="rounded-lg bg-blue-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-blue-600">Total Items</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600">Total Items</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ totalItems }}</p>
       </div>
-      <div class="rounded-lg bg-amber-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-amber-600">Low Stock</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600">Low Stock</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ lowStockCount }}</p>
       </div>
-      <div class="rounded-lg bg-emerald-50 p-4">
-        <p class="text-xs uppercase tracking-wide text-emerald-600">Suppliers</p>
+      <div class="rounded-lg bg-sky-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-sky-600">Suppliers</p>
         <p class="mt-1 text-2xl font-bold text-gray-900">{{ supplierCount }}</p>
       </div>
     </div>
@@ -224,17 +224,17 @@ function formatDateTime(value?: string) {
         v-model="searchTerm"
         type="text"
         placeholder="Search materials or suppliers..."
-        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 lg:max-w-md"
+        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200 lg:max-w-md"
       />
     </div>
 
-    <div v-if="selectedCount > 0" class="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-4">
+    <div v-if="selectedCount > 0" class="flex items-center justify-between rounded-lg border border-sky-200 bg-sky-50 p-4">
       <div>
-        <p class="font-semibold text-blue-900">{{ selectedCount }} item(s) selected</p>
+        <p class="font-semibold text-sky-900">{{ selectedCount }} item(s) selected</p>
       </div>
       <button
         type="button"
-        class="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-green-700"
+        class="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-sky-700"
         @click="openStockModal"
       >
         Stock In
@@ -378,7 +378,7 @@ function formatDateTime(value?: string) {
                 type="number"
                 min="0"
                 required
-                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
               />
             </div>
           </div>
@@ -387,7 +387,7 @@ function formatDateTime(value?: string) {
             <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting" @click="closeDialog">
               Cancel
             </button>
-            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting">
+            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting">
               <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
