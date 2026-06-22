@@ -8,16 +8,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.middleware.auth_middleware import (
-	ACCESS_TOKEN_EXPIRE_MINUTES,
-	AUTH_COOKIE_NAME,
-	AUTH_COOKIE_SAMESITE,
-	AUTH_COOKIE_SECURE,
-	create_access_token,
-	get_current_user,
-	hash_password,
-	verify_password,
+from app.core.config import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    AUTH_COOKIE_NAME,
+    AUTH_COOKIE_SAMESITE,
+    AUTH_COOKIE_SECURE,
 )
+from app.core.jwt import create_access_token
+from app.core.security import hash_password, verify_password
+from app.dependencies.auth import get_current_user
 from app.models.user import User, UserRole
 from app.models.verification_code import EmailVerificationCode, EmailVerification
 from app.schemas.user import AuthResponse, LoginRequest, SignupRequest, UserRead
