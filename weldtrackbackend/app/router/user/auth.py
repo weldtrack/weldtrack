@@ -50,12 +50,15 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 	return db.scalar(statement)
 
 
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+	if current_user.role != UserRole.admin:
+		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
+	return current_user
+
+
 def generate_verification_code() -> str:
 	"""Generate a random 6-digit verification code"""
 	return str(secrets.randbelow(1000000)).zfill(6)
-
-
-
 
 
 @router.post("/signup", status_code=status.HTTP_200_OK)
@@ -134,10 +137,7 @@ def read_current_user(current_user: User = Depends(get_current_user), db: Sessio
 
 
 @router.get("/staff", response_model=list[UserRead])
-def list_staff_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[UserRead]:
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-
+def list_staff_users(admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> list[UserRead]:
 	users = db.scalars(select(User).where(User.role == UserRole.staff).order_by(User.id)).all()
 	return [get_user_response(user) for user in users]
 
@@ -157,7 +157,6 @@ def logout(response: Response, current_user: User = Depends(get_current_user), d
 	return {"success": True, "message": "Logged out successfully"}
 
 
-
 def is_user_online(user: User) -> bool:
 	"""Determine if user is online based on session activity (last_active within 30 seconds)"""
 	if user.last_active is None:
@@ -167,11 +166,8 @@ def is_user_online(user: User) -> bool:
 
 
 @router.get("/admin/users", response_model=list[UserRead])
-def admin_get_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[UserRead]:
+def admin_get_users(admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> list[UserRead]:
 	"""Admin-only: get all non-admin users (customers and staff)"""
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-	
 	users = db.scalars(
 		select(User)
 		.where(User.role != UserRole.admin)
@@ -185,17 +181,14 @@ def admin_get_users(current_user: User = Depends(get_current_user), db: Session 
 
 
 @router.get("/admin/online", response_model=list[UserRead])
-def admin_get_online_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[UserRead]:
+def admin_get_online_users(admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> list[UserRead]:
 	"""Admin-only: get online users (based on recent last_active within 30 seconds)"""
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-	
 	thirty_seconds_ago = datetime.now(timezone.utc) - timedelta(seconds=30)
 	
 	users = db.scalars(
 		select(User)
 		.where(User.role != UserRole.admin)
-		.where((User.last_active != None) & (User.last_active >= thirty_seconds_ago))
+		.where((User.last_active.isnot(None)) & (User.last_active >= thirty_seconds_ago))
 		.order_by(User.last_active.desc(), User.id.desc())
 	).all()
 	
@@ -206,12 +199,9 @@ def admin_get_online_users(current_user: User = Depends(get_current_user), db: S
 
 
 @router.post("/admin/ban/{user_id}")
-def admin_ban_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, bool | str]:
+def admin_ban_user(user_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> dict[str, bool | str]:
 	"""Admin-only: ban a user"""
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-	
-	if user_id == current_user.id:
+	if user_id == admin.id:
 		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot ban yourself")
 	
 	user = db.get(User, user_id)
@@ -234,11 +224,8 @@ def admin_ban_user(user_id: int, current_user: User = Depends(get_current_user),
 
 
 @router.post("/admin/unban/{user_id}")
-def admin_unban_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict[str, bool | str]:
+def admin_unban_user(user_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)) -> dict[str, bool | str]:
 	"""Admin-only: unban a user"""
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-	
 	user = db.get(User, user_id)
 	if not user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -256,7 +243,6 @@ def admin_unban_user(user_id: int, current_user: User = Depends(get_current_user
 		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to unban user")
 	
 	return {"success": True, "message": f"User {user.email} has been unbanned"}
-
 
 
 @router.post("/verifyemail")
@@ -415,11 +401,8 @@ def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)
 
 
 @router.post("/admin/create-staff")
-def admin_create_staff(payload: dict, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def admin_create_staff(payload: dict, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
 	"""Admin-only: create a staff account without requiring email verification."""
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-
 	email = payload.get("email")
 	password = payload.get("password")
 
@@ -450,11 +433,8 @@ def admin_create_staff(payload: dict, current_user: User = Depends(get_current_u
 
 
 @router.delete("/staff/{staff_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_staff(staff_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_staff(staff_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
 	"""Admin-only: delete a staff member"""
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-
 	staff_user = db.get(User, staff_id)
 	if not staff_user:
 		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Staff member not found")
@@ -522,57 +502,3 @@ def reset_password(payload: dict, db: Session = Depends(get_db)):
 	
 	return {"success": True, "message": "Password reset successful"}
 
-
-@router.get("/admin/users", response_model=list[UserRead])
-def list_all_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[UserRead]:
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-
-	users = db.scalars(select(User).order_by(User.id)).all()
-	return [get_user_response(user) for user in users]
-
-
-@router.get("/admin/online", response_model=list[UserRead])
-def list_online_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> list[UserRead]:
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-
-	threshold = datetime.now(timezone.utc) - timedelta(minutes=5)
-	users = db.scalars(
-		select(User)
-		.where(User.is_online.is_(True) | ((User.last_active != None) & (User.last_active >= threshold)))
-		.order_by(User.id)
-	).all()
-	return [get_user_response(user) for user in users]
-
-
-@router.post("/admin/ban/{user_id}")
-def ban_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> UserRead:
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-
-	user = db.get(User, user_id)
-	if not user:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-	user.is_banned = True
-	db.add(user)
-	db.commit()
-	db.refresh(user)
-	return get_user_response(user)
-
-
-@router.post("/admin/unban/{user_id}")
-def unban_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> UserRead:
-	if current_user.role != UserRole.admin:
-		raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Requires admin privileges")
-
-	user = db.get(User, user_id)
-	if not user:
-		raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-	user.is_banned = False
-	db.add(user)
-	db.commit()
-	db.refresh(user)
-	return get_user_response(user)
