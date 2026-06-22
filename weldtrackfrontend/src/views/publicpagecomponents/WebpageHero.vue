@@ -75,7 +75,7 @@ const heroStats = [
                         class="public-hero-image h-[34rem] w-full object-cover sm:h-[40rem]" />
                     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),transparent_42%),linear-gradient(180deg,transparent_20%,rgba(2,6,23,0.84)_100%)]"></div>
 
-                    <div class="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-4 py-2 text-xs font-bold tracking-[0.2em] text-cyan-200 uppercase backdrop-blur-md">
+                    <div class="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-4 py-2 text-xs font-bold tracking-[0.2em] text-cyan-600 uppercase backdrop-blur-md">
                         Live visibility
                     </div>
 
