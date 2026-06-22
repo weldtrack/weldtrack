@@ -6,7 +6,7 @@ from app.models.booking import Booking, BookingStatus, RecordMaterial
 from app.models.service import Service
 from app.models.customer_address import CustomerAddress
 from app.schemas.booking import BookingCreate, BookingUpdate, BookingResponse, MaterialCreate
-from app.router.user.auth import get_current_user
+from app.router.auth import get_current_user
 from app.models.user import User, UserRole
 from app.models.inventory import InventoryItem, StockMovement, MovementType
 from app.schemas.stafftask import TaskMaterialsCreate

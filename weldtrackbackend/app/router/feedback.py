@@ -4,7 +4,7 @@ from sqlalchemy import select, desc
 from app.db import get_db
 from app.models.feedback import Feedback
 from app.models.user import User, UserRole
-from app.router.user.auth import get_current_user
+from app.router.auth import get_current_user
 from app.schemas.feedback import FeedbackCreate, FeedbackUpdate, FeedbackResponse
 
 router = APIRouter(prefix="/feedbacks", tags=["feedbacks"])

@@ -6,7 +6,7 @@ from app.db import get_db
 from app.models.attendance import AttendanceRecord
 from app.models.user import User, UserRole
 from app.schemas.attendance import AttendanceCheckIn, AttendanceCheckOut, AttendanceResponse
-from app.router.user.auth import get_current_user
+from app.router.auth import get_current_user
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 

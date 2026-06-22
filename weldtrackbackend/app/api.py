@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
-from app.router.user.auth import router as auth_router
+from app.router.auth import router as auth_router
+from app.router.admin import router as admin_router
+from app.router.verification import router as verification_router
 from app.router.bookings import router as bookings_router
 from app.router.customer_addresses import router as customer_addresses_router
 from app.router.feedback import router as feedback_router
@@ -20,3 +22,5 @@ router.include_router(stafftasks_router)
 router.include_router(staffcontributions_router)
 router.include_router(attendance_router)
 router.include_router(service_router)
+router.include_router(admin_router)
+router.include_router(verification_router)

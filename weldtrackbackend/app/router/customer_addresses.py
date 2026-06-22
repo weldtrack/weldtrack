@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.customer_address import CustomerAddress
 from app.models.user import User, UserRole
-from app.router.user.auth import get_current_user
+from app.router.auth import get_current_user
 from app.schemas.customer_address import (
     CustomerAddressCreate,
     CustomerAddressResponse,
