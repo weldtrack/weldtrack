@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../../stores/auth'
 import { useFeedbackStore } from '../../../../stores/feedback'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
+import api from '../../../../api/api'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
@@ -26,20 +27,24 @@ const formData = reactive({
   comment: '',
 })
 
-const projectTypes = [
-  'Gate Welding',
-  'Metal Railings',
-  'Steel Frame Construction',
-  'Staircase Fabrication',
-  'Metal Doors & Windows',
-  'Pipe & Duct Welding',
-  'Metal Shelving',
-  'Automotive Welding',
-  'Fence Installation',
-  'Tank & Vessel Fabrication',
-  'Repair & Maintenance',
-  'Other',
-]
+const services = ref<Array<{ id: number; name: string }>>([])
+const loadingServices = ref(false)
+
+async function fetchServices() {
+  loadingServices.value = true
+  try {
+    const response = await api.get('/services')
+    services.value = (response.data || []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+    }))
+  } catch (error) {
+    console.error('Failed to load services:', error)
+    services.value = []
+  } finally {
+    loadingServices.value = false
+  }
+}
 
 const feedbacksSorted = computed(() => {
   return [...feedbackStore.feedbacks].sort((a, b) => {
@@ -67,8 +72,11 @@ const starPercentage = (rating: number) => {
   return total === 0 ? 0 : Math.round((count / total) * 100)
 }
 
-onMounted(() => {
-  feedbackStore.fetchFeedbacks()
+onMounted(async () => {
+  await Promise.all([
+    feedbackStore.fetchFeedbacks(),
+    fetchServices(),
+  ])
 })
 
 function resetForm() {
@@ -308,10 +316,11 @@ function canManageFeedback(feedbackEmail: string) {
             id="projectType"
             v-model="formData.projectType"
             required
-            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            :disabled="loadingServices || services.length === 0"
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="">Select project type</option>
-            <option v-for="type in projectTypes" :key="type" :value="type">{{ type }}</option>
+            <option value="">{{ loadingServices ? 'Loading services...' : services.length === 0 ? 'No services available' : 'Select project type' }}</option>
+            <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }}</option>
           </select>
         </div>
 
