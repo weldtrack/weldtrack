@@ -136,6 +136,7 @@ async function loadServicePrices() {
 }
 
 onMounted(() => {
+  void bookingsStore.fetchBookings()
   void loadServicePrices()
 })
 
