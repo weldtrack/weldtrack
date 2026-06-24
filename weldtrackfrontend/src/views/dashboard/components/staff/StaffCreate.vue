@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { User } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'

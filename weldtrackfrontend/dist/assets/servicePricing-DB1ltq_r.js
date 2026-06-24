@@ -1,0 +1,1 @@
+import"./index-D0zsdZ0G.js";var e=null;function t(e){return e.trim().toLowerCase()}function n(n,r=e??{}){return r[t(n)]??0}function r(e,t,r){return Number(t??0)>0?Number(t):n(e,r)}export{r as t};
