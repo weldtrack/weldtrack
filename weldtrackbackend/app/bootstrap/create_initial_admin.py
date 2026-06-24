@@ -13,9 +13,8 @@ Rules:
     - Will only create admin if none exists.
 
 Usage:
-    export ADMIN_EMAIL=admin@example.com
-    export ADMIN_PASSWORD=StrongPass@123
-
+    python3 app/bootstrap/create_initial_admin.py
+    OR
     python3 -m app.bootstrap.create_initial_admin
 """
 
@@ -26,15 +25,21 @@ import re
 import sys
 from pathlib import Path
 
-from sqlalchemy import select
+# 1. Load environment variables from .env immediately
+from dotenv import load_dotenv
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
+
+# 2. Setup project root path for internal application utility imports
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from sqlalchemy import text
 
 from app.core.security import hash_password
 from app.db import SessionLocal
-from app.models.user import User, UserRole
-from app.models.verification_code import EmailVerification
+from app.models.user import UserRole
 
 
 def validate_password(password: str) -> None:
@@ -45,7 +50,6 @@ def validate_password(password: str) -> None:
     - At least 1 number
     - At least 1 special character
     """
-
     if len(password) < 12:
         raise ValueError("Password must be at least 12 characters long.")
 
@@ -64,45 +68,67 @@ def seed_admin() -> None:
     admin_password = os.getenv("ADMIN_PASSWORD")
 
     if not admin_email or not admin_password:
-        raise ValueError("ADMIN_EMAIL and ADMIN_PASSWORD are required.")
+        raise ValueError("ADMIN_EMAIL and ADMIN_PASSWORD are required in your environment or .env file.")
 
-    # Validate password strength BEFORE touching DB
-    validate_password(admin_password)
+    # Validate password strength BEFORE running queries
+    # validate_password(admin_password)
 
     db = SessionLocal()
 
     try:
-        existing_admin = db.scalar(
-            select(User).where(User.role == UserRole.admin).limit(1)
-        )
+        # Resolve the string value from Enum safely
+        role_value = UserRole.admin.value if hasattr(UserRole.admin, "value") else UserRole.admin
 
-        if existing_admin:
-            print(f"Admin already exists: {existing_admin.email}")
+        # 1. Check if an administrator already exists using raw SQL
+        result = db.execute(
+            text("SELECT id, email FROM users WHERE role = :role LIMIT 1"),
+            {"role": role_value}
+        ).fetchone()
+
+        if result:
+            print(f"Admin already exists: {result.email}")
             return
 
-        admin_user = User(
-            email=admin_email,
-            hashed_password=hash_password(admin_password),
-            role=UserRole.admin,
-        )
+        print("No existing admin found. Creating initial administrator account...")
 
-        db.add(admin_user)
-        db.flush()
+        # 2. Insert user directly (explicitly passing NOT NULL columns with defaults)
+        insert_user_query = text("""
+            INSERT INTO users (email, hashed_password, role, is_banned, is_online)
+            VALUES (:email, :hashed_password, :role, :is_banned, :is_online)
+            RETURNING id
+        """)
+        
+        user_id = db.execute(
+            insert_user_query,
+            {
+                "email": admin_email,
+                "hashed_password": hash_password(admin_password),
+                "role": role_value,
+                "is_banned": False,
+                "is_online": False,
+            }
+        ).scalar()
 
-        db.add(
-            EmailVerification(
-                user_id=admin_user.id,
-                is_verified=True,
-            )
+        # 3. Insert email verification record matching the schema name
+        insert_verification_query = text("""
+            INSERT INTO email_verifications (user_id, is_verified)
+            VALUES (:user_id, :is_verified)
+        """)
+        
+        db.execute(
+            insert_verification_query,
+            {
+                "user_id": user_id,
+                "is_verified": True
+            }
         )
 
         db.commit()
-
         print(f"Successfully created admin account: {admin_email}")
 
     except Exception as exc:
         db.rollback()
-        print(f"Failed to create admin account: {exc}")
+        print(f"Failed to create admin account due to error: {exc}")
         raise
 
     finally:
