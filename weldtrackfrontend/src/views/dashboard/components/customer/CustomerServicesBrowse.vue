@@ -3,6 +3,9 @@ import { onMounted, ref } from 'vue'
 import { Briefcase } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useAdminSectionStore } from '../../../../stores/adminSection'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 interface Service {
   id: number
@@ -31,7 +34,7 @@ async function fetchServices() {
 
 function openBooking(service: Service) {
   adminSectionStore.setSelectedService(service)
-  adminSectionStore.setSection('booking')
+  router.push({ name: 'customer-booking' })
 }
 
 function formatCurrency(value: number) {
