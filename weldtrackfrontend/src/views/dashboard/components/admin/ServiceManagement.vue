@@ -358,7 +358,7 @@ function formatDate(value: string) {
     </div>
 
     <div v-else class="overflow-hidden rounded-xl border border-gray-200">
-      <div class="overflow-x-auto">
+      <div class="h-screen overflow-x-auto">
         <table class="w-full min-w-180 divide-y divide-gray-200">
           <thead class="bg-gray-50/70">
             <tr class="text-left">

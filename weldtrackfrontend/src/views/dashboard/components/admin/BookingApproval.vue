@@ -13,9 +13,65 @@ const bookingsStore = useBookingsStore()
 const inventoryStore = useInventoryStore()
 const modalStore = useModalStore()
 const bookings = computed(() => bookingsStore.bookings)
-const activeBookings = computed(() =>
-  bookings.value.filter((booking) => booking.status === 'pending' || booking.status === 'confirmed'),
-)
+
+const searchTerm = ref('')
+const dateFilter = ref('all')
+
+const filteredBookings = computed(() => {
+  let data = bookings.value.filter(
+    (booking) => booking.status === 'pending' || booking.status === 'confirmed',
+  )
+
+  const query = searchTerm.value.trim().toLowerCase()
+
+  if (query) {
+    data = data.filter(
+      (booking) =>
+        booking.projectType?.toLowerCase().includes(query) ||
+        booking.email?.toLowerCase().includes(query) ||
+        booking.phone?.toLowerCase().includes(query),
+    )
+  }
+
+  if (dateFilter.value !== 'all') {
+    const today = new Date()
+
+    data = data.filter((booking) => {
+      const created = new Date(booking.createdDate ?? '')
+      const diffDays = Math.floor(
+        (today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24),
+      )
+
+      switch (dateFilter.value) {
+        case 'today':
+          return diffDays === 0
+        case '1':
+          return diffDays === 1
+
+        case '2':
+          return diffDays === 2
+
+        case '3':
+          return diffDays === 3
+
+        case '5':
+          return diffDays === 5
+
+        case '7':
+          return diffDays === 7
+        default:
+          return true
+      }
+    })
+  }
+
+  return data
+})
+
+function resetFilters() {
+  searchTerm.value = ''
+  dateFilter.value = 'all'
+}
 
 const pendingCount = computed(() => bookings.value.filter((booking) => booking.status === 'pending').length)
 const confirmedCount = computed(() => bookings.value.filter((booking) => booking.status === 'confirmed').length)
@@ -338,8 +394,39 @@ function getDisplayedLaborCost(booking: BookingItem) {
       </div>
     </div>
 
+    <div class="rounded-xl border border-gray-200 bg-white p-4">
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-4">
+        <div class="relative lg:col-span-2">
+          <svg class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+          </svg>
+
+          <input v-model="searchTerm" type="text" placeholder="Search service, email, or phone..."
+            class="w-full rounded-xl border border-gray-300 bg-gray-50 py-3 pl-10 pr-4 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+        </div>
+
+        <select v-model="dateFilter"
+          class="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="1">1 Day Ago</option>
+          <option value="2">2 Days Ago</option>
+          <option value="3">3 Days Ago</option>
+          <option value="5">5 Days Ago</option>
+          <option value="7">7 Days Ago</option>
+        </select>
+
+        <button type="button"
+          class="rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          @click="resetFilters">
+          Reset Filters
+        </button>
+      </div>
+    </div>
     <div class="overflow-hidden rounded-xl border border-gray-200">
-      <div class="overflow-x-auto">
+      <div class="h-screen overflow-x-auto">
         <table class="w-full min-w-300 divide-y divide-gray-200">
           <thead class="bg-gray-50/70">
             <tr class="text-left">
@@ -353,7 +440,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 bg-white">
-            <tr v-for="booking in activeBookings" :key="booking.id" class="transition-colors hover:bg-slate-50/80">
+            <tr v-for="booking in filteredBookings" :key="booking.id" class="transition-colors hover:bg-slate-50/80">
               <td class="px-6 py-4 font-medium text-gray-900 wrap-break-word">{{ booking.email }}<p
                   class="mt-0.5 text-xs text-gray-500">{{ booking.phone }}</p>
               </td>
@@ -535,7 +622,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
         <div>
           <p class="text-sm text-gray-600">Total Price</p>
           <p class="mt-1 text-lg font-medium text-gray-900">₱{{ computedCompletionTotal.toLocaleString('en-PH', {
-            minimumFractionDigits: 2 }) }}</p>
+            minimumFractionDigits: 2
+          }) }}</p>
         </div>
       </div>
 
