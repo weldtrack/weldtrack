@@ -161,6 +161,21 @@ export function createRouter() {
         name: 'signup',
         component: () => import('../views/auth/SignupPage.vue'),
       },
+      {
+        path: '/privacy',
+        name: 'privacy',
+        component: () => import('../views/PrivacyPolicy.vue'),
+      },
+      {
+        path: '/terms',
+        name: 'terms',
+        component: () => import('../views/TermsOfService.vue'),
+      },
+      {
+        path: '/:pathMatch(.*)*',
+        name: 'not-found',
+        component: () => import('../views/NotFound.vue'),
+      },
     ],
   })
 }

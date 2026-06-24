@@ -22,11 +22,22 @@ function getContributorLabels(snapshot: { contributorIds?: string[]; contributor
 }
 
 const completedContributions = computed(() => {
+  console.log('Current User ID (Email):', currentUserId.value)
+  console.log('All Snapshots:', staffContributionsStore.snapshots)
+
   const relevantSnapshots = staffContributionsStore.snapshots.filter((snapshot) => {
     if (isAdmin.value) return true
-    if (Array.isArray(snapshot.contributorIds)) return snapshot.contributorIds.includes(currentUserId.value)
-    return false
+
+    // Check IDs
+    const matchesId = Array.isArray(snapshot.contributorIds) && snapshot.contributorIds.includes(currentUserId.value)
+    // Check Emails
+    const matchesEmail = Array.isArray(snapshot.contributorEmails) && snapshot.contributorEmails.includes(currentUserId.value)
+
+    console.log('Snapshot', snapshot.id, 'matches:', matchesId || matchesEmail)
+    return matchesId || matchesEmail
   })
+
+  console.log('Relevant Snapshots:', relevantSnapshots)
 
   const byProject: Record<
     string,
@@ -68,9 +79,8 @@ onMounted(async () => {
   await Promise.all([
     staffContributionsStore.fetchSnapshots(),
     authStore.fetchStaffDirectory(),
-    // Assuming authStore or api can provide current user ID. 
-    // In original code, it was fetching /auth/me, I'll simplify.
   ])
+  currentUserId.value = authStore.email
 })
 </script>
 
