@@ -71,42 +71,39 @@ onMounted(() => {
       No services are available right now.
     </div>
 
-    <div v-else class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+    <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
       <article
         v-for="service in services"
         :key="service.id"
-        class="group overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
+        class="group flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm transition-all hover:shadow-lg hover:border-cyan-100"
       >
-        <div class="relative h-52 overflow-hidden bg-gray-100">
+        <div class="relative h-56 overflow-hidden">
           <img
             :src="service.image_url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop'"
             :alt="service.name"
             class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          <div class="absolute inset-0 bg-[linear-gradient(180deg,transparent_35%,rgba(2,6,23,0.7)_100%)]"></div>
-          <div class="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-slate-900 shadow-sm">
+          <div class="absolute inset-0 bg-[linear-gradient(180deg,transparent_30%,rgba(15,23,42,0.6)_100%)]"></div>
+          <div class="absolute top-4 right-4 rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-xs font-bold text-white shadow-sm border border-white/20">
             {{ formatCurrency(service.price) }}
           </div>
         </div>
 
-        <div class="space-y-4 p-5">
-          <div>
-            <h4 class="text-lg font-bold text-gray-900">{{ service.name }}</h4>
-            <p class="mt-2 text-sm leading-relaxed text-gray-600">
-              {{ service.description || 'Book this service directly from your customer dashboard.' }}
+        <div class="flex flex-1 flex-col p-6">
+          <div class="mb-4 flex-1">
+            <h4 class="text-xl font-bold text-slate-900">{{ service.name }}</h4>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600 line-clamp-3">
+              {{ service.description || 'Professional welding service tailored to your requirements.' }}
             </p>
           </div>
 
-          <div class="flex items-center justify-between gap-3">
-            <span class="text-sm font-semibold text-cyan-700">Available for booking</span>
-            <button
-              type="button"
-              class="inline-flex items-center justify-center rounded-full bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-700"
-              @click="openBooking(service)"
-            >
-              Book Service
-            </button>
-          </div>
+          <button
+            type="button"
+            class="mt-auto inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-cyan-600 active:scale-95"
+            @click="openBooking(service)"
+          >
+            Book Now
+          </button>
         </div>
       </article>
     </div>
