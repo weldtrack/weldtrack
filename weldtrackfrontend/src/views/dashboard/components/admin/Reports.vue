@@ -62,32 +62,113 @@ onMounted(async () => {
     inventoryStore.fetchInventory(),
     inventoryStore.fetchMovements(),
   ])
-
-  const today = new Date()
-  const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`
-  const monthEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  
-  await fetchAttendanceData(monthStart, monthEnd)
+  await onRangeChange()
 })
 
 const today = new Date()
-const defaultStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`
-const defaultEnd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-const selectedStartDate = ref(defaultStart)
-const selectedEndDate = ref(defaultEnd)
+const maxDate = today.toISOString().split('T')[0]
+
+const dateRanges = computed(() => {
+  const ranges = []
+  const today = new Date()
+  
+  // Helper to format date strictly as YYYY-MM-DD
+  const formatDate = (y: number, m: number, d: number) => {
+    const date = new Date(y, m, d)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  }
+
+  for (let i = 4; i >= 0; i--) {
+    const startStr = formatDate(today.getFullYear(), today.getMonth() - i, 15)
+    const endStr = formatDate(today.getFullYear(), today.getMonth() - i + 1, 15)
+    
+    // Ensure end date does not exceed today
+    const endDateStr = endStr > maxDate ? maxDate : endStr
+    
+    const startObj = new Date(startStr + 'T00:00:00')
+    const endObj = new Date(endDateStr + 'T00:00:00')
+
+    ranges.push({
+      label: `${startObj.toLocaleDateString('en-PH', { month: 'short' })} - ${endObj.toLocaleDateString('en-PH', { month: 'short' })}`,
+      start: startStr,
+      end: endDateStr,
+    })
+  }
+  return ranges
+})
+
+const selectedRange = ref(dateRanges.value[4].start + '|' + dateRanges.value[4].end)
+const selectedStartDate = ref(dateRanges.value[4].start)
+const selectedEndDate = ref(dateRanges.value[4].end)
+
+async function refreshData(start: string, end: string) {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+  const today = new Date()
+  
+  // Prevent future dates and invalid ranges
+  if (startDate > endDate || startDate > today || endDate > today) return;
+  
+  await Promise.all([
+    fetchAttendanceData(start, end),
+    inventoryStore.fetchMovements(),
+  ])
+}
+
+async function onRangeChange() {
+  const [start, end] = selectedRange.value.split('|')
+  selectedStartDate.value = start
+  selectedEndDate.value = end
+  await refreshData(start, end)
+}
+
+// Auto-update on manual input change
+import { watch } from 'vue'
+watch([selectedStartDate, selectedEndDate], async () => {
+  if (!hasInvalidDateRange.value) {
+    await refreshData(selectedStartDate.value, selectedEndDate.value)
+  }
+})
 
 const normalizedStart = computed(() => new Date(`${selectedStartDate.value}T00:00:00`))
 const normalizedEnd = computed(() => new Date(`${selectedEndDate.value}T23:59:59.999`))
 
-const hasInvalidDateRange = computed(() => normalizedStart.value > normalizedEnd.value)
+const hasInvalidDateRange = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return normalizedStart.value > normalizedEnd.value || selectedStartDate.value > today || selectedEndDate.value > today
+})
 
 function isWithinSelectedRange(isoDate: string) {
-  const d = new Date(`${isoDate}T00:00:00`)
+  const dateValue = isoDate.includes('T') ? isoDate : `${isoDate}T00:00:00`
+  const d = new Date(dateValue)
+  if (isNaN(d.getTime())) return false
   return d >= normalizedStart.value && d <= normalizedEnd.value
 }
 
 const filteredAttendanceRecords = computed(() =>
   attendanceRecords.value.filter((record) => isWithinSelectedRange(record.date)),
+)
+
+const inventoryInPeriod = computed(() => {
+  const start = normalizedStart.value
+  const end = normalizedEnd.value
+
+  const movementsInRange = movements.value.filter((m) => {
+    const t = m.rawTimestamp || m.timestamp
+    const d = new Date(t)
+    return !isNaN(d.getTime()) && d >= start && d <= end
+  })
+
+  const itemIds = new Set(movementsInRange.map((m) => m.itemId))
+  return inventory.value.filter((item) => itemIds.has(item.id))
+})
+
+const totalInventoryValueInPeriod = computed(() =>
+  inventoryInPeriod.value.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+)
+
+const lowStockCountInPeriod = computed(() =>
+  inventoryInPeriod.value.filter((item) => item.quantity <= item.lowStockThreshold).length,
 )
 
 const totalInventoryValue = computed(() =>
@@ -116,7 +197,7 @@ function formatDateTime(dateStr?: string) {
 
 const projects = computed(() =>
   bookingsStore.bookings
-    .filter((b) => b.status !== 'cancelled')
+    .filter((b) => b.status !== 'cancelled' && b.createdDate && isWithinSelectedRange(b.createdDate))
     .map((b) => {
       const laborCost = getServicePriceDisplay(b.projectType, b.estimatedCost)
       const baseCost = Number(b.totalPrice ?? laborCost + Number(b.materialCost ?? 0))
@@ -174,21 +255,6 @@ const staffData = computed(() => {
   return Array.from(emails)
 })
 
-async function updateDateRange() {
-  if (hasInvalidDateRange.value) {
-    modalStore.open({
-      title: 'Invalid date range',
-      message: 'Start Date must be on or before End Date.',
-      variant: 'warning',
-    })
-    return
-  }
-  await Promise.all([
-    fetchAttendanceData(selectedStartDate.value, selectedEndDate.value),
-    inventoryStore.fetchMovements(),
-  ])
-}
-
 function computeMovementValuesForRange() {
   const start = new Date(`${selectedStartDate.value}T00:00:00`)
   const end = new Date(`${selectedEndDate.value}T23:59:59`)
@@ -231,6 +297,21 @@ async function generateStockInReportPDF() {
   isExporting.value = true
 
   try {
+    const start = new Date(`${selectedStartDate.value}T00:00:00`)
+    const end = new Date(`${selectedEndDate.value}T23:59:59`)
+
+    const movementsFiltered = movements.value.filter((m) => {
+      const t = m.rawTimestamp || m.timestamp
+      const d = new Date(t)
+      return !isNaN(d.getTime()) && d >= start && d <= end
+    })
+
+    const itemsWithMovementsIds = new Set(movementsFiltered.map((m) => m.itemId))
+    const filteredInventory = inventory.value.filter((item) => itemsWithMovementsIds.has(item.id))
+    
+    const filteredTotalValue = filteredInventory.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+    const filteredLowStockCount = filteredInventory.filter((item) => item.quantity <= item.lowStockThreshold).length
+
     const element = document.createElement('div')
     element.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -241,20 +322,20 @@ async function generateStockInReportPDF() {
         <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Summary</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Stocked Items</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${inventory.value.length}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Stocked Items (in period)</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${filteredInventory.length}</td>
           </tr>
           <tr>
             <td style="padding: 8px; border: 1px solid #ddd;"><strong>Low Stock Items</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${lowStockCount.value}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${filteredLowStockCount}</td>
           </tr>
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Stock Value</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(totalInventoryValue.value)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Value of Period Items</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(filteredTotalValue)}</td>
           </tr>
         </table>
 
-        <h3 style="margin-top: 25px; border-bottom: 1px solid #333; padding-bottom: 10px;">Inventory Details</h3>
+        <h3 style="margin-top: 25px; border-bottom: 1px solid #333; padding-bottom: 10px;">Inventory Details (Period Items)</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <thead>
             <tr style="background-color: #333; color: white;">
@@ -266,7 +347,7 @@ async function generateStockInReportPDF() {
             </tr>
           </thead>
           <tbody>
-            ${inventory.value.map((item) => `
+            ${filteredInventory.map((item) => `
               <tr>
                 <td style="padding: 8px; border: 1px solid #ddd;">${item.name}</td>
                 <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
@@ -279,15 +360,6 @@ async function generateStockInReportPDF() {
         </table>
       </div>
     `
-
-    const start = new Date(`${selectedStartDate.value}T00:00:00`)
-    const end = new Date(`${selectedEndDate.value}T23:59:59`)
-
-    const movementsFiltered = movements.value.filter((m) => {
-      const t = m.rawTimestamp || m.timestamp
-      const d = new Date(t)
-      return !isNaN(d.getTime()) && d >= start && d <= end
-    })
 
     const options = {
       margin: 10,
@@ -565,33 +637,34 @@ async function generateStaffAttendanceReportPDF() {
     </div>
 
     <div class="rounded-lg border border-gray-200 bg-white p-4">
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Start Date</label>
-          <input v-model="selectedStartDate" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="flex items-center gap-4">
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Quick Range</label>
+            <select 
+              v-model="selectedRange" 
+              @change="onRangeChange"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2"
+            >
+              <option v-for="range in dateRanges" :key="range.start" :value="range.start + '|' + range.end">
+                {{ range.label }}
+              </option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">End Date</label>
-          <input v-model="selectedEndDate" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
-        </div>
-        <div class="lg:col-span-2 flex items-end gap-2">
-          <button
-            type="button"
-            class="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
-            :disabled="hasInvalidDateRange || isExporting"
-            @click="updateDateRange"
-          >
-            {{ isExporting ? 'Loading...' : 'Update' }}
-          </button>
-          <p class="text-sm text-gray-600">
-            <span class="font-semibold text-gray-900">{{ selectedStartDate }}</span>
-            to
-            <span class="font-semibold text-gray-900">{{ selectedEndDate }}</span>
-          </p>
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-2">
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Start</label>
+            <input v-model="selectedStartDate" type="date" :max="maxDate" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">End</label>
+            <input v-model="selectedEndDate" type="date" :max="maxDate" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
+          </div>
         </div>
       </div>
       <p v-if="hasInvalidDateRange" class="mt-2 text-sm text-red-600">
-        Start Date must be earlier than or equal to End Date.
+        Invalid date range: Ensure dates are not in the future, and start date is not after end date.
       </p>
     </div>
 
@@ -613,15 +686,15 @@ async function generateStaffAttendanceReportPDF() {
         <div class="mb-6 flex-1 space-y-3">
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Total Stocked Items:</span>
-            <span class="text-gray-900">{{ inventory.length }}</span>
+            <span class="text-gray-900">{{ inventoryInPeriod.length }}</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Low Stock Items:</span>
-            <span class="text-sky-600">{{ lowStockCount }}</span>
+            <span class="text-sky-600">{{ lowStockCountInPeriod }}</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Total Stock Value:</span>
-            <span class="text-gray-900">{{ formatCurrency(totalInventoryValue) }}</span>
+            <span class="text-gray-900">{{ formatCurrency(totalInventoryValueInPeriod) }}</span>
           </div>
         </div>
         <button

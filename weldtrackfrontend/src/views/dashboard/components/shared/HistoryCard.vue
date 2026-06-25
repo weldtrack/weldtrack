@@ -87,7 +87,21 @@ const grandTotal = computed(() => getGrandTotal(item))
         <p class="text-sm text-gray-500">Schedule</p>
         <p class="mt-1 font-medium text-gray-900">{{ formatDate(item.scheduleDate || item.endDate) }}</p>
         <p class="mt-3 text-sm text-gray-500">Status</p>
-        <span class="mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize" :class="getStatusClass(item.status)">{{ item.status }}</span>
+        <div class="relative group inline-block">
+          <span 
+            class="mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors" 
+            :class="[getStatusClass(item.status), item.status === 'cancelled' ? 'cursor-help' : '']"
+          >
+            {{ item.status }}
+          </span>
+          <div 
+            v-if="item.status === 'cancelled'" 
+            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-2 py-1 text-[11px] text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10 text-center"
+          >
+            {{ item.cancelReason || 'No reason provided' }}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+          </div>
+        </div>
       </div>
     </div>
 
