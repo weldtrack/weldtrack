@@ -33,10 +33,17 @@ def list_feedbacks(
     response = []
     for feedback in feedbacks:
         feedback_data = FeedbackResponse.model_validate(feedback)
-        # Fetch user profile image
+        # Fetch user profile image for feedback author
         user = db.scalar(select(User).filter(User.email == feedback.email))
         if user:
             feedback_data.profile_image = user.profile_image
+        
+        # Fetch profile images for comments
+        for comment in feedback_data.comments:
+            comment_user = db.scalar(select(User).filter(User.email == comment.user_email))
+            if comment_user:
+                comment.profile_image = comment_user.profile_image
+        
         response.append(feedback_data)
         
     return response

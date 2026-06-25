@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Star, ThumbsUp, MessageSquare } from 'lucide-vue-next'
+import { Star, ThumbsUp, MessageSquare, Send } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useFeedbackStore } from '../../../../stores/feedback'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
 import api from '../../../../api/api'
-import { type Feedback } from '../../../../types/feedback'
+import { type Feedback, type FeedbackComment } from '../../../../types/feedback'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
@@ -22,6 +22,7 @@ const currentEmail = computed(() => authStore.email || '')
 const editingFeedbackId = ref<number | null>(null)
 const isSubmitting = ref(false)
 const newCommentText = ref<Record<number, string>>({})
+const showComments = ref<Record<number, boolean>>({})
 
 const formData = reactive({
   projectType: '',
@@ -38,8 +39,16 @@ const getImageUrl = (url?: string) => {
     return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
 };
 
+const getSortedComments = (comments: FeedbackComment[]) => {
+  return [...comments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
+
 const isLiked = (feedback: Feedback) => {
   return feedback.likes.some(l => l.userEmail.toLowerCase() === currentEmail.value.toLowerCase())
+}
+
+const toggleComments = (feedbackId: number) => {
+  showComments.value[feedbackId] = !showComments.value[feedbackId]
 }
 
 async function handleAddComment(feedbackId: number) {
@@ -313,20 +322,33 @@ function canManageFeedback(feedbackEmail: string) {
             <ThumbsUp class="h-4 w-4" />
             {{ feedback.likes.length }}
           </button>
-          <div class="flex items-center gap-1 text-xs text-slate-500 font-semibold">
+          <button @click="toggleComments(feedback.id)" class="flex items-center gap-1 text-xs text-slate-500 font-semibold">
             <MessageSquare class="h-4 w-4" />
             {{ feedback.comments.length }}
-          </div>
+          </button>
         </div>
 
-        <div class="mt-4 space-y-2">
-          <div v-for="comment in feedback.comments" :key="comment.id" class="text-sm bg-slate-100 p-2 rounded">
-            <span class="font-semibold text-slate-800">{{ comment.userEmail }}: </span>
-            <span>{{ comment.comment }}</span>
+        <div v-if="showComments[feedback.id]" class="mt-4 space-y-2">
+          <div class="max-h-[200px] overflow-y-auto space-y-2">
+            <div v-for="comment in getSortedComments(feedback.comments)" :key="comment.id" class="text-sm bg-slate-50 p-3 rounded-lg border border-slate-100 flex gap-3">
+              <div class="h-8 w-8 shrink-0 rounded-full bg-slate-200 overflow-hidden border border-slate-300">
+                <img v-if="comment.profileImage" :src="getImageUrl(comment.profileImage)" alt="Profile" class="h-full w-full object-cover">
+                <span v-else class="text-xs font-semibold text-slate-600 w-full h-full flex items-center justify-center">{{ comment.userEmail.slice(0, 1).toUpperCase() }}</span>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <span class="font-semibold text-slate-800">{{ comment.userEmail }}</span>
+                    <span class="text-xs text-slate-500">{{ formatFeedbackDate(comment.date) }}</span>
+                </div>
+                <p class="text-slate-700 mt-1">{{ comment.comment }}</p>
+              </div>
+            </div>
           </div>
           <div class="flex gap-2">
             <input v-model="newCommentText[feedback.id]" placeholder="Add a comment..." class="flex-1 rounded-lg border border-slate-200 px-3 py-1 text-sm">
-            <button @click="handleAddComment(feedback.id)" class="text-xs font-semibold text-blue-600">Post</button>
+            <button @click="handleAddComment(feedback.id)" class="text-blue-600 hover:text-blue-700">
+              <Send class="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>

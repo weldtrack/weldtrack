@@ -4,6 +4,7 @@ export type FeedbackComment = {
   userEmail: string
   comment: string
   date: string
+  profileImage?: string
 }
 
 export type FeedbackLike = {

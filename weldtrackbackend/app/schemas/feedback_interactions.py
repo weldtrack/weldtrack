@@ -15,6 +15,7 @@ class FeedbackCommentResponse(FeedbackCommentBase):
     feedback_id: int
     user_email: EmailStr
     date: datetime
+    profile_image: str | None = None
 
     class Config:
         from_attributes = True

@@ -16,6 +16,7 @@ export function toFrontendFeedback(item: BackendFeedback): Feedback {
       userEmail: c.user_email,
       comment: c.comment,
       date: c.date,
+      profileImage: c.profile_image,
     })),
     likes: item.likes.map(l => ({
       id: l.id,
