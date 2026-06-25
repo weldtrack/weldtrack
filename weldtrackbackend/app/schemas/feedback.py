@@ -23,6 +23,7 @@ class FeedbackUpdate(BaseModel):
 class FeedbackResponse(FeedbackBase):
     id: int
     date: datetime
+    profile_image: str | None = None
 
     class Config:
         from_attributes = True

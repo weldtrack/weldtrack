@@ -30,6 +30,12 @@ const formData = reactive({
 const services = ref<Array<{ id: number; name: string }>>([])
 const loadingServices = ref(false)
 
+const getImageUrl = (url?: string) => {
+    if (!url) return '';
+    const cleanUrl = url.replace('/api', '');
+    return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
+};
+
 async function fetchServices() {
   loadingServices.value = true
   try {
@@ -258,8 +264,9 @@ function canManageFeedback(feedbackEmail: string) {
       <div v-for="feedback in feedbacksSorted" :key="feedback.id" :class="['rounded-lg border p-4 sm:p-6', getRatingBgColor(feedback.rating)]">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div class="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-            <div class="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-sky-800 text-white font-bold text-sm">
-              {{ feedback.email.slice(0, 1).toUpperCase() }}
+            <div class="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 overflow-hidden border border-slate-300">
+              <img v-if="feedback.profileImage" :src="getImageUrl(feedback.profileImage)" alt="Profile" class="h-full w-full object-cover">
+              <span v-else class="text-xs font-semibold text-slate-600">{{ feedback.email.slice(0, 1).toUpperCase() }}</span>
             </div>
             <div class="min-w-0 flex-1">
               <h3 class="font-semibold text-gray-900 text-sm sm:text-base overflow-auto">{{ feedback.email }}</h3>

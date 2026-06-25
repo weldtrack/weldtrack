@@ -9,6 +9,7 @@ export function toFrontendFeedback(item: BackendFeedback): Feedback {
     rating: item.rating,
     comment: item.comment,
     date: item.date,
+    profileImage: item.profile_image,
   }
 }
 

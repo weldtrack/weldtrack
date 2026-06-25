@@ -5,6 +5,7 @@ export type Feedback = {
   rating: number
   comment: string
   date: string
+  profileImage?: string
 }
 
 export type BackendFeedback = {
@@ -14,4 +15,5 @@ export type BackendFeedback = {
   rating: number
   comment: string
   date: string
+  profile_image?: string
 }

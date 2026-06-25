@@ -30,9 +30,22 @@ def list_feedbacks(
     limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    """Get all feedbacks"""
-    query = select(Feedback).order_by(desc(Feedback.date)).offset(skip).limit(limit)
-    feedbacks = db.scalars(query).all()
+    """Get all feedbacks with user profile images"""
+    query = (
+        select(Feedback, User.profile_image)
+        .outerjoin(User, Feedback.email == User.email)
+        .order_by(desc(Feedback.date))
+        .offset(skip)
+        .limit(limit)
+    )
+    results = db.execute(query).all()
+    
+    feedbacks = []
+    for feedback, profile_image in results:
+        feedback_data = FeedbackResponse.model_validate(feedback)
+        feedback_data.profile_image = profile_image
+        feedbacks.append(feedback_data)
+        
     return feedbacks
 
 
