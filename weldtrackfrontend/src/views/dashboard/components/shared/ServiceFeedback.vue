@@ -23,6 +23,7 @@ const editingFeedbackId = ref<number | null>(null)
 const isSubmitting = ref(false)
 const newCommentText = ref<Record<number, string>>({})
 const showComments = ref<Record<number, boolean>>({})
+const activeRatingFilter = ref<number | null>(null)
 
 const formData = reactive({
   projectType: '',
@@ -75,7 +76,13 @@ async function fetchServices() {
 }
 
 const feedbacksSorted = computed(() => {
-  return [...feedbackStore.feedbacks].sort((a, b) => {
+  let filtered = [...feedbackStore.feedbacks]
+  
+  if (activeRatingFilter.value !== null) {
+    filtered = filtered.filter(f => f.rating === activeRatingFilter.value)
+  }
+
+  return filtered.sort((a, b) => {
     return new Date(b.date).getTime() - new Date(a.date).getTime()
   })
 })
@@ -236,6 +243,19 @@ function canManageFeedback(feedbackEmail: string) {
             <span class="text-xl text-gray-600">/ 5</span>
           </div>
           <p class="mt-2 text-sm text-gray-600">Based on {{ feedbackStore.feedbacks.length }} reviews</p>
+          
+          <!-- Rating Filter Buttons -->
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              v-for="rating in [null, 5, 4, 3, 2, 1]"
+              :key="rating ?? 'all'"
+              @click="activeRatingFilter = rating"
+              :class="['px-3 py-1 rounded-full text-xs font-semibold transition', activeRatingFilter === rating ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200']"
+            >
+              {{ rating === null ? 'All' : `${rating} Stars` }}
+            </button>
+          </div>
+          
           <p v-if="feedbackStore.feedbacks.length === 0" class="mt-3 text-xs font-medium text-gray-500">No ratings yet</p>
           <div v-else class="mt-4 flex gap-1">
             <svg
