@@ -58,6 +58,7 @@ const sidebarItems = computed<SidebarItem[]>(() => {
       { id: 'staff-attendance', label: 'Attendance', icon: Calendar },
       { id: 'staff-tasks', label: 'Tasks', icon: ClipboardList },
       { id: 'staff-contributions', label: 'Contributions', icon: BarChart2 },
+      { id: 'staff-feedback', label: 'Service Feedback', icon: MessageCircle },
     ]
   }
 

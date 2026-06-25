@@ -71,6 +71,11 @@ export function createRouter() {
                 name: 'staff-create',
                 component: () => import('../views/dashboard/components/staff/StaffCreate.vue'),
               },
+              {
+                path: 'feedback',
+                name: 'staff-feedback',
+                component: () => import('../views/dashboard/components/shared/ServiceFeedback.vue'),
+              },
             ],
           },
         ],

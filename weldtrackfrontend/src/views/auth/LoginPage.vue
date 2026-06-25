@@ -67,7 +67,7 @@ async function submitLogin() {
     if (authStore.role === 'admin') {
       router.replace('/dashboard/admin')
     } else if (authStore.role === 'staff') {
-      router.replace('/dashboard/staff')
+      router.replace('/dashboard/staff/attendance')
     } else {
       router.replace('/dashboard')
     }
@@ -246,7 +246,7 @@ onBeforeUnmount(() => {
       <div class="relative grid w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f172a]/40 shadow-2xl backdrop-blur-2xl xl:grid-cols-[1.1fr_0.9fr]">
         <ThemeToggle class="absolute right-4 top-4 z-20 sm:right-6 sm:top-6" />
         <!-- Left Side: Visual/Branding -->
-        <div class="relative isolate hidden min-h-[38rem] overflow-hidden bg-slate-950 xl:flex">
+        <div class="relative isolate hidden min-h-152 overflow-hidden bg-slate-950 xl:flex">
           <img
             src="https://images.pexels.com/photos/15888227/pexels-photo-15888227.jpeg?cs=srgb&dl=pexels-hoang-nc-483165236-15888227.jpg&fm=jpg"
             alt="Welder creating sparks"
@@ -257,31 +257,31 @@ onBeforeUnmount(() => {
           <div class="relative z-10 flex h-full w-full flex-col justify-between p-10 text-white">
             <div>
               <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-              <svg class="h-8 w-8 !text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-8 w-8 text-cyan-300!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               </div>
-              <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] !text-cyan-200 uppercase backdrop-blur-md">Customer Access</div>
-              <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight !text-white">
+              <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] text-cyan-200! uppercase backdrop-blur-md">Customer Access</div>
+              <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight text-white!">
                 Access your <br> booking account.
               </h1>
-              <p class="mt-6 max-w-sm text-lg leading-relaxed !text-slate-200">
+              <p class="mt-6 max-w-sm text-lg leading-relaxed text-slate-200!">
                 Sign in to view your bookings, update your details, and continue your service requests.
               </p>
             </div>
 
             <div class="grid grid-cols-3 gap-6">
               <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-              <div class="text-xl font-black !text-white">Fast</div>
-              <div class="mt-1 text-xs font-bold !text-slate-300 uppercase tracking-widest">Login</div>
+              <div class="text-xl font-black text-white!">Fast</div>
+              <div class="mt-1 text-xs font-bold text-slate-300! uppercase tracking-widest">Login</div>
               </div>
               <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-              <div class="text-xl font-black !text-white">Safe</div>
-              <div class="mt-1 text-xs font-bold !text-slate-300 uppercase tracking-widest">Encrypted</div>
+              <div class="text-xl font-black text-white!">Safe</div>
+              <div class="mt-1 text-xs font-bold text-slate-300! uppercase tracking-widest">Encrypted</div>
               </div>
               <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
-              <div class="text-xl font-black !text-white">Live</div>
-              <div class="mt-1 text-xs font-bold !text-slate-300 uppercase tracking-widest">Synced</div>
+              <div class="text-xl font-black text-white!">Live</div>
+              <div class="mt-1 text-xs font-bold text-slate-300! uppercase tracking-widest">Synced</div>
               </div>
             </div>
           </div>
@@ -332,7 +332,7 @@ onBeforeUnmount(() => {
 
               <button
                 type="submit"
-                class="group relative h-12 w-full overflow-hidden rounded-xl border border-white/10 !bg-slate-900 font-bold !text-white shadow-lg shadow-slate-950/20 transition-all hover:!bg-slate-800 hover:shadow-xl hover:shadow-slate-950/25 active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+                class="group relative h-12 w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900! font-bold text-white! shadow-lg shadow-slate-950/20 transition-all hover:bg-slate-800! hover:shadow-xl hover:shadow-slate-950/25 active:scale-95 disabled:opacity-70 disabled:active:scale-100"
                 :disabled="isSubmittingLogin"
               >
                 {{ isSubmittingLogin ? 'Signing in...' : 'Sign In' }}
@@ -362,7 +362,7 @@ onBeforeUnmount(() => {
                 </div>
                 <button
                   type="button"
-                  class="h-12 w-full rounded-xl border border-white/10 !bg-slate-900 font-bold !text-white shadow-lg shadow-slate-950/20 transition-all hover:!bg-slate-800 active:scale-95 disabled:opacity-70"
+                  class="h-12 w-full rounded-xl border border-white/10 bg-slate-900! font-bold text-white! shadow-lg shadow-slate-950/20 transition-all hover:bg-slate-800! active:scale-95 disabled:opacity-70"
                   :disabled="isSendingResetEmail"
                   @click="verifyEmail"
                 >
@@ -389,7 +389,7 @@ onBeforeUnmount(() => {
                 </div>
                 <button
                   type="button"
-                  class="h-12 w-full rounded-xl border border-white/10 !bg-slate-900 font-bold !text-white shadow-lg shadow-slate-950/20 transition-all hover:!bg-slate-800 active:scale-95 disabled:opacity-70"
+                  class="h-12 w-full rounded-xl border border-white/10 bg-slate-900! font-bold text-white! shadow-lg shadow-slate-950/20 transition-all hover:bg-slate-800! active:scale-95 disabled:opacity-70"
                   :disabled="isVerifyingResetCode"
                   @click="verifyCode"
                 >
@@ -442,7 +442,7 @@ onBeforeUnmount(() => {
                 </div>
                 <button
                   type="button"
-                  class="h-12 w-full rounded-xl border border-white/10 !bg-slate-900 font-bold !text-white shadow-lg shadow-slate-950/20 transition-all hover:!bg-slate-800 active:scale-95"
+                  class="h-12 w-full rounded-xl border border-white/10 bg-slate-900! font-bold text-white! shadow-lg shadow-slate-950/20 transition-all hover:bg-slate-800! active:scale-95"
                   :disabled="isSavingNewPassword"
                   @click="submitNewPassword"
                 >
