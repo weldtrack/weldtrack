@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { User } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
@@ -10,6 +9,8 @@ interface StaffMember {
   email: string
   role: string
   created_at: string
+  mobile_phone: string | null
+  profile_image: string | null
 }
 
 const createStaffForm = reactive({ email: '', password: '', confirmPassword: '', confirm: false })
@@ -104,6 +105,12 @@ async function confirmDeleteStaff() {
   }
 }
 
+const getImageUrl = (url?: string | null) => {
+  if (!url) return '';
+  const cleanUrl = url.replace('/api', '');
+  return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
+};
+
 onMounted(fetchStaffList)
 </script>
 
@@ -168,23 +175,33 @@ onMounted(fetchStaffList)
     </div>
 
     <div class="rounded-lg border border-gray-200 bg-white p-4">
-      <h3 class="mb-4 text-lg font-semibold text-gray-900">Staff Members</h3>
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">Staff Members</h3>
+        <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+          {{ staffList.length }} Staff
+        </span>
+      </div>
 
       <div v-if="staffList.length === 0" class="rounded-lg bg-gray-50 p-4 text-center text-sm text-gray-500">
         No staff members yet.
       </div>
 
-      <div v-else class="space-y-2">
+      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div v-for="staff in staffList" :key="staff.id"
-          class="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-          <div class="flex-1">
-            <p class="font-semibold text-gray-900">{{ staff.email }}</p>
-            <p class="text-xs text-gray-600">
-              Created: {{ new Date(staff.created_at).toLocaleDateString('en-PH') }}
+          class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 overflow-hidden border border-slate-300">
+            <img v-if="staff.profile_image" :src="getImageUrl(staff.profile_image)" :alt="staff.email" class="h-full w-full object-cover" />
+            <span v-else class="text-lg font-semibold text-slate-600">{{ staff.email.slice(0, 1).toUpperCase() }}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="truncate font-semibold text-gray-900">{{ staff.email }}</p>
+            <p class="truncate text-sm text-gray-600">{{ staff.mobile_phone || 'No phone' }}</p>
+            <p class="text-xs text-gray-500">
+              Joined: {{ new Date(staff.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) }}
             </p>
           </div>
           <button type="button" @click="openDeleteModal(staff)"
-            class="ml-3 rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50">
+            class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 hover:border-red-300">
             Delete
           </button>
         </div>

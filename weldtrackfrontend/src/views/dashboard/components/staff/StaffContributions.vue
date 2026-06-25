@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { User } from 'lucide-vue-next'
+import { CheckCircle } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useStaffContributionsStore } from '../../../../stores/staffContributions'
 
@@ -13,31 +13,25 @@ function getStaffLabel(staffId: string) {
   return authStore.getStaffLabel(staffId)
 }
 
-function getContributorLabels(snapshot: { contributorIds?: string[]; contributorEmails?: string[] }) {
-  if (snapshot.contributorEmails?.length) return snapshot.contributorEmails.filter(Boolean)
-  if (!snapshot.contributorIds?.length) return []
-  return snapshot.contributorIds
-    .map((id) => getStaffLabel(id))
-    .filter(Boolean)
+function getContributorDetails(snapshot: { contributorIds?: string[]; contributorEmails?: string[] }) {
+  const emails = snapshot.contributorEmails?.filter(Boolean) || []
+  const ids = snapshot.contributorIds || []
+  
+  // Combine into a list of unique emails/identifiers
+  const contributors = [...new Set([...emails, ...ids.map((id) => getStaffLabel(id)).filter(Boolean)])]
+  
+  return contributors
 }
 
 const completedContributions = computed(() => {
-  console.log('Current User ID (Email):', currentUserId.value)
-  console.log('All Snapshots:', staffContributionsStore.snapshots)
-
   const relevantSnapshots = staffContributionsStore.snapshots.filter((snapshot) => {
     if (isAdmin.value) return true
 
-    // Check IDs
     const matchesId = Array.isArray(snapshot.contributorIds) && snapshot.contributorIds.includes(currentUserId.value)
-    // Check Emails
     const matchesEmail = Array.isArray(snapshot.contributorEmails) && snapshot.contributorEmails.includes(currentUserId.value)
 
-    console.log('Snapshot', snapshot.id, 'matches:', matchesId || matchesEmail)
     return matchesId || matchesEmail
   })
-
-  console.log('Relevant Snapshots:', relevantSnapshots)
 
   const byProject: Record<
     string,
@@ -46,7 +40,7 @@ const completedContributions = computed(() => {
 
   relevantSnapshots.forEach((snapshot) => {
     const existing = byProject[snapshot.projectName]
-    const contributorNames = getContributorLabels(snapshot)
+    const contributorNames = getContributorDetails(snapshot)
 
     if (!existing) {
       byProject[snapshot.projectName] = {
@@ -69,10 +63,9 @@ const completedContributions = computed(() => {
   })
 })
 
-function isCurrentUserContributor(name: string) {
+function isCurrentUserContributor(email: string) {
   if (isAdmin.value) return false
-  const currentName = currentUserId.value ? getStaffLabel(currentUserId.value) : ''
-  return Boolean(currentName && name === currentName)
+  return email.toLowerCase() === authStore.email.toLowerCase()
 }
 
 onMounted(async () => {
@@ -89,7 +82,7 @@ onMounted(async () => {
     <div class="flex items-start gap-3">
       <div
         class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
-        <User class="h-6 w-6 text-sky-600" />
+        <CheckCircle class="h-6 w-6 text-sky-600" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Contributions</h3>
@@ -101,23 +94,32 @@ onMounted(async () => {
       No completed tasks yet.
     </div>
 
-    <div v-else class="space-y-3">
+    <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div v-for="proj in completedContributions" :key="proj.projectName"
-        class="rounded-lg border border-gray-200 bg-white p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="font-semibold text-gray-900">{{ proj.projectName }}</p>
-            <p class="text-sm text-gray-600">Completed tasks: {{ proj.doneCount }}</p>
-            <div class="mt-1 flex flex-wrap gap-2">
-              <span v-for="name in proj.contributors" :key="`${proj.projectName}-${name}`"
-                class="rounded-full px-2 py-0.5 text-xs"
-                :class="isCurrentUserContributor(name) ? 'bg-blue-100 font-semibold text-blue-700' : 'bg-gray-100 text-gray-600'">
-                {{ name }}
-                <span v-if="isCurrentUserContributor(name)">(You)</span>
+        class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <div class="flex items-start justify-between">
+          <div class="min-w-0">
+            <h4 class="truncate font-semibold text-gray-900">{{ proj.projectName }}</h4>
+            <p class="text-sm text-gray-600">Completed: {{ proj.doneCount }} tasks</p>
+          </div>
+          <span class="text-xs text-gray-500 whitespace-nowrap">
+            Last: {{ new Date(proj.lastDoneAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) }}
+          </span>
+        </div>
+        
+        <div class="mt-4">
+          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Contributors</p>
+          <div class="flex flex-wrap gap-2">
+            <div v-for="email in proj.contributors" :key="email"
+              :class="['flex items-center gap-2 rounded-full border px-2 py-1 text-xs', isCurrentUserContributor(email) ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50']">
+              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600">
+                {{ email.slice(0, 1).toUpperCase() }}
+              </span>
+              <span :class="isCurrentUserContributor(email) ? 'font-semibold text-blue-700' : 'text-gray-700'">
+                {{ email }}
               </span>
             </div>
           </div>
-          <p class="text-sm text-gray-500">Last: {{ new Date(proj.lastDoneAt).toLocaleDateString('en-PH') }}</p>
         </div>
       </div>
     </div>
