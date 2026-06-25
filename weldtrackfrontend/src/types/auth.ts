@@ -14,6 +14,8 @@ export interface UserUpdate {
   fullname?: string
   mobile_phone?: string
   profile_image?: string
+  email?: string
+  password?: string
 }
 
 export interface StaffDirectoryEntry {

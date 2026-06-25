@@ -5,9 +5,11 @@ import os
 from uuid import uuid4
 
 from app.db import get_db
+from app.core.security import hash_password
 from app.dependencies.auth import get_current_user
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import UserRead, UserUpdate
+from app.services.auth_service import get_user_by_email
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
@@ -32,8 +34,22 @@ def update_profile(
         current_user.mobile_phone = profile_update.mobile_phone
     if profile_update.profile_image:
         current_user.profile_image = profile_update.profile_image
-    # NOTE: Need to add fullname to User model if required, 
-    # but based on requirements I only added profile_image and mobile_phone.
+    
+    if profile_update.email and profile_update.email != current_user.email:
+        if current_user.role not in [UserRole.staff, UserRole.admin]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only staff and admins can change email"
+            )
+        if get_user_by_email(db, profile_update.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already registered"
+            )
+        current_user.email = profile_update.email
+    
+    if profile_update.password:
+        current_user.hashed_password = hash_password(profile_update.password)
     
     db.add(current_user)
     db.commit()

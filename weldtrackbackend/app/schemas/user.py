@@ -37,6 +37,8 @@ class UserUpdate(BaseModel):
     fullname: Optional[str] = None
     mobile_phone: Optional[str] = Field(None, max_length=20)
     profile_image: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(None, min_length=8)
 
 
 class CurrentUserResponse(UserRead):
