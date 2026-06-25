@@ -167,6 +167,8 @@ async function submitFeedback() {
       projectType: formData.projectType,
       rating: formData.rating,
       comment: formData.comment.trim(),
+      comments: [],
+      likes: []
     }
 
     if (editingFeedbackId.value) {

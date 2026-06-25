@@ -33,6 +33,6 @@ export type BackendFeedback = {
   comment: string
   date: string
   profile_image?: string
-  comments: { id: number; feedback_id: number; user_email: string; comment: string; date: string }[]
+  comments: { id: number; feedback_id: number; user_email: string; comment: string; date: string; profile_image?: string }[]
   likes: { id: number; feedback_id: number; user_email: string }[]
 }

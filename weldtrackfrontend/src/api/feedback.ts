@@ -52,6 +52,10 @@ export async function updateFeedback(id: number, feedback: Partial<Omit<Feedback
   return toFrontendFeedback(response.data as BackendFeedback)
 }
 
+export async function deleteFeedback(id: number) {
+  await api.delete(`/feedbacks/${id}`)
+}
+
 export async function toggleLike(feedbackId: number) {
   await api.post(`/feedbacks/${feedbackId}/likes`)
 }

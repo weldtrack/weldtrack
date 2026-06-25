@@ -171,14 +171,6 @@ const lowStockCountInPeriod = computed(() =>
   inventoryInPeriod.value.filter((item) => item.quantity <= item.lowStockThreshold).length,
 )
 
-const totalInventoryValue = computed(() =>
-  inventoryStore.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
-)
-
-const lowStockCount = computed(() =>
-  inventoryStore.items.filter((item) => item.quantity <= item.lowStockThreshold).length,
-)
-
 const inventory = computed(() => inventoryStore.items)
 const movements = computed(() => inventoryStore.movements)
 

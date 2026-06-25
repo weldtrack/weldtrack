@@ -122,7 +122,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
-import { User, CheckCircle, Mail, Key, Phone } from 'lucide-vue-next';
+import { User, Mail, Key, Phone } from 'lucide-vue-next';
 import { getProfile, updateProfile, uploadProfileImage } from '../../services/profile.service';
 import type { UserRead } from '../../types/auth';
 import { useAuthStore } from '../../stores/auth';
