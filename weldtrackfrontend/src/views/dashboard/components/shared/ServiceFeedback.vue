@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Star } from 'lucide-vue-next'
+import { Star, ThumbsUp, MessageSquare } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useFeedbackStore } from '../../../../stores/feedback'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
 import api from '../../../../api/api'
+import { type Feedback } from '../../../../types/feedback'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
@@ -20,6 +21,7 @@ const isDialogOpen = ref(false)
 const currentEmail = computed(() => authStore.email || '')
 const editingFeedbackId = ref<number | null>(null)
 const isSubmitting = ref(false)
+const newCommentText = ref<Record<number, string>>({})
 
 const formData = reactive({
   projectType: '',
@@ -35,6 +37,17 @@ const getImageUrl = (url?: string) => {
     const cleanUrl = url.replace('/api', '');
     return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
 };
+
+const isLiked = (feedback: Feedback) => {
+  return feedback.likes.some(l => l.userEmail.toLowerCase() === currentEmail.value.toLowerCase())
+}
+
+async function handleAddComment(feedbackId: number) {
+  const comment = newCommentText.value[feedbackId]
+  if (!comment || !comment.trim()) return
+  await feedbackStore.addComment(feedbackId, comment)
+  newCommentText.value[feedbackId] = ''
+}
 
 async function fetchServices() {
   loadingServices.value = true
@@ -294,6 +307,28 @@ function canManageFeedback(feedbackEmail: string) {
           </div>
         </div>
         <p class="mt-3 sm:mt-4 text-sm sm:text-base text-gray-700 overflow-auto">{{ feedback.comment }}</p>
+
+        <div class="mt-4 flex items-center gap-4">
+          <button @click="feedbackStore.toggleLike(feedback.id)" :class="['flex items-center gap-1 text-xs font-semibold', isLiked(feedback) ? 'text-blue-600' : 'text-slate-500']">
+            <ThumbsUp class="h-4 w-4" />
+            {{ feedback.likes.length }}
+          </button>
+          <div class="flex items-center gap-1 text-xs text-slate-500 font-semibold">
+            <MessageSquare class="h-4 w-4" />
+            {{ feedback.comments.length }}
+          </div>
+        </div>
+
+        <div class="mt-4 space-y-2">
+          <div v-for="comment in feedback.comments" :key="comment.id" class="text-sm bg-slate-100 p-2 rounded">
+            <span class="font-semibold text-slate-800">{{ comment.userEmail }}: </span>
+            <span>{{ comment.comment }}</span>
+          </div>
+          <div class="flex gap-2">
+            <input v-model="newCommentText[feedback.id]" placeholder="Add a comment..." class="flex-1 rounded-lg border border-slate-200 px-3 py-1 text-sm">
+            <button @click="handleAddComment(feedback.id)" class="text-xs font-semibold text-blue-600">Post</button>
+          </div>
+        </div>
       </div>
     </div>
 

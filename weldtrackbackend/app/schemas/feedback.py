@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from app.schemas.feedback_interactions import FeedbackCommentResponse, FeedbackLikeResponse
 
 
 class FeedbackBase(BaseModel):
@@ -24,6 +25,8 @@ class FeedbackResponse(FeedbackBase):
     id: int
     date: datetime
     profile_image: str | None = None
+    comments: list[FeedbackCommentResponse] = []
+    likes: list[FeedbackLikeResponse] = []
 
     class Config:
         from_attributes = True

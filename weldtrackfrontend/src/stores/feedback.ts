@@ -36,6 +36,16 @@ export const useFeedbackStore = defineStore('feedback', {
       return updated
     },
 
+    async toggleLike(feedbackId: number) {
+      await feedbackService.toggleLike(feedbackId)
+      await this.fetchFeedbacks() // Refresh feedback to update likes count/state
+    },
+
+    async addComment(feedbackId: number, comment: string) {
+      await feedbackService.addComment(feedbackId, comment)
+      await this.fetchFeedbacks() // Refresh feedback to update comments
+    },
+
     async deleteFeedback(id: number) {
       await feedbackService.deleteFeedback(id)
       this.feedbacks = this.feedbacks.filter((f) => f.id !== id)
