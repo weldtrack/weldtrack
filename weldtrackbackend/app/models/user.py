@@ -42,6 +42,9 @@ class User(Base):
 
     is_online: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    profile_image: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    mobile_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
     last_active: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,

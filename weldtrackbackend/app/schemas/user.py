@@ -26,9 +26,21 @@ class UserRead(UserBase):
     is_banned: bool = False
     is_online: bool = False
     last_active: Optional[datetime] = None
+    profile_image: Optional[str] = None
+    mobile_phone: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class UserUpdate(BaseModel):
+    fullname: Optional[str] = None
+    mobile_phone: Optional[str] = Field(None, max_length=20)
+    profile_image: Optional[str] = None
+
+
+class CurrentUserResponse(UserRead):
+    pass
 
 
 class AuthToken(BaseModel):

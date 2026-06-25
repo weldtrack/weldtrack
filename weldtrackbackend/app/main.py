@@ -2,6 +2,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,6 +22,10 @@ app = FastAPI(
     redoc_url=None if IS_PROD else "/redoc",
     openapi_url=None if IS_PROD else "/openapi.json"
 )
+
+# Serve uploaded profile images
+os.makedirs("uploads/profiles", exist_ok=True)
+app.mount("/static/profiles", StaticFiles(directory="uploads/profiles"), name="profiles")
 
 origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if origin.strip()]
 app.add_middleware(

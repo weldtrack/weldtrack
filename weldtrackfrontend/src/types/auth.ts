@@ -1,3 +1,21 @@
+export interface UserRead {
+  id: number
+  email: string
+  role: string
+  created_at: string
+  is_banned: boolean
+  is_online: boolean
+  last_active?: string
+  profile_image?: string
+  mobile_phone?: string
+}
+
+export interface UserUpdate {
+  fullname?: string
+  mobile_phone?: string
+  profile_image?: string
+}
+
 export interface StaffDirectoryEntry {
   id: string
   email: string
@@ -11,11 +29,7 @@ export interface LoginPayload {
 export interface LoginResponse {
   success?: boolean
   access_token?: string
-  user?: {
-    id?: number
-    email?: string
-    role?: string
-  }
+  user?: UserRead
 }
 
 export interface SignupPayload {
@@ -41,11 +55,7 @@ export interface ConfirmVerificationResponse {
   email?: string
   role?: string
   access_token?: string
-  user?: {
-    id?: number
-    email?: string
-    role?: string
-  }
+  user?: UserRead
 }
 
 export interface ResetPasswordPayload {

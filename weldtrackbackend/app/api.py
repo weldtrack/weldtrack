@@ -11,6 +11,7 @@ from app.router.stafftasks import router as stafftasks_router
 from app.router.staffcontributions import router as staffcontributions_router
 from app.router.attendance import router as attendance_router
 from app.router.service import router as service_router
+from app.router.profile import router as profile_router
 
 router = APIRouter()
 router.include_router(auth_router)
@@ -24,3 +25,4 @@ router.include_router(attendance_router)
 router.include_router(service_router)
 router.include_router(admin_router)
 router.include_router(verification_router)
+router.include_router(profile_router)

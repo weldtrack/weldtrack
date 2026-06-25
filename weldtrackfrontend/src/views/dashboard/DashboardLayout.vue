@@ -91,6 +91,12 @@ const roleHint = computed(() => {
 
 // onMounted logic removed
 
+const getImageUrl = (url?: string) => {
+    if (!url) return '';
+    const cleanUrl = url.replace('/api', '');
+    return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
+};
+
 function toggleSidebarMeta() {
   isSidebarMetaCollapsed.value = !isSidebarMetaCollapsed.value
 }
@@ -128,6 +134,14 @@ function handleLogout() {
       @click="isMobileSidebarOpen = true">
       <Menu class="h-5 w-5" />
     </button>
+    
+    <!-- Top Header -->
+    <header class="fixed top-0 right-0 z-30 flex h-[50px] w-full items-center justify-end px-6 lg:w-[calc(100%-320px)] bg-slate-50 border-b border-slate-200">
+      <button @click="$router.push({ name: `${authStore.role}-profile` })" class="h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-200 flex items-center justify-center">
+        <img v-if="authStore.user?.profile_image" :src="getImageUrl(authStore.user.profile_image)" alt="Profile" class="h-full w-full object-cover">
+        <span v-else class="text-xs font-semibold text-slate-600">{{ authStore.email?.slice(0, 1).toUpperCase() || 'U' }}</span>
+      </button>
+    </header>
 
     <div v-if="isMobileSidebarOpen" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-[2px] lg:hidden"
       @click="isMobileSidebarOpen = false" />
@@ -238,7 +252,7 @@ function handleLogout() {
     </aside>
 
     <div class="flex-1 lg:h-screen lg:overflow-y-auto">
-      <section class="p-4 pt-16 sm:p-6 sm:pt-16 lg:p-8 lg:pt-8">
+      <section class="p-4 pt-[66px] sm:p-6 sm:pt-[74px] lg:p-8 lg:pt-[66px]">
         <slot />
       </section>
     </div>

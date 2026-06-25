@@ -101,7 +101,10 @@ onMounted(async () => {
 function resetForm() {
   formData.customerName = userRole.value === 'customer' ? currentUser.value : ''
   formData.email = userRole.value === 'customer' ? currentEmail.value : ''
-  formData.phone = ''
+  
+  // Pre-fill phone if available in auth store
+  formData.phone = (userRole.value === 'customer' && auth.user?.mobile_phone) ? auth.user.mobile_phone.replace('+63', '') : ''
+  
   formData.projectType = ''
   formData.description = ''
   formData.createdDate = new Date().toISOString().split('T')[0]

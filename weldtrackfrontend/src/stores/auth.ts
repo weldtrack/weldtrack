@@ -10,6 +10,7 @@ import {
 import type {
   StaffDirectoryEntry,
   StoredAuthState,
+  UserRead,
 } from '../types/auth'
 
 const AUTH_STORAGE_KEY = 'weldtrack-auth'
@@ -30,13 +31,14 @@ function readAuthState() {
       email?: string
       role?: string
       isLoggedIn?: boolean
+      user?: UserRead
     }
   } catch {
     return null
   }
 }
 
-function writeAuthState(state: StoredAuthState) {
+function writeAuthState(state: StoredAuthState & { user?: UserRead }) {
   if (typeof window === 'undefined') {
     return
   }
@@ -58,6 +60,7 @@ export const useAuthStore = defineStore('auth', {
     email: readAuthState()?.email || '',
     role: readAuthState()?.role || 'customer',
     isLoggedIn: readAuthState()?.isLoggedIn || false,
+    user: readAuthState()?.user as UserRead | undefined,
     staffDirectory: [] as StaffDirectoryEntry[],
   }),
   actions: {
@@ -68,6 +71,7 @@ export const useAuthStore = defineStore('auth', {
         token: data.access_token || '',
         email: data.user?.email || payload.email,
         role: data.user?.role || 'customer',
+        user: data.user,
       })
 
       return data
@@ -118,17 +122,20 @@ export const useAuthStore = defineStore('auth', {
       token?: string
       email?: string
       role?: string
+      user?: UserRead
     }) {
       this.token = payload.token || ''
       this.role = payload.role || 'customer'
       this.email = payload.email || ''
       this.isLoggedIn = true
+      this.user = payload.user
 
       writeAuthState({
         token: this.token,
         email: this.email,
         role: this.role,
         isLoggedIn: this.isLoggedIn,
+        user: this.user,
       })
     },
     logout() {
@@ -136,6 +143,7 @@ export const useAuthStore = defineStore('auth', {
       this.email = ''
       this.role = 'customer'
       this.isLoggedIn = false
+      this.user = undefined
       this.staffDirectory = []
 
       clearAuthState()

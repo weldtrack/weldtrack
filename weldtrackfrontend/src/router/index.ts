@@ -39,6 +39,11 @@ export function createRouter() {
             name: 'customer-feedback',
             component: () => import('../views/dashboard/components/shared/ServiceFeedback.vue'),
           },
+          {
+            path: 'profile',
+            name: 'customer-profile',
+            component: () => import('../views/dashboard/ProfilePage.vue'),
+          },
         ],
       },
       {
@@ -75,6 +80,11 @@ export function createRouter() {
                 path: 'feedback',
                 name: 'staff-feedback',
                 component: () => import('../views/dashboard/components/shared/ServiceFeedback.vue'),
+              },
+              {
+                path: 'profile',
+                name: 'staff-profile',
+                component: () => import('../views/dashboard/ProfilePage.vue'),
               },
             ],
           },
@@ -153,6 +163,11 @@ export function createRouter() {
             name: 'admin-feedback',
             component: () => import('../views/dashboard/components/shared/ServiceFeedback.vue'),
             props: { isAdmin: true },
+          },
+          {
+            path: 'profile',
+            name: 'admin-profile',
+            component: () => import('../views/dashboard/ProfilePage.vue'),
           },
         ],
       },
