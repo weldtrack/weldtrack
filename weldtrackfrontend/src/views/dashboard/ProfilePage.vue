@@ -256,17 +256,23 @@ const autoSave = async () => {
 };
 const handleImageUpload = async (event: any) => {
   const file = event.target.files[0];
-  if (file) {
-    const data = await uploadProfileImage(file);
-    if (user.value) {
+  if (file && user.value) {
+    try {
+      const data = await uploadProfileImage(file);
+      console.log('Image upload response:', data);
       user.value.profile_image = data.url;
-      authStore.user = user.value;
+      authStore.user = { ...user.value }; // Ensure reactivity
+    } catch (error) {
+      console.error('Image upload failed:', error);
     }
   }
 };
 
 const getImageUrl = (url?: string) => {
     if (!url) return 'https://via.placeholder.com/150';
+    // If it's a data URI, return as is
+    if (url.startsWith('data:')) return url;
+    // Otherwise, handle as API path
     const cleanUrl = url.replace('/api', '');
     return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
 };

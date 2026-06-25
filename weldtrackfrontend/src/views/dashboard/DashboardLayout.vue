@@ -93,6 +93,9 @@ const roleHint = computed(() => {
 
 const getImageUrl = (url?: string) => {
     if (!url) return '';
+    // If it's a data URI, return as is
+    if (url.startsWith('data:')) return url;
+    // Otherwise, handle as API path
     const cleanUrl = url.replace('/api', '');
     return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
 };
@@ -129,16 +132,15 @@ function handleLogout() {
 
 <template>
   <div class="min-h-screen bg-slate-50 lg:pl-80">
+    <button type="button"
+      class="fixed left-4 top-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 text-slate-900 shadow-[0_12px_30px_rgba(15,23,42,0.14)] backdrop-blur-xl transition hover:bg-white lg:hidden"
+      @click="isMobileSidebarOpen = true">
+      <Menu class="h-5 w-5" />
+    </button>
     
     <!-- Top Header -->
-    <header class="fixed top-0 right-0 z-30 flex h-[50px] w-full items-center justify-between px-6 lg:w-[calc(100%-320px)] bg-slate-50 border-b border-slate-200">
-      <button type="button"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white/90 text-slate-900 shadow-sm backdrop-blur-xl transition hover:bg-white lg:hidden"
-        @click="isMobileSidebarOpen = true">
-        <Menu class="h-5 w-5" />
-      </button>
-
-      <button @click="$router.push({ name: `${authStore.role}-profile` })" class="h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-200 flex items-center justify-center ml-auto">
+    <header class="fixed top-0 right-0 z-30 flex h-[50px] w-full items-center justify-end px-6 lg:w-[calc(100%-320px)] bg-slate-50 border-b border-slate-200">
+      <button @click="$router.push({ name: `${authStore.role}-profile` })" class="h-8 w-8 overflow-hidden rounded-full border border-slate-200 bg-slate-200 flex items-center justify-center">
         <img v-if="authStore.user?.profile_image" :src="getImageUrl(authStore.user.profile_image)" alt="Profile" class="h-full w-full object-cover">
         <span v-else class="text-xs font-semibold text-slate-600">{{ authStore.email?.slice(0, 1).toUpperCase() || 'U' }}</span>
       </button>

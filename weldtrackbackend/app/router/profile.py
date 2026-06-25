@@ -1,8 +1,6 @@
+import base64
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
-import shutil
-import os
-from uuid import uuid4
 
 from app.db import get_db
 from app.core.security import hash_password
@@ -12,10 +10,6 @@ from app.schemas.user import UserRead, UserUpdate
 from app.services.auth_service import get_user_by_email
 
 router = APIRouter(prefix="/profile", tags=["profile"])
-
-# Setup for image storage
-UPLOAD_DIR = "uploads/profiles"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
@@ -30,9 +24,9 @@ def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if profile_update.mobile_phone:
+    if profile_update.mobile_phone is not None:
         current_user.mobile_phone = profile_update.mobile_phone
-    if profile_update.profile_image:
+    if profile_update.profile_image is not None:
         current_user.profile_image = profile_update.profile_image
     
     if profile_update.email and profile_update.email != current_user.email:
@@ -76,16 +70,12 @@ async def upload_profile_image(
             detail="File too large. Max size 5MB"
         )
     
-    # Save file
-    file_ext = file.filename.split(".")[-1]
-    filename = f"{current_user.id}_{uuid4()}.{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
+    # Encode to Base64
+    encoded_image = base64.b64encode(file_data).decode('utf-8')
+    image_data_uri = f"data:{file.content_type};base64,{encoded_image}"
     
-    with open(file_path, "wb") as buffer:
-        buffer.write(file_data)
-        
     # Update user model
-    current_user.profile_image = f"/static/profiles/{filename}"
+    current_user.profile_image = image_data_uri
     db.add(current_user)
     db.commit()
     db.refresh(current_user)

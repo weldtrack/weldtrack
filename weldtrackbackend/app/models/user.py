@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Integer, String, Boolean, func
+from sqlalchemy import DateTime, Enum, Integer, String, Boolean, func, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -42,7 +42,7 @@ class User(Base):
 
     is_online: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    profile_image: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    profile_image: Mapped[str | None] = mapped_column(Text, nullable=True)
     mobile_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     last_active: Mapped[datetime | None] = mapped_column(
