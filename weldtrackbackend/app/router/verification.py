@@ -32,12 +32,12 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
             detail="Email is already registered",
         )
 
-    # Replace any existing pending code for this email
     existing_code = db.scalar(
         select(EmailVerificationCode).where(EmailVerificationCode.email == payload.email)
     )
     if existing_code:
         db.delete(existing_code)
+        db.flush() 
 
     db.add(EmailVerificationCode(
         email=payload.email,
@@ -46,7 +46,6 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     ))
     db.commit()
 
-    # Re-fetch to get the code we just committed
     verification_record = db.scalar(
         select(EmailVerificationCode).where(EmailVerificationCode.email == payload.email)
     )
@@ -58,7 +57,6 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         )
 
     return {"success": True, "message": "Verification code sent to email. Code will expire in 15 minutes."}
-
 
 @router.post("/verifyemail")
 def request_verification_email(payload: dict, db: Session = Depends(get_db)):
