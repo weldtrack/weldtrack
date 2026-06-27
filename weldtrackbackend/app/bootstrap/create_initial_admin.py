@@ -68,7 +68,9 @@ def seed_admin() -> None:
     admin_password = os.getenv("ADMIN_PASSWORD")
 
     if not admin_email or not admin_password:
-        raise ValueError("ADMIN_EMAIL and ADMIN_PASSWORD are required in your environment or .env file.")
+        raise ValueError(
+            "ADMIN_EMAIL and ADMIN_PASSWORD are required in your environment or .env file."
+        )
 
     # Validate password strength BEFORE running queries
     # validate_password(admin_password)
@@ -77,12 +79,14 @@ def seed_admin() -> None:
 
     try:
         # Resolve the string value from Enum safely
-        role_value = UserRole.admin.value if hasattr(UserRole.admin, "value") else UserRole.admin
+        role_value = (
+            UserRole.admin.value if hasattr(UserRole.admin, "value") else UserRole.admin
+        )
 
         # 1. Check if an administrator already exists using raw SQL
         result = db.execute(
             text("SELECT id, email FROM users WHERE role = :role LIMIT 1"),
-            {"role": role_value}
+            {"role": role_value},
         ).fetchone()
 
         if result:
@@ -97,7 +101,7 @@ def seed_admin() -> None:
             VALUES (:email, :hashed_password, :role, :is_banned, :is_online)
             RETURNING id
         """)
-        
+
         user_id = db.execute(
             insert_user_query,
             {
@@ -106,7 +110,7 @@ def seed_admin() -> None:
                 "role": role_value,
                 "is_banned": False,
                 "is_online": False,
-            }
+            },
         ).scalar()
 
         # 3. Insert email verification record matching the schema name
@@ -114,14 +118,8 @@ def seed_admin() -> None:
             INSERT INTO email_verifications (user_id, is_verified)
             VALUES (:user_id, :is_verified)
         """)
-        
-        db.execute(
-            insert_verification_query,
-            {
-                "user_id": user_id,
-                "is_verified": True
-            }
-        )
+
+        db.execute(insert_verification_query, {"user_id": user_id, "is_verified": True})
 
         db.commit()
         print(f"Successfully created admin account: {admin_email}")

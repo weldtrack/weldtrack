@@ -23,7 +23,9 @@ def get_user_response(user: User) -> UserRead:
 
 
 def build_auth_response(user: User) -> AuthResponse:
-    return AuthResponse(access_token=create_access_token(user), user=get_user_response(user))
+    return AuthResponse(
+        access_token=create_access_token(user), user=get_user_response(user)
+    )
 
 
 def set_auth_cookie(response: Response, token: str) -> None:

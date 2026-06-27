@@ -19,7 +19,9 @@ def serialize_task(task: StaffTask) -> dict:
         "title": task.title,
         "description": task.description,
         "assignedStaffIds": [a.staff_id for a in task.assignees],
-        "assignedStaffEmails": [a.staff.email for a in task.assignees if a.staff and a.staff.email],
+        "assignedStaffEmails": [
+            a.staff.email for a in task.assignees if a.staff and a.staff.email
+        ],
         "assignedAt": task.assigned_at,
         "dueDate": task.due_date,
         "status": task.status.value,
@@ -30,16 +32,20 @@ def serialize_task(task: StaffTask) -> dict:
             "municipality": task.municipality,
             "barangay": task.barangay,
             "house": task.house,
-        }
+        },
     }
 
 
 def upsert_contribution_snapshot(task: StaffTask, db: Session) -> None:
     contributor_ids = [a.staff_id for a in task.assignees]
-    contributor_emails = [a.staff.email for a in task.assignees if a.staff and a.staff.email]
+    contributor_emails = [
+        a.staff.email for a in task.assignees if a.staff and a.staff.email
+    ]
 
     snapshot = db.scalars(
-        select(StaffContributionSnapshot).where(StaffContributionSnapshot.task_id == str(task.id))
+        select(StaffContributionSnapshot).where(
+            StaffContributionSnapshot.task_id == str(task.id)
+        )
     ).first()
 
     if snapshot is None:
@@ -67,13 +73,13 @@ def list_staff_tasks(
 ):
     """Get all staff tasks"""
     query = select(StaffTask).order_by(desc(StaffTask.assigned_at))
-    
+
     if status:
         query = query.where(StaffTask.status == status)
-    
+
     query = query.offset(skip).limit(limit)
     tasks = db.scalars(query).all()
-    
+
     return [serialize_task(task) for task in tasks]
 
 
@@ -85,8 +91,10 @@ def get_staff_task(
     """Get a specific task"""
     task = db.get(StaffTask, task_id)
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+
     return serialize_task(task)
 
 
@@ -112,16 +120,19 @@ def create_staff_task(
         location_data = payload.location
     elif payload.bookingId is not None:
         from app.models.booking import Booking
+
         booking = db.get(Booking, payload.bookingId)
         if booking:
-            location_data = type('LD', (), {})()
+            location_data = type("LD", (), {})()
             location_data.province = booking.province
             location_data.municipality = booking.municipality
             location_data.barangay = booking.barangay
             location_data.house = booking.house
 
     if location_data is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Location is required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Location is required"
+        )
 
     task = StaffTask(
         booking_id=payload.bookingId,
@@ -134,18 +145,19 @@ def create_staff_task(
         barangay=location_data.barangay,
         house=location_data.house,
     )
-    
+
     db.add(task)
     db.flush()
-    
+
     from app.models.stafftask import StaffTaskAssignee
+
     for staff_id in payload.assignedStaffIds:
         assignee = StaffTaskAssignee(task_id=task.id, staff_id=staff_id)
         db.add(assignee)
-    
+
     db.commit()
     db.refresh(task)
-    
+
     return serialize_task(task)
 
 
@@ -158,14 +170,16 @@ def update_staff_task_status(
     """Update task status"""
     task = db.get(StaffTask, task_id)
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+
     task.status = TaskStatus(payload.status)
     if task.status == TaskStatus.done:
         upsert_contribution_snapshot(task, db)
     db.commit()
     db.refresh(task)
-    
+
     return serialize_task(task)
 
 
@@ -177,7 +191,9 @@ def delete_staff_task(
     """Delete a task"""
     task = db.get(StaffTask, task_id)
     if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+
     db.delete(task)
     db.commit()

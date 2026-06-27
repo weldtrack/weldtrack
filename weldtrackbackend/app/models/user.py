@@ -19,23 +19,17 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
     email: Mapped[str] = mapped_column(
-        String(255),
-        unique=True,
-        index=True,
-        nullable=False
+        String(255), unique=True, index=True, nullable=False
     )
 
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole),
-        default=UserRole.customer,
-        nullable=False
+        Enum(UserRole), default=UserRole.customer, nullable=False
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now()
+        DateTime(timezone=True), server_default=func.now()
     )
 
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -53,14 +47,14 @@ class User(Base):
     logged_out_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
-        comment="When the user last logged out - used to invalidate old tokens"
+        comment="When the user last logged out - used to invalidate old tokens",
     )
-    
+
     email_verification = relationship(
         "EmailVerification",
         back_populates="user",
         uselist=False,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
     assigned_tasks = relationship(
         "StaffTaskAssignee",

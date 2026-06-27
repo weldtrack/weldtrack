@@ -16,10 +16,14 @@ app = FastAPI(
     root_path="/api",
     docs_url=None if IS_PROD else "/docs",
     redoc_url=None if IS_PROD else "/redoc",
-    openapi_url=None if IS_PROD else "/openapi.json"
+    openapi_url=None if IS_PROD else "/openapi.json",
 )
 
-origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if origin.strip()]
+origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -30,22 +34,16 @@ app.add_middleware(
 
 app.include_router(router)
 
+
 @app.get("/")
 def root():
-    return {
-        "name": "weldtrack",
-        "status": "online"
-    }
+    return {"name": "weldtrack", "status": "online"}
+
 
 if __name__ == "__main__":
     import uvicorn
 
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
-    
-    uvicorn.run(
-        "app.main:app", 
-        host=host, 
-        port=port, 
-        reload=not IS_PROD
-    )
+
+    uvicorn.run("app.main:app", host=host, port=port, reload=not IS_PROD)

@@ -10,20 +10,21 @@ resend.api_key = RESEND_API_KEY
 def send_verification_email(to_email: str, verification_code: str) -> bool:
     """
     Send verification code to user's email using Resend.
-    
+
     Args:
         to_email: Recipient email address
         verification_code: 6-digit verification code
-    
+
     Returns:
         True if email sent successfully, False otherwise
     """
     try:
-        response = resend.Emails.send({
-            "from": RESEND_FROM_EMAIL,
-            "to": to_email,
-            "subject": "WeldTrack Email Verification",
-            "html": f"""
+        response = resend.Emails.send(
+            {
+                "from": RESEND_FROM_EMAIL,
+                "to": to_email,
+                "subject": "WeldTrack Email Verification",
+                "html": f"""
             <html>
                 <body style="font-family: Arial, sans-serif;">
                     <h2>Email Verification</h2>
@@ -33,8 +34,9 @@ def send_verification_email(to_email: str, verification_code: str) -> bool:
                     <p>If you didn't request this code, please ignore this email.</p>
                 </body>
             </html>
-            """
-        })
+            """,
+            }
+        )
 
         return response.get("id") is not None
 

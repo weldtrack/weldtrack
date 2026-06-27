@@ -35,6 +35,7 @@ def is_user_online(user: User) -> bool:
 
 # ── Staff ─────────────────────────────────────────────────────────────────────
 
+
 @router.get("/staff", response_model=list[UserRead])
 def list_staff_users(
     admin: User = Depends(require_admin),
@@ -73,7 +74,9 @@ def admin_create_staff(
             detail="Email is already registered",
         )
 
-    user = User(email=email, hashed_password=hash_password(password), role=UserRole.staff)
+    user = User(
+        email=email, hashed_password=hash_password(password), role=UserRole.staff
+    )
     db.add(user)
     db.flush()
 
@@ -93,7 +96,9 @@ def delete_staff(
     """Admin-only: delete a staff member."""
     staff_user = db.get(User, staff_id)
     if not staff_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Staff member not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Staff member not found"
+        )
     if staff_user.role != UserRole.staff:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -105,6 +110,7 @@ def delete_staff(
 
 
 # ── Users ─────────────────────────────────────────────────────────────────────
+
 
 @router.get("/admin/users", response_model=list[UserRead])
 def admin_get_users(
@@ -148,6 +154,7 @@ def admin_get_online_users(
 
 # ── Ban / Unban ───────────────────────────────────────────────────────────────
 
+
 @router.post("/admin/ban/{user_id}")
 def admin_ban_user(
     user_id: int,
@@ -163,7 +170,9 @@ def admin_ban_user(
 
     user = db.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     if user.role == UserRole.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -194,7 +203,9 @@ def admin_unban_user(
     """Admin-only: unban a user."""
     user = db.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     if user.role == UserRole.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

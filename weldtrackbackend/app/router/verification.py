@@ -26,26 +26,27 @@ router = APIRouter(prefix="/auth", tags=["verification"])
 
 EMAIL_CHECKER = os.getenv("EMAIL_CHECKER_API_KEY")
 
+
 @router.post("/signup", status_code=status.HTTP_200_OK)
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     """Request signup — validate email and send verification code. Account is not created yet."""
-    
+
     if EMAIL_CHECKER:
         url = f"https://emailvalidation.abstractapi.com/v1/?api_key={EMAIL_CHECKER}&email={payload.email}"
         try:
             response = requests.get(url, timeout=5)
             data = response.json()
             is_disposable = data.get("is_disposable_email", {}).get("value", False)
-            
+
             if is_disposable:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Disposable email addresses are not allowed. Please use a permanent email.",
                 )
         except HTTPException:
-            raise  
+            raise
         except Exception as e:
-  
+
             print(f"Abstract API Error: {e}")
             pass
     else:
@@ -58,21 +59,27 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         )
 
     existing_code = db.scalar(
-        select(EmailVerificationCode).where(EmailVerificationCode.email == payload.email)
+        select(EmailVerificationCode).where(
+            EmailVerificationCode.email == payload.email
+        )
     )
     if existing_code:
         db.delete(existing_code)
-        db.flush() 
+        db.flush()
 
-    db.add(EmailVerificationCode(
-        email=payload.email,
-        code=generate_verification_code(),
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
-    ))
+    db.add(
+        EmailVerificationCode(
+            email=payload.email,
+            code=generate_verification_code(),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=15),
+        )
+    )
     db.commit()
 
     verification_record = db.scalar(
-        select(EmailVerificationCode).where(EmailVerificationCode.email == payload.email)
+        select(EmailVerificationCode).where(
+            EmailVerificationCode.email == payload.email
+        )
     )
 
     if not send_verification_email(payload.email, verification_record.code):
@@ -81,18 +88,26 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
             detail="Failed to send verification email",
         )
 
-    return {"success": True, "message": "Verification code sent to email. Code will expire in 15 minutes."}
+    return {
+        "success": True,
+        "message": "Verification code sent to email. Code will expire in 15 minutes.",
+    }
+
 
 @router.post("/verifyemail")
 def request_verification_email(payload: dict, db: Session = Depends(get_db)):
     """Send a verification code to an existing user (for password reset)."""
     email = payload.get("email")
     if not email:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required"
+        )
 
     user = get_user_by_email(db, email)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Email not found"
+        )
 
     email_verification = user.email_verification
     if not email_verification:
@@ -101,7 +116,9 @@ def request_verification_email(payload: dict, db: Session = Depends(get_db)):
 
     verification_code = generate_verification_code()
     email_verification.verification_code = verification_code
-    email_verification.code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+    email_verification.code_expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=15
+    )
     db.commit()
 
     if not send_verification_email(email, verification_code):
@@ -110,7 +127,10 @@ def request_verification_email(payload: dict, db: Session = Depends(get_db)):
             detail="Failed to send verification email",
         )
 
-    return {"success": True, "message": "Verification code sent to email. Code will expire in 15 minutes."}
+    return {
+        "success": True,
+        "message": "Verification code sent to email. Code will expire in 15 minutes.",
+    }
 
 
 @router.post("/verifycode")
@@ -184,7 +204,9 @@ def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)
 
     elif action == "changepassword":
         if not user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found"
+            )
 
         email_verification = user.email_verification
         if not email_verification or not email_verification.verification_code:
@@ -193,7 +215,10 @@ def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)
                 detail="No verification code found. Please request a password reset.",
             )
 
-        if email_verification.code_expires_at and datetime.now(timezone.utc) > email_verification.code_expires_at:
+        if (
+            email_verification.code_expires_at
+            and datetime.now(timezone.utc) > email_verification.code_expires_at
+        ):
             email_verification.verification_code = None
             email_verification.code_expires_at = None
             db.commit()
@@ -240,7 +265,9 @@ def reset_password(payload: dict, db: Session = Depends(get_db)):
 
     user = get_user_by_email(db, email)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Email not found"
+        )
 
     email_verification = user.email_verification
     if not email_verification or not email_verification.verification_code:
@@ -249,7 +276,10 @@ def reset_password(payload: dict, db: Session = Depends(get_db)):
             detail="No verification code found. Please request a password reset.",
         )
 
-    if email_verification.code_expires_at and datetime.now(timezone.utc) > email_verification.code_expires_at:
+    if (
+        email_verification.code_expires_at
+        and datetime.now(timezone.utc) > email_verification.code_expires_at
+    ):
         email_verification.verification_code = None
         email_verification.code_expires_at = None
         db.commit()

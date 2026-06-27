@@ -17,11 +17,15 @@ router = APIRouter(prefix="/customer-addresses", tags=["customer-addresses"])
 
 def require_customer(current_user: User) -> User:
     if current_user.role != UserRole.customer:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Customer access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Customer access required"
+        )
     return current_user
 
 
-def get_owned_address(address_id: int, current_user: User, db: Session) -> CustomerAddress:
+def get_owned_address(
+    address_id: int, current_user: User, db: Session
+) -> CustomerAddress:
     address = db.scalar(
         select(CustomerAddress).where(
             CustomerAddress.id == address_id,
@@ -29,14 +33,22 @@ def get_owned_address(address_id: int, current_user: User, db: Session) -> Custo
         )
     )
     if address is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Address not found"
+        )
     return address
 
 
-def deactivate_other_addresses(user_id: int, active_address_id: int | None, db: Session) -> None:
-    addresses = db.scalars(select(CustomerAddress).where(CustomerAddress.user_id == user_id)).all()
+def deactivate_other_addresses(
+    user_id: int, active_address_id: int | None, db: Session
+) -> None:
+    addresses = db.scalars(
+        select(CustomerAddress).where(CustomerAddress.user_id == user_id)
+    ).all()
     for address in addresses:
-        should_be_active = address.id == active_address_id if active_address_id is not None else False
+        should_be_active = (
+            address.id == active_address_id if active_address_id is not None else False
+        )
         if address.is_active != should_be_active:
             address.is_active = should_be_active
             db.add(address)
@@ -55,17 +67,25 @@ def list_my_addresses(
     ).all()
 
 
-@router.post("", response_model=CustomerAddressResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=CustomerAddressResponse, status_code=status.HTTP_201_CREATED
+)
 def create_address(
     payload: CustomerAddressCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     current_user = require_customer(current_user)
-    has_existing = db.scalar(select(CustomerAddress.id).where(CustomerAddress.user_id == current_user.id))
+    has_existing = db.scalar(
+        select(CustomerAddress.id).where(CustomerAddress.user_id == current_user.id)
+    )
     should_activate = payload.is_active or has_existing is None
 
-    address = CustomerAddress(user_id=current_user.id, **payload.model_dump(exclude={"is_active"}), is_active=should_activate)
+    address = CustomerAddress(
+        user_id=current_user.id,
+        **payload.model_dump(exclude={"is_active"}),
+        is_active=should_activate
+    )
     db.add(address)
     db.flush()
 
@@ -99,11 +119,17 @@ def update_address(
     elif should_activate is False and address.is_active:
         remaining_address = db.scalar(
             select(CustomerAddress)
-            .where(CustomerAddress.user_id == current_user.id, CustomerAddress.id != address.id)
+            .where(
+                CustomerAddress.user_id == current_user.id,
+                CustomerAddress.id != address.id,
+            )
             .order_by(CustomerAddress.id.asc())
         )
         if remaining_address is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="At least one active address is required")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one active address is required",
+            )
         deactivate_other_addresses(current_user.id, remaining_address.id, db)
         address.is_active = False
 

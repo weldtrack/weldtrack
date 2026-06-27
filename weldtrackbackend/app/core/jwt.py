@@ -24,11 +24,17 @@ def _b64url_decode(data: str) -> bytes:
 
 def encode_jwt(payload: dict[str, Any]) -> str:
     header = {"alg": JWT_ALGORITHM, "typ": "JWT"}
-    header_segment = _b64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
-    payload_segment = _b64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    header_segment = _b64url_encode(
+        json.dumps(header, separators=(",", ":")).encode("utf-8")
+    )
+    payload_segment = _b64url_encode(
+        json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    )
     signing_input = f"{header_segment}.{payload_segment}".encode("utf-8")
     # Security: Signature verification relies on hmac and the secret key
-    signature = hmac.new(JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256).digest()
+    signature = hmac.new(
+        JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256
+    ).digest()
     return f"{header_segment}.{payload_segment}.{_b64url_encode(signature)}"
 
 
@@ -44,14 +50,18 @@ def decode_jwt(token: str) -> dict[str, Any]:
 
     signing_input = f"{header_segment}.{payload_segment}".encode("utf-8")
     # Security: Signature verification relying on hmac to ensure token integrity
-    expected_signature = hmac.new(JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256).digest()
+    expected_signature = hmac.new(
+        JWT_SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256
+    ).digest()
     provided_signature = _b64url_decode(signature_segment)
     if not hmac.compare_digest(expected_signature, provided_signature):
         raise ValueError("Invalid token signature")
 
     payload = json.loads(_b64url_decode(payload_segment))
     expires_at = payload.get("exp")
-    if expires_at is not None and datetime.now(timezone.utc).timestamp() >= float(expires_at):
+    if expires_at is not None and datetime.now(timezone.utc).timestamp() >= float(
+        expires_at
+    ):
         raise ValueError("Token has expired")
     return payload
 

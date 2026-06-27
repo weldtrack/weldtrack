@@ -19,7 +19,13 @@ class Feedback(Base):
     rating: Mapped[float] = mapped_column(Float, nullable=False)
     comment: Mapped[str] = mapped_column(String(1000), nullable=False)
 
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
 
-    comments = relationship("FeedbackComment", back_populates="feedback", cascade="all, delete-orphan")
-    likes = relationship("FeedbackLike", back_populates="feedback", cascade="all, delete-orphan")
+    comments = relationship(
+        "FeedbackComment", back_populates="feedback", cascade="all, delete-orphan"
+    )
+    likes = relationship(
+        "FeedbackLike", back_populates="feedback", cascade="all, delete-orphan"
+    )

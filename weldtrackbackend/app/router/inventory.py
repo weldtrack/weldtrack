@@ -36,11 +36,15 @@ def get_inventory_item(
     """Get a specific inventory item"""
     item = db.get(InventoryItem, item_id)
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
     return item
 
 
-@router.post("", response_model=InventoryItemResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=InventoryItemResponse, status_code=status.HTTP_201_CREATED
+)
 def create_inventory_item(
     payload: InventoryItemCreate,
     db: Session = Depends(get_db),
@@ -62,12 +66,14 @@ def update_inventory_item(
     """Update an inventory item"""
     item = db.get(InventoryItem, item_id)
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
+
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(item, key):
             setattr(item, key, value)
-    
+
     db.commit()
     db.refresh(item)
     return item
@@ -82,19 +88,23 @@ def partial_update_inventory_item(
     """Partially update an inventory item"""
     item = db.get(InventoryItem, item_id)
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
+
     old_quantity = item.quantity or 0
-    
+
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(item, key):
             setattr(item, key, value)
-    
+
     new_quantity = item.quantity or 0
     if old_quantity != new_quantity:
         quantity_delta = new_quantity - old_quantity
-        movement_type = MovementType.stock_in if quantity_delta > 0 else MovementType.stock_out
-        
+        movement_type = (
+            MovementType.stock_in if quantity_delta > 0 else MovementType.stock_out
+        )
+
         movement = StockMovement(
             item_id=item.id,
             item_name=item.name,
@@ -102,7 +112,7 @@ def partial_update_inventory_item(
             type=movement_type,
         )
         db.add(movement)
-    
+
     db.commit()
     db.refresh(item)
     return item
@@ -116,8 +126,10 @@ def delete_inventory_item(
     """Delete an inventory item"""
     item = db.get(InventoryItem, item_id)
     if not item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
+
     db.delete(item)
     db.commit()
 
@@ -133,14 +145,14 @@ def get_stock_movements(
 ):
     """Get stock movement history"""
     query = select(StockMovement).order_by(desc(StockMovement.timestamp))
-    
+
     if item_id:
         query = query.where(StockMovement.item_id == item_id)
     if booking_id:
         query = query.where(StockMovement.booking_id == booking_id)
     if task_id:
         query = query.where(StockMovement.task_id == task_id)
-    
+
     query = query.offset(skip).limit(limit)
     movements = db.scalars(query).all()
     task_ids: list[UUID] = []
@@ -167,11 +179,15 @@ def get_stock_movements(
             "timestamp": movement.timestamp,
             "booking_id": movement.booking_id,
             "task_id": movement.task_id,
-            "team_emails": [
-                assignee.staff.email
-                for assignee in tasks_by_id.get(movement.task_id, []).assignees
-                if assignee.staff and assignee.staff.email
-            ] if movement.task_id and movement.task_id in tasks_by_id else [],
+            "team_emails": (
+                [
+                    assignee.staff.email
+                    for assignee in tasks_by_id.get(movement.task_id, []).assignees
+                    if assignee.staff and assignee.staff.email
+                ]
+                if movement.task_id and movement.task_id in tasks_by_id
+                else []
+            ),
         }
         for movement in movements
     ]

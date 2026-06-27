@@ -12,9 +12,15 @@ class AttendanceRecord(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     date: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    check_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    check_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    check_in_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    check_out_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     hours_worked: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     regular_hours: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     overtime_hours: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

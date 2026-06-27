@@ -1,6 +1,9 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from app.schemas.feedback_interactions import FeedbackCommentResponse, FeedbackLikeResponse
+from app.schemas.feedback_interactions import (
+    FeedbackCommentResponse,
+    FeedbackLikeResponse,
+)
 
 
 class FeedbackBase(BaseModel):

@@ -33,7 +33,9 @@ def get_service(
     """Get a specific service"""
     service = db.get(Service, service_id)
     if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service not found"
+        )
     return service
 
 
@@ -50,7 +52,7 @@ def create_service(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Service with this name already exists",
         )
-    
+
     service = Service(**payload.model_dump())
     db.add(service)
     db.commit()
@@ -67,21 +69,25 @@ def update_service(
     """Update a service"""
     service = db.get(Service, service_id)
     if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service not found"
+        )
+
     # Check if new name conflicts with existing service
     if payload.name and payload.name != service.name:
-        existing = db.scalars(select(Service).where(Service.name == payload.name)).first()
+        existing = db.scalars(
+            select(Service).where(Service.name == payload.name)
+        ).first()
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Service with this name already exists",
             )
-    
+
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(service, key):
             setattr(service, key, value)
-    
+
     db.commit()
     db.refresh(service)
     return service
@@ -95,7 +101,9 @@ def delete_service(
     """Delete a service"""
     service = db.get(Service, service_id)
     if not service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Service not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Service not found"
+        )
+
     db.delete(service)
     db.commit()

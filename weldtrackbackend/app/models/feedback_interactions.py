@@ -13,7 +13,9 @@ class FeedbackComment(Base):
     feedback_id: Mapped[int] = mapped_column(ForeignKey("feedbacks.id"), nullable=False)
     user_email: Mapped[str] = mapped_column(String(255), nullable=False)
     comment: Mapped[str] = mapped_column(String(1000), nullable=False)
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
 
     feedback = relationship("Feedback", back_populates="comments")
 

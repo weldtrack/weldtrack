@@ -10,11 +10,15 @@ router = APIRouter(prefix="/staff-contributions", tags=["staff-contributions"])
 
 
 def backfill_missing_snapshots(db: Session) -> None:
-    done_tasks = db.scalars(select(StaffTask).where(StaffTask.status == TaskStatus.done)).all()
+    done_tasks = db.scalars(
+        select(StaffTask).where(StaffTask.status == TaskStatus.done)
+    ).all()
 
     for task in done_tasks:
         existing = db.scalars(
-            select(StaffContributionSnapshot).where(StaffContributionSnapshot.task_id == str(task.id))
+            select(StaffContributionSnapshot).where(
+                StaffContributionSnapshot.task_id == str(task.id)
+            )
         ).first()
         if existing is not None:
             continue
@@ -25,7 +29,9 @@ def backfill_missing_snapshots(db: Session) -> None:
                 project_name=task.project_name,
                 task_title=task.title,
                 contributor_ids=[a.staff_id for a in task.assignees],
-                contributor_emails=[a.staff.email for a in task.assignees if a.staff and a.staff.email],
+                contributor_emails=[
+                    a.staff.email for a in task.assignees if a.staff and a.staff.email
+                ],
                 completed_at=task.assigned_at,
             )
         )

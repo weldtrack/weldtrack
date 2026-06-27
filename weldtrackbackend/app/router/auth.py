@@ -22,7 +22,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
+def login(
+    payload: LoginRequest, response: Response, db: Session = Depends(get_db)
+) -> AuthResponse:
     user = get_user_by_email(db, payload.email)
     if user is None or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(

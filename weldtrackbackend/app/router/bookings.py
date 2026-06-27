@@ -5,7 +5,12 @@ from app.db import get_db
 from app.models.booking import Booking, BookingStatus, RecordMaterial
 from app.models.service import Service
 from app.models.customer_address import CustomerAddress
-from app.schemas.booking import BookingCreate, BookingUpdate, BookingResponse, MaterialCreate
+from app.schemas.booking import (
+    BookingCreate,
+    BookingUpdate,
+    BookingResponse,
+    MaterialCreate,
+)
 from app.router.auth import get_current_user
 from app.models.user import User, UserRole
 from app.models.inventory import InventoryItem, StockMovement, MovementType
@@ -24,10 +29,10 @@ def list_bookings(
 ):
     """Get all bookings with optional filtering"""
     query = select(Booking).order_by(desc(Booking.created_date))
-    
+
     if status:
         query = query.where(Booking.status == status)
-    
+
     query = query.offset(skip).limit(limit)
     bookings = db.scalars(query).all()
     return bookings
@@ -41,7 +46,9 @@ def get_booking(
     """Get a specific booking by ID"""
     booking = db.get(Booking, booking_id)
     if not booking:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
+        )
     return booking
 
 
@@ -100,12 +107,14 @@ def create_booking(
     booking = Booking(**booking_data)
     db.add(booking)
     db.flush()
-    
+
     if payload.model_dump().get("materials"):
         for material_data in payload.materials:
-            material = RecordMaterial(**material_data.model_dump(), booking_id=booking.id)
+            material = RecordMaterial(
+                **material_data.model_dump(), booking_id=booking.id
+            )
             db.add(material)
-    
+
     db.commit()
     db.refresh(booking)
     return booking
@@ -120,12 +129,14 @@ def update_booking(
     """Update a booking"""
     booking = db.get(Booking, booking_id)
     if not booking:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
+        )
+
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(booking, key):
             setattr(booking, key, value)
-    
+
     db.commit()
     db.refresh(booking)
     return booking
@@ -140,12 +151,14 @@ def partial_update_booking(
     """Partially update a booking"""
     booking = db.get(Booking, booking_id)
     if not booking:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
+        )
+
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(booking, key):
             setattr(booking, key, value)
-    
+
     db.commit()
     db.refresh(booking)
     return booking
@@ -159,11 +172,12 @@ def delete_booking(
     """Delete a booking"""
     booking = db.get(Booking, booking_id)
     if not booking:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
+        )
+
     db.delete(booking)
     db.commit()
-
 
 
 @router.post("/{booking_id}/materials", response_model=list[StockMovementResponse])
@@ -176,14 +190,20 @@ def add_booking_materials(
     """Record materials used for a booking and persist a booking-linked material snapshot."""
     booking = db.get(Booking, booking_id)
     if not booking:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found"
+        )
     if booking.status == BookingStatus.completed:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Booking is already completed")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Booking is already completed",
+        )
 
     existing_movements = db.scalars(
         select(StockMovement).where(
             StockMovement.booking_id == booking_id,
-            StockMovement.task_id == (str(payload.taskId) if payload.taskId is not None else None),
+            StockMovement.task_id
+            == (str(payload.taskId) if payload.taskId is not None else None),
             StockMovement.type == MovementType.stock_out,
         )
     ).all()
@@ -203,7 +223,10 @@ def add_booking_materials(
     for line in payload.lines:
         item = db.get(InventoryItem, line.itemId)
         if not item:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Inventory item {line.itemId} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Inventory item {line.itemId} not found",
+            )
 
         qty = int(line.quantity)
         unit_price = float(item.unit_price or 0)

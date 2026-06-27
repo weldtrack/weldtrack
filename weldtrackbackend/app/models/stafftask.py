@@ -27,6 +27,7 @@ class TaskStatus(str, enum.Enum):
 class MovementType(str, enum.Enum):
     stock_out = "stock_out"
 
+
 class StaffTask(Base):
     __tablename__ = "staff_tasks"
 
@@ -52,7 +53,9 @@ class StaffTask(Base):
     )
 
     country: Mapped[str] = mapped_column(String(8), default="PH", nullable=False)
-    region: Mapped[str] = mapped_column(String(64), default="Bicol Region (Region V)", nullable=False)
+    region: Mapped[str] = mapped_column(
+        String(64), default="Bicol Region (Region V)", nullable=False
+    )
     province: Mapped[str] = mapped_column(String(100), nullable=False)
     municipality: Mapped[str] = mapped_column(String(100), nullable=False)
     barangay: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -85,7 +88,9 @@ class StaffTaskAssignee(Base):
     )
 
     task = relationship("StaffTask", back_populates="assignees")
-    staff = relationship("User", back_populates="assigned_tasks", foreign_keys=[staff_id])
+    staff = relationship(
+        "User", back_populates="assigned_tasks", foreign_keys=[staff_id]
+    )
 
 
 class TaskMaterialUsage(Base):
@@ -121,7 +126,11 @@ class TaskMaterialUsage(Base):
     )
 
     task = relationship("StaffTask", back_populates="material_usages")
-    submitted_by_staff = relationship("User", back_populates="material_submissions", foreign_keys=[submitted_by_staff_id])
+    submitted_by_staff = relationship(
+        "User",
+        back_populates="material_submissions",
+        foreign_keys=[submitted_by_staff_id],
+    )
 
     lines = relationship(
         "TaskMaterialUsageLine",
