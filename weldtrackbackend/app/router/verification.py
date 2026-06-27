@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta, timezone
 
+import requests
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db import get_db
 from app.core.jwt import create_access_token
 from app.core.security import hash_password
+from app.db import get_db
 from app.models.user import User, UserRole
 from app.models.verification_code import EmailVerification, EmailVerificationCode
-from app.schemas.user import AuthResponse, SignupRequest
+from app.schemas.user import SignupRequest
 from app.services.auth_service import (
     build_auth_response,
     generate_verification_code,
@@ -22,10 +24,33 @@ from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["verification"])
 
+EMAIL_CHECKER = os.getenv("EMAIL_CHECKER_API_KEY")
 
 @router.post("/signup", status_code=status.HTTP_200_OK)
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     """Request signup — validate email and send verification code. Account is not created yet."""
+    
+    if EMAIL_CHECKER:
+        url = f"https://emailvalidation.abstractapi.com/v1/?api_key={EMAIL_CHECKER}&email={payload.email}"
+        try:
+            response = requests.get(url, timeout=5)
+            data = response.json()
+            is_disposable = data.get("is_disposable_email", {}).get("value", False)
+            
+            if is_disposable:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Disposable email addresses are not allowed. Please use a permanent email.",
+                )
+        except HTTPException:
+            raise  
+        except Exception as e:
+  
+            print(f"Abstract API Error: {e}")
+            pass
+    else:
+        print("Warning: EMAIL_CHECKER_API_KEY is missing from environment variables!")
+
     if get_user_by_email(db, payload.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
