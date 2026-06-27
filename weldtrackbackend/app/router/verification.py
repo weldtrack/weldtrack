@@ -34,10 +34,9 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     if EMAIL_CHECKER:
         url = f"https://emailreputation.abstractapi.com/v1/?api_key={EMAIL_CHECKER}&email={payload.email}"
         try:
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=20)
             data = response.json()
             
-
             is_disposable = data.get("email_quality", {}).get("is_disposable", False)
             
             if is_disposable:
@@ -47,6 +46,10 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
                 )
         except HTTPException:
             raise  
+        except requests.exceptions.Timeout:
+            
+            print("Abstract API Error: Request timed out after 20 seconds.")
+            pass
         except Exception as e:
             print(f"Abstract API Error: {e}")
             pass
