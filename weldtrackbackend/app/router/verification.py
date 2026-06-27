@@ -32,7 +32,7 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     """Request signup — validate email and send verification code. Account is not created yet."""
 
     if EMAIL_CHECKER:
-        url = f"https://emailvalidation.abstractapi.com/v1/?api_key={EMAIL_CHECKER}&email={payload.email}"
+        url = f"https://emailreputation.abstractapi.com/v1/?api_key={EMAIL_CHECKER}&email={payload.email}"
         try:
             response = requests.get(url, timeout=5)
             data = response.json()
