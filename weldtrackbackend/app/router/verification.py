@@ -36,17 +36,18 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         try:
             response = requests.get(url, timeout=5)
             data = response.json()
-            is_disposable = data.get("is_disposable_email", {}).get("value", False)
+            
 
+            is_disposable = data.get("email_quality", {}).get("is_disposable", False)
+            
             if is_disposable:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Disposable email addresses are not allowed. Please use a permanent email.",
                 )
         except HTTPException:
-            raise
+            raise  
         except Exception as e:
-
             print(f"Abstract API Error: {e}")
             pass
     else:
