@@ -49,7 +49,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_project_history_booking_id'), 'project_history', ['booking_id'], unique=False)
     op.create_index(op.f('ix_project_history_id'), 'project_history', ['id'], unique=False)
     op.create_index(op.f('ix_project_history_task_id'), 'project_history', ['task_id'], unique=False)
-    op.drop_column('attendance_records', 'total_hours_worked')
+    op.execute("ALTER TABLE attendance_records DROP COLUMN IF EXISTS total_hours_worked")
     op.alter_column('feedback_comments', 'date',
                existing_type=postgresql.TIMESTAMP(timezone=True),
                nullable=False,
