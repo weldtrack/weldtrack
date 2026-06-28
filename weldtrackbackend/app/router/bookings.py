@@ -16,6 +16,8 @@ from app.models.user import User, UserRole
 from app.models.inventory import InventoryItem, StockMovement, MovementType
 from app.schemas.stafftask import TaskMaterialsCreate
 from app.schemas.inventory import StockMovementResponse
+from app.models.stafftask import TaskMaterialUsage
+from app.core.config import FIXED_LABOR_RATE
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -219,7 +221,20 @@ def add_booking_materials(
         db.delete(material)
 
     created: list[StockMovement] = []
-
+    
+    # Create TaskMaterialUsage record
+    material_usage = TaskMaterialUsage(
+        task_id=payload.taskId,
+        booking_id=booking_id,
+        submitted_by_staff_id=payload.submittedBy,
+        before_image_url=payload.beforeImage,
+        after_image_url=payload.afterImage,
+        labor_hours=payload.laborHours,
+    )
+    db.add(material_usage)
+    # No need to flush here if I don't use the ID immediately for something else, 
+    # but good practice if I needed to create lines.
+    
     for line in payload.lines:
         item = db.get(InventoryItem, line.itemId)
         if not item:

@@ -12,6 +12,7 @@ from sqlalchemy import (
     Enum,
     Integer,
     func,
+    Float
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -118,6 +119,8 @@ class TaskMaterialUsage(Base):
 
     before_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     after_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    labor_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

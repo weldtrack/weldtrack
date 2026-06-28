@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
                                 <div class="absolute inset-0 bg-linear-to-t from-[#020617] via-transparent to-transparent"></div>
                                 <div class="absolute bottom-10 left-10 right-10 text-left">
                                     <div class="mb-2 inline-block rounded-full bg-cyan-500/20 px-4 py-1 text-xs font-bold tracking-widest text-cyan-400 uppercase backdrop-blur-md">
-                                        {{ formatCurrency(services[currentSlide]?.price || 0) }}
+                                        {{ formatCurrency(services[currentSlide]?.price || 0) }} /hour
                                     </div>
                                     <h3 class="public-service-text mb-4 text-4xl font-black">{{ services[currentSlide]?.name }}</h3>
                                     <p class="public-service-text max-w-xl text-lg leading-relaxed">

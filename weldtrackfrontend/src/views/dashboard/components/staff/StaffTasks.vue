@@ -9,6 +9,7 @@ import api from '../../../../api/api'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
+import { loadServicePriceMap } from '../../../../services/servicePricing'
 
 interface StaffMember {
   id: string
@@ -19,6 +20,7 @@ const authStore = useAuthStore()
 const staffTasksStore = useStaffTasksStore()
 const bookingsStore = useBookingsStore()
 const modalStore = useModalStore()
+const servicePriceMap = ref<Record<string, number>>({})
 const isAdmin = computed(() => authStore.role === 'admin')
 
 const staffList = computed(() => authStore.staffDirectory as StaffMember[])
@@ -78,6 +80,7 @@ const recordForm = reactive({
   afterImageFile: null as File | null,
   beforeImagePreview: '' as string,
   afterImagePreview: '' as string,
+  laborHours: 0,
 })
 
 function resetRecordForm() {
@@ -87,6 +90,7 @@ function resetRecordForm() {
   recordForm.afterImageFile = null
   recordForm.beforeImagePreview = ''
   recordForm.afterImagePreview = ''
+  recordForm.laborHours = 0
 }
 
 function getTaskBookingId(taskId: string) {
@@ -174,6 +178,7 @@ onMounted(async () => {
     staffTasksStore.fetchTasks(),
     inventoryStore.fetchInventory(),
     inventoryStore.fetchMovements(),
+    loadServicePriceMap().then((map) => (servicePriceMap.value = map)),
   ])
 })
 
@@ -241,6 +246,24 @@ const materialsTotalPrice = computed(() => {
   }, 0)
 })
 
+function getAssignedStaffCount(taskId: string) {
+  const task = staffTasksStore.tasks.find((t) => t.id === taskId)
+  return task?.assignedStaffIds?.length || 0
+}
+
+function getLaborRate(taskId: string) {
+  const task = staffTasksStore.tasks.find((t) => t.id === taskId)
+  if (!task) return 0
+  const normalizedName = task.projectName.split(' - ')[0].trim().toLowerCase()
+  return servicePriceMap.value[normalizedName] || 0
+}
+
+function calculateTotalLaborCost(taskId: string) {
+  const staffCount = getAssignedStaffCount(taskId)
+  const rate = getLaborRate(taskId)
+  return recordForm.laborHours * staffCount * rate
+}
+
 async function recordMaterialsUsage() {
   if (!recordingTask.value) return
   const bookingId = getTaskBookingId(recordingTask.value)
@@ -272,6 +295,7 @@ async function recordMaterialsUsage() {
     taskId,
     movementType: 'stock_out',
     lines: validLines.map((l) => ({ itemId: Number(l.itemId), quantity: l.quantity })),
+    laborHours: recordForm.laborHours,
     beforeImage: recordForm.beforeImagePreview || undefined,
     afterImage: recordForm.afterImagePreview || undefined,
   }
@@ -634,6 +658,13 @@ async function confirmRemoveTask() {
           <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
             <p class="text-sm text-emerald-700">Estimated total material cost</p>
             <p class="mt-1 text-2xl font-semibold text-emerald-900">{{ formatCurrency(materialsTotalPrice) }}</p>
+          </div>
+
+          <div class="space-y-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+            <p class="text-sm text-sky-700">Labor Hours (per member)</p>
+            <input v-model.number="recordForm.laborHours" type="number" min="0" step="0.5" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm" />
+            <p class="text-xs text-sky-700">Total: {{ recordForm.laborHours }} hours * {{ getAssignedStaffCount(recordingTask || '') }} members * PHP {{ getLaborRate(recordingTask || '') }}/hr</p>
+            <p class="text-lg font-semibold text-sky-900">Total Labor Cost: {{ formatCurrency(calculateTotalLaborCost(recordingTask || '')) }}</p>
           </div>
 
           <div>

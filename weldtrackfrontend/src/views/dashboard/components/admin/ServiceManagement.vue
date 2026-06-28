@@ -286,7 +286,7 @@ function formatDate(value: string) {
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Labor Price (₱) *</label>
+            <label class="block text-sm font-medium text-gray-700">Labor Price (₱) /hour *</label>
             <input
               v-model="formData.price"
               type="number"
@@ -365,7 +365,7 @@ function formatDate(value: string) {
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Image</th>
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Service Name</th>
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Description</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Labor Price</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Labor Price /hour</th>
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Created</th>
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
             </tr>

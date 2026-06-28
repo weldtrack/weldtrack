@@ -366,7 +366,7 @@ function formatActiveAddress() {
           </div>
 
           <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Labor Cost</p>
+            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Labor Cost /hour</p>
             <p class="mt-1 text-gray-900 font-medium">{{ formatCurrency(getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
           </div>
 
@@ -455,7 +455,7 @@ function formatActiveAddress() {
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
-              <p class="text-sm text-gray-600">Labor Cost</p>
+              <p class="text-sm text-gray-600">Labor Cost /hour</p>
               <p class="mt-1 text-lg font-semibold text-gray-900">{{ formatCurrency(selectedLaborPrice) }}</p>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">

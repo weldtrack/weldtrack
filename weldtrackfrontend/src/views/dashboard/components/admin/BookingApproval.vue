@@ -598,7 +598,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
 
       <div class="space-y-4">
         <div>
-          <p class="text-sm text-gray-600">Labor Cost</p>
+          <p class="text-sm text-gray-600">Labor Cost /hour</p>
           <p class="mt-1 text-lg font-medium text-gray-900">₱{{ (selectedBooking ?
             getDisplayedLaborCost(selectedBooking) :
             0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
