@@ -88,8 +88,8 @@ onBeforeUnmount(() => {
                                     <div class="mb-2 inline-block rounded-full bg-cyan-500/20 px-4 py-1 text-xs font-bold tracking-widest text-cyan-400 uppercase backdrop-blur-md">
                                         {{ formatCurrency(services[currentSlide]?.price || 0) }} /hour
                                     </div>
-                                    <h3 class="public-service-text mb-4 text-4xl font-black">{{ services[currentSlide]?.name }}</h3>
-                                    <p class="public-service-text max-w-xl text-lg leading-relaxed">
+                                    <h3 class="public-service-text mb-4 text-2xl sm:text-4xl font-black line-clamp-1 group-hover:line-clamp-none">{{ services[currentSlide]?.name }}</h3>
+                                    <p class="public-service-text max-w-xl text-lg leading-relaxed line-clamp-2 group-hover:line-clamp-none">
                                         {{ services[currentSlide]?.description || 'A service option customers can book directly from the portal.' }}
                                     </p>
                                 </div>
