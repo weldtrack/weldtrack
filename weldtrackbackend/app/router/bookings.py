@@ -16,7 +16,7 @@ from app.models.user import User, UserRole
 from app.models.inventory import InventoryItem, StockMovement, MovementType
 from app.schemas.stafftask import TaskMaterialsCreate
 from app.schemas.inventory import StockMovementResponse
-from app.models.stafftask import TaskMaterialUsage
+from app.models.stafftask import TaskMaterialUsage, StaffTask
 from app.core.config import FIXED_LABOR_RATE
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
@@ -232,8 +232,14 @@ def add_booking_materials(
         labor_hours=payload.laborHours,
     )
     db.add(material_usage)
-    # No need to flush here if I don't use the ID immediately for something else, 
-    # but good practice if I needed to create lines.
+    
+    # Calculate and update labor cost
+    task = db.get(StaffTask, payload.taskId)
+    if task:
+        staff_count = len(task.assignees)
+        service = db.scalar(select(Service).where(Service.name == booking.project_type))
+        labor_price = service.price if service else 0
+        booking.estimated_cost = payload.laborHours * staff_count * labor_price
     
     for line in payload.lines:
         item = db.get(InventoryItem, line.itemId)

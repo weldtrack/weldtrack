@@ -117,8 +117,8 @@ class TaskMaterialUsage(Base):
         nullable=False,
     )
 
-    before_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    after_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    before_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    after_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     labor_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
 
