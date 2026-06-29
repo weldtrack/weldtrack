@@ -1,1 +1,0 @@
-import{B as e,E as t,L as n,N as r,T as i,b as a}from"./index-CsYtHrzH.js";import{t as o}from"./DashboardLayout-DuCFwvsy.js";var s=t({__name:`AdminDashboard`,setup(t){return(t,s)=>{let c=n(`RouterView`);return r(),a(o,{title:`Admin Dashboard`},{default:e(()=>[i(c)]),_:1})}}});export{s as default};

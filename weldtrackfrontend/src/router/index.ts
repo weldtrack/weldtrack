@@ -1,9 +1,9 @@
 import { createRouter as createVueRouter, createWebHistory } from 'vue-router'
-
+import { useAuthStore } from '../stores/auth'
 export function createRouter() {
-  return createVueRouter({
+  const router = createVueRouter({
     history: createWebHistory(),
-    scrollBehavior(to, from, savedPosition) {
+    scrollBehavior(to, _from, savedPosition) {
       if (to.hash) {
         return {
           el: to.hash,
@@ -207,4 +207,16 @@ export function createRouter() {
       },
     ],
   })
+
+router.beforeEach((to, _from, next) => {
+  const authStore = useAuthStore()
+  const publicPages = ['login', 'signup', 'privacy', 'terms', 'not-found']
+  const authRequired = !publicPages.includes(to.name as string)
+  if (authRequired && !authStore.isLoggedIn) {
+    return next({ name: 'login' })
+  }
+  next()
+})
+
+return router
 }
