@@ -16,10 +16,10 @@ const isMobileMenuOpen = ref(false)
             </div>
 
             <div class="hidden items-center gap-10 lg:flex">
-                <a href="#home" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Home</a>
-                <a href="#about" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Why WeldTrack</a>
-                <a href="#services" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Services</a>
-                <a href="#contact" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Contact</a>
+                <RouterLink to="/#home" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Home</RouterLink>
+                <RouterLink to="/#about" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Why WeldTrack</RouterLink>
+                <RouterLink to="/#services" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Services</RouterLink>
+                <RouterLink to="/#contact" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Contact</RouterLink>
             </div>
 
             <div class="hidden items-center gap-4 lg:flex">
@@ -43,10 +43,10 @@ const isMobileMenuOpen = ref(false)
                 <ThemeToggle />
             </div>
             <div class="flex flex-col gap-6">
-                <a href="#home" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Home</a>
-                <a href="#about" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Why WeldTrack</a>
-                <a href="#services" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Services</a>
-                <a href="#contact" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Contact</a>
+                <RouterLink to="/#home" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Home</RouterLink>
+                <RouterLink to="/#about" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Why WeldTrack</RouterLink>
+                <RouterLink to="/#services" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Services</RouterLink>
+                <RouterLink to="/#contact" class="text-lg font-medium text-slate-300" @click="isMobileMenuOpen = false">Contact</RouterLink>
             </div>
             <div class="flex flex-col gap-4 pt-4 border-t border-white/5">
                 <RouterLink to="/login" class="flex h-12 items-center justify-center font-semibold text-white" @click="isMobileMenuOpen = false">Sign In</RouterLink>
