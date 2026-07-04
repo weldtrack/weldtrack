@@ -210,7 +210,7 @@ export function createRouter() {
 
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
-  const publicPages = ['login', 'signup', 'privacy', 'terms', 'not-found']
+  const publicPages = ['webpage', 'login', 'signup', 'privacy', 'terms', 'not-found']
   const authRequired = !publicPages.includes(to.name as string)
   if (authRequired && !authStore.isLoggedIn) {
     return next({ name: 'login' })
