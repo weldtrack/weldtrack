@@ -1,17 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
-class AttendanceBase(BaseModel):
-    email: str
-
-
-class AttendanceCheckIn(AttendanceBase):
-    pass
+class AttendanceCheckIn(BaseModel):
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
+    accuracy: float | None = Field(default=None, ge=0)
 
 
 class AttendanceCheckOut(BaseModel):
-    email: str
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
+    accuracy: float | None = Field(default=None, ge=0)
 
 
 class AttendanceResponse(BaseModel):

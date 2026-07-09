@@ -4,6 +4,7 @@ from .customer_address import *
 from .feedback import *
 from .feedback_interactions import *
 from .attendance import *
+from .attendance_site import *
 from .history import *
 from .booking import *
 from .inventory import *

@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import api from '../../../../api/api'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
+import { User } from 'lucide-vue-next'
 
 interface StaffMember {
   id: number

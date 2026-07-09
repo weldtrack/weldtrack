@@ -1,1 +1,0 @@
-import{B as e,E as t,L as n,N as r,T as i,b as a}from"./index-Bnliwsx1.js";import{t as o}from"./DashboardLayout-izerjjvc.js";var s=t({__name:`CustomerDashboard`,setup(t){return(t,s)=>{let c=n(`RouterView`);return r(),a(o,{title:`Customer Dashboard`},{default:e(()=>[i(c)]),_:1})}}});export{s as default};
