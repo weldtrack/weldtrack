@@ -1,1 +1,0 @@
-import{E as e,L as t,N as n,T as r,V as i,b as a}from"./index-CtvxP-ft.js";import{t as o}from"./DashboardLayout-B5Sf264r.js";var s=e({__name:`StaffDashboard`,setup(e){return(e,s)=>{let c=t(`RouterView`);return n(),a(o,{title:`Staff Dashboard`},{default:i(()=>[r(c)]),_:1})}}});export{s as default};
