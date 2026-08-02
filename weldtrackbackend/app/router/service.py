@@ -9,6 +9,7 @@ from app.schemas.service import (
     ServiceUpdate,
     ServiceResponse,
 )
+from app.dependencies.auth import require_admin
 
 router = APIRouter(prefix="/services", tags=["services"])
 
@@ -42,6 +43,7 @@ def get_service(
 @router.post("", response_model=ServiceResponse, status_code=status.HTTP_201_CREATED)
 def create_service(
     payload: ServiceCreate,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Create a new service"""
@@ -64,6 +66,7 @@ def create_service(
 def update_service(
     service_id: int,
     payload: ServiceUpdate,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Update a service"""
@@ -96,6 +99,7 @@ def update_service(
 @router.delete("/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_service(
     service_id: int,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Delete a service"""

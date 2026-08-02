@@ -1,23 +1,63 @@
 services:
   frontend:
-    image: ghcr.io/ruzzgd/weldtrack/frontend:latest
+    build:
+      context: ./weldtrackfrontend
+      dockerfile: Dockerfile
+    container_name: weldtrack_frontend
     restart: always
     ports:
-      - "8081:80"
+      - "8080:80"
+    env_file:
+      - ./weldtrackfrontend/.env
     networks:
       - shared_network
 
   backend:
-    image: ghcr.io/ruzzgd/weldtrack/backend:latest
+    build:
+      context: ./weldtrackbackend
+      dockerfile: Dockerfile
+    container_name: weldtrack_backend
     restart: always
     ports:
       - "8000:8000"
     env_file:
-      - ./.env
+      - ./weldtrackbackend/.env
     networks:
       - shared_network
 
+  postgres:
+    image: postgres:16
+    container_name: weldtrack_postgres
+    environment:
+      POSTGRES_USER: weldtrack
+      POSTGRES_PASSWORD: weldtrack_123
+      POSTGRES_DB: weldtrack_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - shared_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: weldtrack_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@weldtrack.com
+      PGADMIN_DEFAULT_PASSWORD: weldtrack_123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - shared_network
+
+volumes:
+  pgdata:
+
 networks:
   shared_network:
-    external: true
-    name: docker_default
+    driver: bridge
+

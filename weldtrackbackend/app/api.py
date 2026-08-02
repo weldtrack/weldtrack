@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.dependencies.auth import get_current_user, require_staff_or_admin
 
 from app.router.auth import router as auth_router
 from app.router.admin import router as admin_router
@@ -16,13 +18,21 @@ from app.router.profile import router as profile_router
 
 router = APIRouter()
 router.include_router(auth_router)
-router.include_router(bookings_router)
+router.include_router(bookings_router, dependencies=[Depends(get_current_user)])
 router.include_router(customer_addresses_router)
-router.include_router(feedback_router)
-router.include_router(inventory_router)
-router.include_router(stafftasks_router)
-router.include_router(staffcontributions_router)
-router.include_router(attendance_router)
+router.include_router(feedback_router, dependencies=[Depends(get_current_user)])
+router.include_router(
+    inventory_router, dependencies=[Depends(require_staff_or_admin)]
+)
+router.include_router(
+    stafftasks_router, dependencies=[Depends(require_staff_or_admin)]
+)
+router.include_router(
+    staffcontributions_router, dependencies=[Depends(require_staff_or_admin)]
+)
+router.include_router(
+    attendance_router, dependencies=[Depends(require_staff_or_admin)]
+)
 router.include_router(settings_router)
 router.include_router(service_router)
 router.include_router(admin_router)

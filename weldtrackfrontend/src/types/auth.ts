@@ -78,7 +78,6 @@ export interface SendVerificationCodeResponse {
 }
 
 export interface StoredAuthState {
-  token: string
   email: string
   role: string
   isLoggedIn: boolean

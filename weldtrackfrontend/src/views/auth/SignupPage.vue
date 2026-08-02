@@ -104,7 +104,7 @@ async function submitSignup() {
     if (response.success !== true) {
       throw new Error('Request failed.')
     }
-    
+
     step.value = 2
     startCodeTimer()
   } catch (error) {
@@ -133,7 +133,6 @@ async function submitCode() {
     
     if (response.user || response.access_token || response.token) {
       authStore.setSession({
-        token: response.access_token || response.token || '',
         email: response.user?.email || form.email,
         role: response.user?.role || 'customer',
       })

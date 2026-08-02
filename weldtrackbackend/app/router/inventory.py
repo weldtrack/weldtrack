@@ -12,6 +12,7 @@ from app.schemas.inventory import (
     InventoryItemResponse,
     StockMovementResponse,
 )
+from app.dependencies.auth import require_admin
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
@@ -47,6 +48,7 @@ def get_inventory_item(
 )
 def create_inventory_item(
     payload: InventoryItemCreate,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Create a new inventory item"""
@@ -61,6 +63,7 @@ def create_inventory_item(
 def update_inventory_item(
     item_id: int,
     payload: InventoryItemUpdate,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Update an inventory item"""
@@ -83,6 +86,7 @@ def update_inventory_item(
 def partial_update_inventory_item(
     item_id: int,
     payload: InventoryItemUpdate,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Partially update an inventory item"""
@@ -121,6 +125,7 @@ def partial_update_inventory_item(
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_inventory_item(
     item_id: int,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Delete an inventory item"""

@@ -7,6 +7,7 @@ from app.models.stafftask import StaffTask, TaskStatus
 from app.models.staffcontribution import StaffContributionSnapshot
 from app.schemas.stafftask import TaskCreate, TaskStatusUpdate, TaskOut
 from datetime import datetime
+from app.dependencies.auth import require_admin
 
 router = APIRouter(prefix="/staff-tasks", tags=["staff-tasks"])
 
@@ -101,6 +102,7 @@ def get_staff_task(
 @router.post("", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 def create_staff_task(
     payload: TaskCreate,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Create a new staff task"""
@@ -186,6 +188,7 @@ def update_staff_task_status(
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_staff_task(
     task_id: UUID,
+    _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Delete a task"""

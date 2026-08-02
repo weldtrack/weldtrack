@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import {
   loginApi,
+  fetchCurrentUserApi,
   sendVerificationCodeApi,
   signupApi,
   confirmVerificationCodeApi,
@@ -27,7 +28,6 @@ function readAuthState() {
 
   try {
     return JSON.parse(storedValue) as {
-      token?: string
       email?: string
       role?: string
       isLoggedIn?: boolean
@@ -56,7 +56,6 @@ function clearAuthState() {
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: readAuthState()?.token || '',
     email: readAuthState()?.email || '',
     role: readAuthState()?.role || 'customer',
     isLoggedIn: readAuthState()?.isLoggedIn || false,
@@ -68,13 +67,36 @@ export const useAuthStore = defineStore('auth', {
       const data = await loginApi(payload)
 
       this.setSession({
-        token: data.access_token || '',
         email: data.user?.email || payload.email,
         role: data.user?.role || 'customer',
         user: data.user,
       })
 
       return data
+    },
+
+    async validateSession() {
+      try {
+        const user = await fetchCurrentUserApi()
+        this.email = user.email
+        this.role = user.role
+        this.user = user
+        this.isLoggedIn = true
+        writeAuthState({
+          email: this.email,
+          role: this.role,
+          isLoggedIn: true,
+          user: this.user,
+        })
+        return true
+      } catch {
+        this.email = ''
+        this.role = 'customer'
+        this.user = undefined
+        this.isLoggedIn = false
+        clearAuthState()
+        return false
+      }
     },
 
     async sendVerificationCode(email: string) {
@@ -119,19 +141,16 @@ export const useAuthStore = defineStore('auth', {
     },
 
     setSession(payload: {
-      token?: string
       email?: string
       role?: string
       user?: UserRead
     }) {
-      this.token = payload.token || ''
       this.role = payload.role || 'customer'
       this.email = payload.email || ''
       this.isLoggedIn = true
       this.user = payload.user
 
       writeAuthState({
-        token: this.token,
         email: this.email,
         role: this.role,
         isLoggedIn: this.isLoggedIn,
@@ -139,7 +158,6 @@ export const useAuthStore = defineStore('auth', {
       })
     },
     logout() {
-      this.token = ''
       this.email = ''
       this.role = 'customer'
       this.isLoggedIn = false

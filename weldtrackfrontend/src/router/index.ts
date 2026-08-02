@@ -21,6 +21,7 @@ export function createRouter() {
       {
         path: '/dashboard',
         name: 'customer-dashboard',
+        meta: { requiresAuth: true, roles: ['customer'] },
         component: () => import('../views/dashboard/CustomerDashboard.vue'),
         children: [
           {
@@ -58,6 +59,7 @@ export function createRouter() {
       {
         path: '/dashboard/staff',
         name: 'staff-dashboard',
+        meta: { requiresAuth: true, roles: ['staff'] },
         redirect: { name: 'staff-attendance' },
         component: () => import('../views/dashboard/StaffDashboard.vue'),
         children: [
@@ -83,6 +85,8 @@ export function createRouter() {
               {
                 path: 'create',
                 name: 'staff-create',
+                // Staff creation is exposed through the admin dashboard copy only.
+                meta: { roles: [] },
                 component: () => import('../views/dashboard/components/staff/StaffCreate.vue'),
               },
               {
@@ -102,6 +106,7 @@ export function createRouter() {
       {
         path: '/dashboard/admin',
         name: 'admin-dashboard',
+        meta: { requiresAuth: true, roles: ['admin'] },
         component: () => import('../views/dashboard/AdminDashboard.vue'),
         children: [
           {
@@ -183,11 +188,13 @@ export function createRouter() {
       {
         path: '/login',
         name: 'login',
+        meta: { guestOnly: true },
         component: () => import('../views/auth/LoginPage.vue'),
       },
       {
         path: '/signup',
         name: 'signup',
+        meta: { guestOnly: true },
         component: () => import('../views/auth/SignupPage.vue'),
       },
       {
@@ -208,15 +215,43 @@ export function createRouter() {
     ],
   })
 
-router.beforeEach((to, _from, next) => {
-  const authStore = useAuthStore()
-  const publicPages = ['webpage', 'login', 'signup', 'privacy', 'terms', 'not-found']
-  const authRequired = !publicPages.includes(to.name as string)
-  if (authRequired && !authStore.isLoggedIn) {
-    return next({ name: 'login' })
-  }
-  next()
-})
+  router.beforeEach(async (to) => {
+    const authStore = useAuthStore()
+    const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+      || to.path === '/dashboard'
+      || to.path.startsWith('/dashboard/')
+    const guestOnly = to.matched.some((record) => record.meta.guestOnly)
+
+    if (requiresAuth || guestOnly) {
+      await authStore.validateSession()
+    }
+
+    if (requiresAuth && !authStore.isLoggedIn) {
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
+
+    const allowedRoles = [...to.matched]
+      .reverse()
+      .find((record) => Array.isArray(record.meta.roles))
+      ?.meta.roles as string[] | undefined
+    const role = authStore.role.trim().toLowerCase()
+
+    if (requiresAuth && allowedRoles && !allowedRoles.includes(role)) {
+      return dashboardForRole(role)
+    }
+
+    if (guestOnly && authStore.isLoggedIn) {
+      return dashboardForRole(role)
+    }
+
+    return true
+  })
 
 return router
+}
+
+function dashboardForRole(role: string) {
+  if (role === 'admin') return { name: 'admin-dashboard' }
+  if (role === 'staff') return { name: 'staff-dashboard' }
+  return { name: 'customer-dashboard' }
 }

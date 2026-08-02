@@ -10,6 +10,7 @@ import type {
   ResetPasswordPayload,
   ResetPasswordResponse,
   SendVerificationCodeResponse,
+  UserRead,
 } from '../types/auth'
 
 export async function loginApi(payload: LoginPayload): Promise<LoginResponse> {
@@ -17,6 +18,11 @@ export async function loginApi(payload: LoginPayload): Promise<LoginResponse> {
     email: payload.email,
     password: payload.password,
   })
+  return data
+}
+
+export async function fetchCurrentUserApi(): Promise<UserRead> {
+  const { data } = await api.get<UserRead>('/auth/me')
   return data
 }
 
