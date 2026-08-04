@@ -3,7 +3,7 @@ from __future__ import annotations
 import secrets
 
 from fastapi import Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import (
@@ -41,7 +41,8 @@ def set_auth_cookie(response: Response, token: str) -> None:
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
-    return db.scalar(select(User).where(User.email == email))
+    normalized_email = email.strip().lower()
+    return db.scalar(select(User).where(func.lower(User.email) == normalized_email))
 
 
 def generate_verification_code() -> str:

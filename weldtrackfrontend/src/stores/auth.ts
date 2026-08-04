@@ -61,6 +61,9 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: readAuthState()?.isLoggedIn || false,
     user: readAuthState()?.user as UserRead | undefined,
     staffDirectory: [] as StaffDirectoryEntry[],
+    // Runtime-only flag. Persisting this would let a stale browser session skip
+    // the server check after a reload.
+    sessionValidated: false,
   }),
   actions: {
     async login(payload: { email: string; password: string }) {
@@ -71,6 +74,7 @@ export const useAuthStore = defineStore('auth', {
         role: data.user?.role || 'customer',
         user: data.user,
       })
+      this.sessionValidated = true
 
       return data
     },
@@ -96,6 +100,8 @@ export const useAuthStore = defineStore('auth', {
         this.isLoggedIn = false
         clearAuthState()
         return false
+      } finally {
+        this.sessionValidated = true
       }
     },
 
@@ -149,6 +155,7 @@ export const useAuthStore = defineStore('auth', {
       this.email = payload.email || ''
       this.isLoggedIn = true
       this.user = payload.user
+      this.sessionValidated = true
 
       writeAuthState({
         email: this.email,
@@ -163,6 +170,7 @@ export const useAuthStore = defineStore('auth', {
       this.isLoggedIn = false
       this.user = undefined
       this.staffDirectory = []
+      this.sessionValidated = true
 
       clearAuthState()
     },

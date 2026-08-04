@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Menu, Wrench, X } from 'lucide-vue-next'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
 
 const isMobileMenuOpen = ref(false)
@@ -8,12 +9,12 @@ const isMobileMenuOpen = ref(false)
 <template>
     <nav class="public-nav sticky top-0 z-50 border-b border-white/5 bg-[#020617]/80 px-6 py-4 backdrop-blur-md transition-all sm:px-12">
         <div class="mx-auto flex max-w-7xl items-center justify-between">
-            <div class="flex items-center gap-2.5">
+            <RouterLink to="/" class="flex items-center gap-2.5" aria-label="WeldTrack home">
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 p-0.5 shadow-lg shadow-cyan-500/20">
-                    <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-[#020617] text-lg">⚙️</div>
+                    <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-[#020617] text-cyan-300"><Wrench class="h-4 w-4" :stroke-width="2.5" /></div>
                 </div>
                 <span class="text-xl font-bold tracking-tight">WeldTrack</span>
-            </div>
+            </RouterLink>
 
             <div class="hidden items-center gap-10 lg:flex">
                 <RouterLink to="/#home" class="text-[15px] font-medium text-slate-400 transition-colors hover:text-white">Home</RouterLink>
@@ -29,12 +30,8 @@ const isMobileMenuOpen = ref(false)
             </div>
 
             <button type="button" class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-white lg:hidden" @click="isMobileMenuOpen = !isMobileMenuOpen">
-                <svg v-if="!isMobileMenuOpen" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                <svg v-else class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <Menu v-if="!isMobileMenuOpen" class="h-5 w-5" />
+                <X v-else class="h-5 w-5" />
             </button>
         </div>
 

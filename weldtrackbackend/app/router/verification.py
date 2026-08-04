@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.jwt import create_access_token
 from app.core.security import hash_password
 from app.db import get_db
 from app.models.user import User, UserRole
@@ -239,7 +238,6 @@ def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)
 
         return {
             "success": True,
-            "token": create_access_token(user),
             "email": user.email,
             "role": user.role.value,
         }

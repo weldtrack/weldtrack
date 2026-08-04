@@ -135,6 +135,7 @@ async function submitCode() {
       authStore.setSession({
         email: response.user?.email || form.email,
         role: response.user?.role || 'customer',
+        user: response.user,
       })
       allowRouteLeave.value = true
       await router.replace('/dashboard')

@@ -58,7 +58,6 @@ export function createRouter() {
       },
       {
         path: '/dashboard/staff',
-        name: 'staff-dashboard',
         meta: { requiresAuth: true, roles: ['staff'] },
         redirect: { name: 'staff-attendance' },
         component: () => import('../views/dashboard/StaffDashboard.vue'),
@@ -222,7 +221,11 @@ export function createRouter() {
       || to.path.startsWith('/dashboard/')
     const guestOnly = to.matched.some((record) => record.meta.guestOnly)
 
-    if (requiresAuth || guestOnly) {
+    // A guest page should not probe a protected endpoint when the browser has
+    // no known session. That request correctly returns 401, but made login and
+    // signup look broken in DevTools. Protected routes are always checked.
+    const shouldValidateSession = requiresAuth || (guestOnly && authStore.isLoggedIn)
+    if (shouldValidateSession && !authStore.sessionValidated) {
       await authStore.validateSession()
     }
 
@@ -252,6 +255,6 @@ return router
 
 function dashboardForRole(role: string) {
   if (role === 'admin') return { name: 'admin-dashboard' }
-  if (role === 'staff') return { name: 'staff-dashboard' }
+  if (role === 'staff') return { name: 'staff-attendance' }
   return { name: 'customer-dashboard' }
 }

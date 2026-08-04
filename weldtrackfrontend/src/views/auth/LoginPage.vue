@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
-import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useModalStore } from '../../stores/modal'
 import { getUserFriendlyApiError } from '../../services/errorMessage'
@@ -9,6 +9,7 @@ import { useThemeMode } from '../../composables/useThemeMode'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const modalStore = useModalStore()
 const { isDarkMode } = useThemeMode()
 
@@ -64,13 +65,16 @@ async function submitLogin() {
       password: loginForm.password,
     })
 
-    if (authStore.role === 'admin') {
-      router.replace('/dashboard/admin')
-    } else if (authStore.role === 'staff') {
-      router.replace('/dashboard/staff/attendance')
-    } else {
-      router.replace('/dashboard')
-    }
+    const requestedRedirect = typeof route.query.redirect === 'string'
+      && route.query.redirect.startsWith('/dashboard')
+      ? route.query.redirect
+      : ''
+    const roleDashboard = authStore.role === 'admin'
+      ? '/dashboard/admin'
+      : authStore.role === 'staff'
+        ? '/dashboard/staff/attendance'
+        : '/dashboard'
+    await router.replace(requestedRedirect || roleDashboard)
   } catch (error) {
     loginError.value = getUserFriendlyApiError(error, 'Unable to sign in. Please try again.')
   } finally {

@@ -41,7 +41,7 @@ onBeforeUnmount(() => {
             <div class="absolute -left-[10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[120px]"></div>
             <div class="absolute -right-[5%] top-[20%] h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[140px]"></div>
             <div class="absolute bottom-[-10%] left-[20%] h-[400px] w-[400px] rounded-full bg-emerald-500/5 blur-[100px]"></div>
-            <div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+            <div class="landing-grid absolute inset-x-0 top-0 h-[52rem] opacity-40"></div>
         </div>
         <WebpageNavBar />
         <WebpageHero />
@@ -71,4 +71,11 @@ html { scroll-behavior: smooth; }
 ::-webkit-scrollbar-track { background: #020617; }
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
+.landing-grid {
+    background-image:
+        linear-gradient(rgb(148 163 184 / 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(148 163 184 / 0.045) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(to bottom, black, transparent 86%);
+}
 </style>
