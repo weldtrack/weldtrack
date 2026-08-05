@@ -6,7 +6,6 @@ import { useAuthStore } from '../../../../stores/auth'
 import { useFeedbackStore } from '../../../../stores/feedback'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
-import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import api from '../../../../api/api'
 import { type Feedback, type FeedbackComment } from '../../../../types/feedback'
 
