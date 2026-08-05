@@ -127,9 +127,9 @@ const projectStatusBreakdown = computed(() => {
   const toPercent = (value: number) => (total > 0 ? Math.round((value / total) * 100) : 0)
 
   return [
-    { name: 'Completed', value: toPercent(completed), color: '#16a34a' },
-    { name: 'Ongoing', value: toPercent(ongoing), color: '#2563eb' },
-    { name: 'Pending', value: toPercent(pending), color: '#f59e0b' },
+    { name: 'Completed', value: toPercent(completed), color: "var(--chart-completed, var(--chart-completed, #16a34a))" },
+    { name: 'Ongoing', value: toPercent(ongoing), color: "var(--chart-ongoing, var(--chart-ongoing, #2563eb))" },
+    { name: 'Pending', value: toPercent(pending), color: "var(--chart-pending, var(--chart-pending, #f59e0b))" },
   ]
 })
 

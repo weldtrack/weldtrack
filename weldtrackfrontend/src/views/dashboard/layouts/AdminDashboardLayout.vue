@@ -47,7 +47,7 @@ const adminNavigation: SidebarEntry[] = [
     role="admin"
     role-label="Admin Control Center"
     role-hint="Oversight, approvals, staffing, and reporting"
-    accent="#F2A93B"
+    accent="var(--role-accent-admin)"
     :navigation="adminNavigation"
   >
     <slot />

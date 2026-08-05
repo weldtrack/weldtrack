@@ -70,8 +70,8 @@ const timeline = [
                 <div class="absolute -right-14 top-12 h-36 w-36 rounded-full border border-cyan-300/15"></div>
                 <div class="absolute -right-6 top-20 h-20 w-20 rounded-full border border-cyan-300/10"></div>
 
-                <div class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/85 p-3 shadow-[0_40px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-4">
-                    <div class="overflow-hidden rounded-[1.35rem] border border-white/8 bg-[#07101f]">
+                <div class="public-hero-panel relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/85 p-3 shadow-[0_40px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-4">
+                    <div class="overflow-hidden rounded-[1.35rem] border border-white/8 bg-public-hero">
                         <div class="flex items-center justify-between border-b border-white/8 px-5 py-4 sm:px-6">
                             <div class="flex items-center gap-3">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400 text-slate-950">

@@ -314,38 +314,38 @@ async function generateStockInReportPDF() {
         <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Summary</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Stocked Items (in period)</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${filteredInventory.length}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Stocked Items (in period)</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${filteredInventory.length}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Low Stock Items</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${filteredLowStockCount}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Low Stock Items</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${filteredLowStockCount}</td>
           </tr>
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Value of Period Items</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(filteredTotalValue)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Value of Period Items</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(filteredTotalValue)}</td>
           </tr>
         </table>
 
         <h3 style="margin-top: 25px; border-bottom: 1px solid #333; padding-bottom: 10px;">Inventory Details (Period Items)</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <thead>
-            <tr style="background-color: #333; color: white;">
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Material Name</th>
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Quantity</th>
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Unit Price</th>
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">Total Value</th>
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Status</th>
+            <tr style="background-color: var(--public-text, #0f172a); color: var(--public-text, #f8fafc);">
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: left;">Material Name</th>
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: center;">Quantity</th>
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: right;">Unit Price</th>
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: right;">Total Value</th>
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: left;">Status</th>
             </tr>
           </thead>
           <tbody>
             ${filteredInventory.map((item) => `
               <tr>
-                <td style="padding: 8px; border: 1px solid #ddd;">${item.name}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(item.unitPrice)}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(item.quantity * item.unitPrice)}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${item.quantity <= item.lowStockThreshold ? '<strong style="color: orange;">Low Stock</strong>' : '<strong style="color: green;">In Stock</strong>'}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);">${item.name}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: center;">${item.quantity}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(item.unitPrice)}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(item.quantity * item.unitPrice)}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);">${item.quantity <= item.lowStockThreshold ? '<strong style="color: var(--status-warning, orange);">Low Stock</strong>' : '<strong style="color: var(--status-success, green);">In Stock</strong>'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -363,11 +363,11 @@ async function generateStockInReportPDF() {
 
     const movementRows = movementsFiltered.map((m) => `
       <tr>
-        <td style="padding:8px;border:1px solid #ddd;">${formatDateTime(m.rawTimestamp || m.timestamp)}</td>
-        <td style="padding:8px;border:1px solid #ddd;">${m.itemName}</td>
-        <td style="padding:8px;border:1px solid #ddd;text-align:center;">${m.type}</td>
-        <td style="padding:8px;border:1px solid #ddd;text-align:right;">${m.quantity}</td>
-        <td style="padding:8px;border:1px solid #ddd;">${m.bookingId ?? m.taskId ?? ''}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${formatDateTime(m.rawTimestamp || m.timestamp)}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${m.itemName}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:center;">${m.type}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${m.quantity}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${m.bookingId ?? m.taskId ?? ''}</td>
       </tr>
     `).join('')
 
@@ -376,12 +376,12 @@ async function generateStockInReportPDF() {
         <h3 style="margin-top:25px;border-bottom:1px solid #333;padding-bottom:10px;">Stock Movement Log</h3>
         <table style="width:100%;border-collapse:collapse;margin-top:15px;">
           <thead>
-            <tr style="background-color:#333;color:white;">
-              <th style="padding:10px;border:1px solid #ddd;text-align:left;">Timestamp</th>
-              <th style="padding:10px;border:1px solid #ddd;text-align:left;">Item</th>
-              <th style="padding:10px;border:1px solid #ddd;text-align:center;">Type</th>
-              <th style="padding:10px;border:1px solid #ddd;text-align:right;">Qty</th>
-              <th style="padding:10px;border:1px solid #ddd;text-align:left;">Ref</th>
+            <tr style="background-color: var(--public-text, #0f172a);color: var(--public-text, #f8fafc);">
+              <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Timestamp</th>
+              <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Item</th>
+              <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:center;">Type</th>
+              <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:right;">Qty</th>
+              <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Ref</th>
             </tr>
           </thead>
           <tbody>
@@ -427,78 +427,78 @@ async function generateFinancialReportPDF() {
         <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Project Overview</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Projects</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${projects.value.length}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Projects</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${projects.value.length}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Ongoing Projects</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${ongoingProjects.value}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Ongoing Projects</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${ongoingProjects.value}</td>
           </tr>
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Completed Projects</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${completedProjects.value}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Completed Projects</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${completedProjects.value}</td>
           </tr>
         </table>
 
         <h3 style="margin-top: 25px; border-bottom: 1px solid #333; padding-bottom: 10px;">Financial Summary</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <tr style="background-color: #f9f9f9;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Materials Cost</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(totalMaterialsCost.value)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Materials Cost</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalMaterialsCost.value)}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Labor Cost</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(totalLaborCost.value)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Labor Cost</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalLaborCost.value)}</td>
           </tr>
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Expenses</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(totalProjectCosts.value)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Expenses</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalProjectCosts.value)}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Sales Revenue</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: green;"><strong>${formatCurrency(totalSalesRevenue.value)}</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Sales Revenue</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right; color: var(--status-success, green);"><strong>${formatCurrency(totalSalesRevenue.value)}</strong></td>
           </tr>
           <tr style="background-color: #e8f5e9; font-size: 14px;">
             <td style="padding: 12px; border: 2px solid #4caf50;"><strong>NET PROFIT</strong></td>
-            <td style="padding: 12px; border: 2px solid #4caf50; text-align: right; color: green;"><strong>${formatCurrency(netProfit.value)}</strong></td>
+            <td style="padding: 12px; border: 2px solid #4caf50; text-align: right; color: var(--status-success, green);"><strong>${formatCurrency(netProfit.value)}</strong></td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; font-size:12px; color:#666;">Avg Profit / Project</td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-size:12px; color:#666;">${formatCurrency(averageProfitPerProject.value)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); font-size:12px; color:#666;">Avg Profit / Project</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right; font-size:12px; color:#666;">${formatCurrency(averageProfitPerProject.value)}</td>
           </tr>
         </table>
 
         <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Stock Movement Values</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
           <tr style="background-color: #f9f9f9;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Stock Movement (In)</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(totalIn)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Stock Movement (In)</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalIn)}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Stock Movement (Out)</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(totalOut)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Stock Movement (Out)</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalOut)}</td>
           </tr>
           <tr style="background-color: #fff7e6;">
-            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Net Movement Value</strong></td>
-            <td style="padding: 10px; border: 1px solid #ddd; text-align: right; color: #333;"><strong>${formatCurrency(netMovement)}</strong></td>
+            <td style="padding: 10px; border: 1px solid var(--table-border, #ddd);"><strong>Net Movement Value</strong></td>
+            <td style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: right; color: var(--public-text, #0f172a);"><strong>${formatCurrency(netMovement)}</strong></td>
           </tr>
         </table>
 
         <h3 style="margin-top:25px;border-bottom:1px solid #333;padding-bottom:10px;">Projects (Itemized)</h3>
         <table style="width:100%;border-collapse:collapse;margin-top:15px; font-size:12px;">
-              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Materials</th>
-              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Labor</th>
-              <th style="padding:8px;border:1px solid #ddd;text-align:right;">Total</th>
+              <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">Materials</th>
+              <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">Labor</th>
+              <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">Total</th>
             </tr>
           </thead>
           <tbody>
             ${projects.value.map((p) => `
               <tr>
-                <td style="padding:8px;border:1px solid #ddd;">${p.id}</td>
-                <td style="padding:8px;border:1px solid #ddd;">${p.status}</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:right;">${formatCurrency(p.materialsCost)}</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:right;">${formatCurrency(p.laborCost)}</td>
-                <td style="padding:8px;border:1px solid #ddd;text-align:right;">${formatCurrency(p.salesPrice)}</td>
+                <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${p.id}</td>
+                <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${p.status}</td>
+                <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${formatCurrency(p.materialsCost)}</td>
+                <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${formatCurrency(p.laborCost)}</td>
+                <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${formatCurrency(p.salesPrice)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -548,40 +548,40 @@ async function generateStaffAttendanceReportPDF() {
         <h3 style="margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Summary</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Staff</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${staffData.value.length}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Staff</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${staffData.value.length}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Hours</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatHours(totalStaffHours.value)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Hours</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatHours(totalStaffHours.value)}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Total Overtime</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: red;"><strong>${formatHours(totalOvertimeHours.value)}</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Overtime</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right; color: var(--status-danger, red);"><strong>${formatHours(totalOvertimeHours.value)}</strong></td>
           </tr>
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Staff with Overtime</strong></td>
-            <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${staffWithOvertimeCount.value}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Staff with Overtime</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${staffWithOvertimeCount.value}</td>
           </tr>
         </table>
 
         <h3 style="margin-top: 25px; border-bottom: 1px solid #333; padding-bottom: 10px;">Attendance Details</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <thead>
-            <tr style="background-color: #333; color: white;">
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Email</th>
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Date</th>
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Hours Worked</th>
-              <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Overtime</th>
+            <tr style="background-color: var(--public-text, #0f172a); color: var(--public-text, #f8fafc);">
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: left;">Email</th>
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: center;">Date</th>
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: center;">Hours Worked</th>
+              <th style="padding: 10px; border: 1px solid var(--table-border, #ddd); text-align: center;">Overtime</th>
             </tr>
           </thead>
           <tbody>
             ${filteredAttendanceRecords.value.map((record) => `
               <tr>
-                <td style="padding: 8px; border: 1px solid #ddd;">${record.email}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatDate(record.date)}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${record.hours_worked}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: ${record.overtime_hours > 0 ? 'red' : 'black'};"><strong>${formatHours(record.overtime_hours)}</strong></td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);">${record.email}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: center;">${formatDate(record.date)}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: center;">${record.hours_worked}</td>
+                <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: center; color: ${record.overtime_hours > 0 ? 'red' : 'black'};"><strong>${formatHours(record.overtime_hours)}</strong></td>
               </tr>
             `).join('')}
           </tbody>

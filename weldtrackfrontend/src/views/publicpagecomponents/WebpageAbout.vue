@@ -19,7 +19,7 @@ const highlights = [
 </script>
 
 <template>
-    <section id="about" class="relative bg-[#020617] py-24 sm:py-32">
+    <section id="about" class="relative bg-public-dark py-24 sm:py-32">
         <div class="mx-auto max-w-7xl px-6 sm:px-12">
             <div class="grid grid-cols-1 gap-16 lg:grid-cols-2 lg:items-center">
                 <div>

@@ -22,7 +22,7 @@ const staffNavigation: SidebarEntry[] = [
     role="staff"
     role-label="Staff Workspace"
     role-hint="Attendance, assigned work, and performance updates"
-    accent="#4FD1C5"
+    accent="var(--role-accent-staff)"
     :navigation="staffNavigation"
   >
     <slot />

@@ -237,7 +237,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div :class="['public-theme-page relative min-h-screen overflow-hidden bg-[#020617] p-4 text-slate-50 sm:p-6 lg:p-10', isDarkMode ? 'theme-dark' : 'theme-light']">
+  <div :class="['public-theme-page relative min-h-screen overflow-hidden p-4 sm:p-6 lg:p-10', isDarkMode ? 'theme-dark' : 'theme-light']">
     <!-- Background Elements -->
     <div class="pointer-events-none absolute inset-0">
       <div class="absolute -left-20 top-16 h-72 w-72 rounded-full bg-cyan-500/10 blur-[100px]"></div>
@@ -247,10 +247,10 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="relative mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-6xl items-center justify-center sm:min-h-[calc(100vh-3rem)] lg:min-h-[calc(100vh-5rem)]">
-      <div class="relative grid w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f172a]/40 shadow-2xl backdrop-blur-2xl xl:grid-cols-[1.1fr_0.9fr]">
+      <div class="auth-shell-card relative grid w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-public-panel xl:grid-cols-[1.1fr_0.9fr] shadow-2xl backdrop-blur-2xl">
         <ThemeToggle class="absolute right-4 top-4 z-20 sm:right-6 sm:top-6" />
         <!-- Left Side: Visual/Branding -->
-        <div class="relative isolate hidden min-h-152 overflow-hidden bg-slate-950 xl:flex">
+        <div class="auth-visual relative isolate hidden min-h-152 overflow-hidden bg-slate-950 xl:flex">
           <img
             src="https://images.pexels.com/photos/15888227/pexels-photo-15888227.jpeg?cs=srgb&dl=pexels-hoang-nc-483165236-15888227.jpg&fm=jpg"
             alt="Welder creating sparks"
@@ -292,11 +292,11 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Right Side: Form -->
-        <div class="flex items-center justify-center p-8 sm:p-12 xl:p-16">
+        <div class="auth-form-panel flex items-center justify-center p-8 sm:p-12 xl:p-16">
           <div class="w-full max-w-sm">
             <div class="mb-10 text-center xl:text-left">
                 <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 p-0.5 xl:hidden">
-                    <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-[#020617] text-xl">⚙️</div>
+                    <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-public-dark text-xl">⚙️</div>
                 </div>
                 <h2 class="text-3xl font-black tracking-tight text-white">{{ forgotPassword ? 'Reset Password' : 'Welcome Back' }}</h2>
                 <p class="mt-2 text-slate-400">Please enter your details to continue.</p>
@@ -471,3 +471,7 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<style>
+@import './login-theme.css';
+</style>

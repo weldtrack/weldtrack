@@ -142,7 +142,7 @@ const dialogLabel = computed(() => props.title || 'Dialog')
 
 .modal-shell__eyebrow {
   margin: 0 0 0.25rem;
-  color: #64748b;
+  color: var(--modal-eyebrow, #64748b);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -151,7 +151,7 @@ const dialogLabel = computed(() => props.title || 'Dialog')
 
 .modal-shell__title {
   margin: 0;
-  color: #0f172a;
+  color: var(--modal-title, #0f172a);
   font-size: 1.15rem;
   font-weight: 800;
 }
@@ -160,7 +160,7 @@ const dialogLabel = computed(() => props.title || 'Dialog')
   border: 0;
   border-radius: 9999px;
   background: rgba(148, 163, 184, 0.15);
-  color: #475569;
+  color: var(--modal-close, #475569);
   font-size: 1.5rem;
   line-height: 1;
   width: 2.25rem;

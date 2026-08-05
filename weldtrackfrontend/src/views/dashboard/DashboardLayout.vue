@@ -26,6 +26,10 @@ import { useAuthStore } from '../../stores/auth'
 
 const props = defineProps<{ title: string }>()
 
+import { useThemeMode } from '../../composables/useThemeMode'
+const { isDarkMode } = useThemeMode()
+const dashboardThemeClass = computed(() => (isDarkMode.value ? 'dashboard-theme-page dashboard-dark' : 'dashboard-theme-page dashboard-light'))
+
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
@@ -55,10 +59,10 @@ type SidebarEntry = SidebarLeaf | SidebarGroup
 // Per-role accent so the three portals read as distinct spaces, not one
 // reskinned template stamped three times.
 const roleAccent = computed(() => {
-  if (normalizedRole.value === 'admin') return '#F2A93B' // arc-flash amber
-  if (normalizedRole.value === 'staff') return '#4FD1C5' // inspection teal
-  if (normalizedRole.value === 'customer') return '#7C9CFF' // signal blue
-  return '#F2A93B'
+  if (normalizedRole.value === 'admin') return 'var(--role-accent-admin)'
+  if (normalizedRole.value === 'staff') return 'var(--role-accent-staff)'
+  if (normalizedRole.value === 'customer') return 'var(--role-accent-customer)'
+  return 'var(--role-accent-admin)'
 })
 
 const sidebarItems = computed<SidebarEntry[]>(() => {
@@ -197,7 +201,7 @@ function handleLogout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 lg:pl-80" :style="{ '--role-accent': roleAccent }">
+  <div :class="['min-h-screen lg:pl-80', dashboardThemeClass]" :style="{ '--role-accent': roleAccent }">
     <!-- Top Header -->
     <header
       class="fixed top-0 right-0 z-30 flex h-12.5 w-full items-center justify-between px-6 lg:w-[calc(100%-320px)] lg:justify-end bg-slate-50 border-b border-slate-200">
@@ -369,6 +373,41 @@ function handleLogout() {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=JetBrains+Mono:wght@500&display=swap');
 
+.dashboard-theme-page {
+  --db-bg: #f8fafc;
+  --db-text: #0f172a;
+  --db-muted: #475569;
+  --db-border: rgba(15, 23, 42, 0.1);
+  --db-sidebar: #0f172a;
+  --db-sidebar-text: #e2e8f0;
+  --db-panel: rgba(255, 255, 255, 0.9);
+  --db-panel-solid: #ffffff;
+  --db-header: rgba(248, 250, 252, 0.92);
+  --db-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  background: var(--db-bg);
+  color: var(--db-text);
+}
+
+.dashboard-theme-page.dashboard-dark {
+  --db-bg: #020617;
+  --db-text: #f8fafc;
+  --db-muted: #94a3b8;
+  --db-border: rgba(255, 255, 255, 0.08);
+  --db-sidebar: #0b1220;
+  --db-sidebar-text: #cbd5e1;
+  --db-panel: rgba(15, 23, 42, 0.72);
+  --db-panel-solid: rgba(15, 23, 42, 0.86);
+  --db-header: rgba(2, 6, 23, 0.82);
+  --db-shadow: 0 24px 60px rgba(2, 6, 23, 0.4);
+}
+
+.dashboard-header {
+  border-bottom: 1px solid var(--db-border);
+  background: var(--db-header);
+  color: var(--db-text);
+  backdrop-filter: blur(14px);
+}
+
 .weld-sidebar {
   background:
     radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 45%),
@@ -422,7 +461,7 @@ function handleLogout() {
 
 .nav-row:hover {
   background: rgba(255, 255, 255, 0.045);
-  color: white;
+  color: var(--public-text, #f8fafc);
 }
 
 .nav-row:focus-visible {
@@ -430,14 +469,19 @@ function handleLogout() {
   outline-offset: 2px;
 }
 
-.nav-row--active {
-  background: white;
-  color: rgb(2 6 23);
+.dashboard-theme-page.dashboard-light .nav-row--active {
+  background: color-mix(in srgb, var(--role-accent) 13%, white);
+  color: #0f172a;
 }
 
-.nav-row--active:hover {
-  background: white;
-  color: rgb(2 6 23);
+.dashboard-theme-page.dashboard-dark .nav-row--active {
+  background: color-mix(in srgb, var(--role-accent) 16%, transparent);
+  color: var(--db-text);
+}
+
+.dashboard-theme-page.dashboard-light .nav-row--active:hover,
+.dashboard-theme-page.dashboard-dark .nav-row--active:hover {
+  opacity: 0.95;
 }
 
 .nav-subgroup {

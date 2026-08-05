@@ -76,14 +76,14 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-else data-reveal class="reveal relative mx-auto max-w-5xl">
-                <div class="group relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0f172a]/50 p-6 backdrop-blur-sm">
+                <div class="group relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-public-panel p-6 backdrop-blur-sm">
                     <div class="relative h-[400px] sm:h-[500px] overflow-hidden rounded-[1.5rem] shadow-2xl">
                         <transition name="fade" mode="out-in">
                             <div :key="currentSlide" class="h-full w-full">
                                 <img :src="services[currentSlide]?.image_url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2164&auto=format&fit=crop'"
                                     :alt="services[currentSlide]?.name"
                                     class="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-110" />
-                                <div class="absolute inset-0 bg-linear-to-t from-[#020617] via-transparent to-transparent"></div>
+                                <div class="absolute inset-0 public-linear-top"></div>
                                 <div class="absolute bottom-10 left-10 right-10 text-left">
                                     <div class="mb-2 inline-block rounded-full bg-cyan-500/20 px-4 py-1 text-xs font-bold tracking-widest text-cyan-400 uppercase backdrop-blur-md">
                                         {{ formatCurrency(services[currentSlide]?.price || 0) }} /hour
@@ -114,5 +114,5 @@ onBeforeUnmount(() => {
 </template>
 <style scoped>
 .public-service-text {
-    color: rgba(227, 227, 227, 0.95);}
+    color: var(--public-service-text, rgba(227, 227, 227, 0.95));}
 </style>

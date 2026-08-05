@@ -49,14 +49,14 @@ const { isLoading } = storeToRefs(loadingStore)
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
-  border: 2px solid #93a2b7;
-  border-top-color: #0f172a;
+  border: 2px solid var(--loader-border, #93a2b7);
+  border-top-color: var(--loader-border-top, #0f172a);
   animation: global-loader-spin 0.7s linear infinite;
 }
 
 .global-loader__text {
   margin: 0;
-  color: #0f172a;
+  color: var(--loader-text, #0f172a);
   font-weight: 600;
   font-size: 0.9rem;
 }

@@ -40,7 +40,7 @@ const toneMap = {
 <style scoped>
 .global-modal__message {
   margin: 0;
-  color: #334155;
+  color: var(--modal-eyebrow, #334155);
   line-height: 1.6;
 }
 
@@ -48,18 +48,18 @@ const toneMap = {
   border: 0;
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
-  background: #2563eb;
-  color: #fff;
+  background: var(--accent-primary, var(--chart-ongoing, #2563eb));
+  color: var(--button-text, #fff);
   font-weight: 700;
   cursor: pointer;
 }
 
 .global-modal__button--secondary {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: var(--public-panel-solid, #e2e8f0);
+  color: var(--public-text, #0f172a);
 }
 
 .global-modal__button--danger {
-  background: #dc2626;
+  background: var(--status-danger, #dc2626);
 }
 </style>

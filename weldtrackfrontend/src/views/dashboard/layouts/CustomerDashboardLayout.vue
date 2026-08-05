@@ -24,7 +24,7 @@ const customerNavigation: SidebarEntry[] = [
     role="customer"
     role-label="Client Portal"
     role-hint="Browse services, book work, and manage account history"
-    accent="#7C9CFF"
+    accent="var(--role-accent-customer)"
     :navigation="customerNavigation"
   >
     <slot />

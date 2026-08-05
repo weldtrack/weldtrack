@@ -5,7 +5,7 @@ const { isDarkMode } = useThemeMode()
 </script>
 
 <template>
-    <div :class="['relative min-h-screen flex items-center justify-center bg-[#020617] text-slate-50 selection:bg-cyan-500/30 overflow-hidden', isDarkMode ? 'theme-dark' : 'theme-light']">
+    <div :class="['public-theme-page relative min-h-screen flex items-center justify-center overflow-hidden', isDarkMode ? 'theme-dark' : 'theme-light']">
         <!-- Background Decorations -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
             <div class="absolute -left-[10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[120px] animate-pulse"></div>
@@ -42,4 +42,10 @@ const { isDarkMode } = useThemeMode()
 .animate-fade-in {
     animation: fade-in 0.8s ease-out forwards;
 }
+</style>
+
+<style>
+@import './auth/login-theme.css';
+/* selection color for public pages */
+::selection { background: rgba(34, 211, 238, 0.3); color: var(--public-text); }
 </style>

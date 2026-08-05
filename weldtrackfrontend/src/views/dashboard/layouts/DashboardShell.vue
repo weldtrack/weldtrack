@@ -312,8 +312,8 @@ function handleLogout() {
   --db-text: #0f172a;
   --db-muted: #475569;
   --db-border: rgba(15, 23, 42, 0.1);
-  --db-sidebar: #0f172a;
-  --db-sidebar-text: #e2e8f0;
+  --db-sidebar: #ffffff;
+  --db-sidebar-text: #334155;
   --db-panel: rgba(255, 255, 255, 0.9);
   --db-panel-solid: #ffffff;
   --db-header: rgba(248, 250, 252, 0.92);
@@ -495,19 +495,35 @@ function handleLogout() {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.dashboard-theme-page.dashboard-light .nav-row:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.dashboard-theme-page.dashboard-light .dashboard-icon-wrap {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.dashboard-theme-page.dashboard-light .dashboard-icon-wrap--active {
+  border-color: color-mix(in srgb, var(--role-accent) 45%, #cbd5e1);
+  background: color-mix(in srgb, var(--role-accent) 14%, white);
+  color: color-mix(in srgb, var(--role-accent) 78%, #0f172a);
+}
+
 .nav-row:focus-visible {
   outline: 2px solid var(--role-accent);
   outline-offset: 2px;
 }
 
-.nav-row--active {
-  background: white;
-  color: rgb(2 6 23);
-}
-
 .dashboard-theme-page.dashboard-light .nav-row--active {
   background: color-mix(in srgb, var(--role-accent) 13%, white);
   color: #0f172a;
+}
+
+.dashboard-theme-page.dashboard-dark .nav-row--active {
+  background: color-mix(in srgb, var(--role-accent) 16%, transparent);
+  color: var(--db-text);
 }
 
 .dashboard-icon-wrap {

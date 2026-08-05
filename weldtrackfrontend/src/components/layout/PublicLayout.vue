@@ -7,7 +7,7 @@ const { isDarkMode } = useThemeMode()
 </script>
 
 <template>
-    <div :class="['public-theme-page relative min-h-screen overflow-hidden bg-[#020617] text-slate-50 selection:bg-cyan-500/30', isDarkMode ? 'theme-dark' : 'theme-light']">
+    <div :class="['public-theme-page relative min-h-screen overflow-hidden', isDarkMode ? 'theme-dark' : 'theme-light']">
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
             <div class="absolute -left-[10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[120px]"></div>
             <div class="absolute -right-[5%] top-[20%] h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[140px]"></div>

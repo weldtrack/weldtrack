@@ -1,7 +1,7 @@
 <template>
     <section id="contact" class="relative py-24 sm:py-32 overflow-hidden">
         <div class="mx-auto max-w-7xl px-6 sm:px-12">
-            <div data-reveal class="public-contact-panel reveal relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-white/10 bg-[#0f172a]/70 p-6 sm:p-12 lg:p-20 shadow-2xl shadow-cyan-950/30">
+            <div data-reveal class="public-contact-panel reveal relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-white/10 bg-public-panel-solid p-6 sm:p-12 lg:p-20 shadow-2xl shadow-cyan-950/30">
                 <div class="public-contact-overlay absolute inset-0 bg-[linear-gradient(135deg,rgba(8,47,73,0.55)_0%,rgba(2,6,23,0.92)_70%)]"></div>
                 <div class="public-contact-noise absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
                 <div class="relative z-10 mx-auto max-w-4xl text-center">

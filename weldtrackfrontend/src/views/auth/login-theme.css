@@ -1,0 +1,136 @@
+.public-theme-page {
+  --public-bg: #020617;
+  --public-text: #f8fafc;
+  --public-panel: rgba(15, 23, 42, 0.5);
+  --public-panel-solid: rgba(15, 23, 42, 0.7);
+  --public-hero: #07101f;
+  background: var(--public-bg);
+  color: var(--public-text);
+}
+
+.public-theme-page.theme-light {
+  --public-bg: #f8fafc;
+  --public-text: #0f172a;
+  --public-panel: rgba(255,255,255,0.6);
+  --public-panel-solid: rgba(255,255,255,0.9);
+  --public-hero: #e6eef8;
+}
+
+.bg-public-dark { background: var(--public-bg) !important; }
+.bg-public-panel { background: var(--public-panel) !important; }
+.bg-public-panel-solid { background: var(--public-panel-solid) !important; }
+.bg-public-hero { background: var(--public-hero) !important; }
+.public-linear-top { background: linear-gradient(to top, var(--public-bg), transparent); }
+.public-contact-overlay { background: linear-gradient(135deg, rgba(8,47,73,0.55), rgba(2,6,23,0.92)); }
+.public-nav-bg { background-color: rgba(2,6,23,0.8); }
+.public-theme-page.theme-light .public-nav-bg { background-color: rgba(248,250,252,0.9); }
+
+/* Authentication pages keep the photo treatment dark, while the actual form
+   follows the selected theme. Semantic hooks avoid recoloring the image side. */
+.auth-shell-card,
+.auth-form-panel {
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.public-theme-page.theme-light .auth-shell-card {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.14) !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel {
+  background: rgba(255, 255, 255, 0.82);
+  color: #0f172a;
+}
+
+.public-theme-page.theme-light .auth-form-panel h2,
+.public-theme-page.theme-light .auth-form-panel .text-white {
+  color: #0f172a !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel .text-slate-400,
+.public-theme-page.theme-light .auth-form-panel .text-slate-500 {
+  color: #475569 !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel input {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.public-theme-page.theme-light .auth-form-panel input:hover {
+  border-color: #94a3b8 !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel input:focus {
+  border-color: #0891b2 !important;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.13) !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel button.bg-slate-900\!,
+.public-theme-page.theme-light .auth-form-panel button[class*="bg-slate-900"] {
+  background: #0f172a !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16) !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel button.bg-slate-900\!:hover,
+.public-theme-page.theme-light .auth-form-panel button[class*="bg-slate-900"]:hover {
+  background: #1e293b !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel .border-white\/5,
+.public-theme-page.theme-light .auth-form-panel .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel .bg-white\/10 {
+  background-color: #e2e8f0 !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel .bg-cyan-500\/10 {
+  background-color: rgba(6, 182, 212, 0.1) !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel .text-cyan-50\/80 {
+  color: #0e7490 !important;
+}
+
+.public-theme-page.theme-light .auth-form-panel .text-red-400 {
+  color: #b91c1c !important;
+}
+
+/* The visual panel is deliberately invariant across themes. */
+.public-theme-page.theme-light .auth-visual {
+  color: #ffffff !important;
+}
+
+.public-theme-page.theme-light .auth-visual .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.public-theme-page.theme-light .auth-visual .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.public-theme-page.theme-light .auth-visual .border-white\/10,
+.public-theme-page.theme-light .auth-visual .border-white\/15,
+.public-theme-page.theme-light .auth-visual .border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* loader variables */
+:root {
+  --loader-border: #93a2b7;
+  --loader-border-top: #0f172a;
+}
+.public-theme-page.theme-light :root {
+  --loader-border-top: #0f172a;
+}

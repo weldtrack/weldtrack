@@ -12,9 +12,34 @@ body {
   font-family: var(--font-sans);
 }
 
+:root {
+  /* sensible defaults for modal and loader colors */
+  --modal-eyebrow: #64748b;
+  --modal-title: #0f172a;
+  --modal-close: #475569;
+  --loader-border: #93a2b7;
+  --loader-border-top: #0f172a;
+  --loader-text: #0f172a;
+  --scroll-thumb: #1e293b;
+  --scroll-thumb-hover: #334155;
+
+  /* per-role accents made theme driven */
+  --role-accent-admin: #F2A93B;
+  --role-accent-staff: #4FD1C5;
+  --role-accent-customer: #7C9CFF;
+}
+
 .public-theme-page {
   transition: background-color 180ms ease, color 180ms ease;
 }
+
+/* Shared public surface utilities are defined globally so the landing page,
+   legal pages, and auth pages all resolve the same theme variables. */
+.bg-public-dark { background: var(--public-bg) !important; }
+.bg-public-panel { background: var(--public-panel) !important; }
+.bg-public-panel-solid { background: var(--public-panel-solid) !important; }
+.bg-public-hero { background: var(--public-hero) !important; }
+.public-nav-bg { background-color: rgb(2 6 23 / 0.8); }
 
 .public-theme-page .theme-toggle {
   border-color: rgb(255 255 255 / 0.1);
@@ -24,6 +49,60 @@ body {
 
 .public-theme-page .theme-toggle:hover {
   background: rgb(255 255 255 / 0.12);
+}
+
+.public-theme-page.theme-dark, .dashboard-theme-page.dashboard-dark {
+  --public-bg: #020617;
+  --public-text: #f8fafc;
+  --public-panel: rgba(15, 23, 42, 0.5);
+  --public-panel-solid: rgba(15, 23, 42, 0.86);
+  --public-hero: #07101f;
+  --loader-border: #93a2b7;
+  --loader-border-top: #0f172a;
+  --loader-text: #f8fafc;
+  --scroll-thumb: #1e293b;
+  --scroll-thumb-hover: #334155;
+  --role-accent-admin: #F2A93B;
+  --role-accent-staff: #4FD1C5;
+  --role-accent-customer: #7C9CFF;
+
+  /* table / border / status colors (theme-aware) */
+  --table-row-muted: rgba(255,255,255,0.04);
+  --table-row-dark: #0f172a;
+  --table-border: rgba(255,255,255,0.06);
+  --status-success: #16a34a;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+  --chart-completed: #16a34a;
+  --chart-ongoing: #2563eb;
+  --chart-pending: #f59e0b;
+}
+
+.public-theme-page.theme-light, .dashboard-theme-page.dashboard-light {
+  --public-bg: #f8fafc;
+  --public-text: #0f172a;
+  --public-panel: rgba(255,255,255,0.9);
+  --public-panel-solid: rgba(255,255,255,0.96);
+  --public-hero: #e6eef8;
+  --loader-border: #93a2b7;
+  --loader-border-top: #0f172a;
+  --loader-text: #0f172a;
+  --scroll-thumb: #1e293b;
+  --scroll-thumb-hover: #334155;
+  --role-accent-admin: #F2A93B;
+  --role-accent-staff: #4FD1C5;
+  --role-accent-customer: #7C9CFF;
+
+  /* table / border / status colors (theme-aware) */
+  --table-row-muted: #f0f0f0;
+  --table-row-dark: #333333;
+  --table-border: #ddd;
+  --status-success: #16a34a;
+  --status-warning: #f59e0b;
+  --status-danger: #dc2626;
+  --chart-completed: #16a34a;
+  --chart-ongoing: #2563eb;
+  --chart-pending: #f59e0b;
 }
 
 .public-theme-page.theme-light,
@@ -194,4 +273,181 @@ body {
   border-color: rgb(15 23 42 / 0.12) !important;
   background: rgb(255 255 255 / 0.96) !important;
   box-shadow: 0 20px 40px rgb(15 23 42 / 0.12);
+}
+
+/* Public landing page surfaces that previously kept their dark utility
+   classes. The image itself is intentionally excluded from these rules. */
+.public-theme-page.theme-light .public-nav {
+  color: #0f172a;
+}
+
+.public-theme-page.theme-light .public-nav-bg {
+  background-color: rgb(255 255 255 / 0.92) !important;
+}
+
+.public-theme-page.theme-light .public-nav .text-slate-300,
+.public-theme-page.theme-light .public-nav .text-slate-400 {
+  color: #475569 !important;
+}
+
+.public-theme-page.theme-light .public-nav .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual > .relative {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.14) !important;
+}
+
+.public-theme-page.theme-light .public-hero-panel {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 30px 70px rgb(15 23 42 / 0.14) !important;
+}
+
+.public-theme-page.theme-light .public-hero-panel .bg-public-hero {
+  background: #f8fafc !important;
+}
+
+.public-theme-page.theme-light .public-hero-panel .bg-white\/\[0\.035\] {
+  background-color: #ffffff !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .bg-public-hero {
+  background: #f8fafc !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .border-white\/8,
+.public-theme-page.theme-light .public-hero-visual .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .bg-white\/\[0\.035\] {
+  background: #ffffff !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .text-white,
+.public-theme-page.theme-light .public-hero-visual .text-slate-100,
+.public-theme-page.theme-light .public-hero-visual .text-slate-200 {
+  color: #0f172a !important;
+}
+
+.public-theme-page.theme-light .public-hero-visual .hero-float {
+  background: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.public-theme-page.theme-light .public-service-text {
+  color: #f8fafc !important;
+}
+
+.public-theme-page.theme-light .public-hero-copy {
+  color: #334155 !important;
+}
+
+/* Explicit dark surfaces prevent light-mode utility overrides or browser
+   refreshes from leaving white gaps in the dark landing page. */
+.public-theme-page.theme-dark {
+  background: #020617 !important;
+  color: #f8fafc !important;
+}
+
+.public-theme-page.theme-dark .public-nav,
+.public-theme-page.theme-dark .public-nav-bg {
+  background-color: rgb(2 6 23 / 0.88) !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
+}
+
+.public-theme-page.theme-dark .public-hero-panel {
+  background-color: rgb(15 23 42 / 0.88) !important;
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+
+.public-theme-page.theme-dark .public-hero-panel .bg-public-hero {
+  background: #07101f !important;
+}
+
+.public-theme-page.theme-dark .public-hero-panel .bg-white\/\[0\.035\] {
+  background-color: rgb(255 255 255 / 0.035) !important;
+}
+
+/* Dashboard content uses utility classes from several older screens. These
+   theme-scoped tokens keep admin, staff, and customer pages visually coherent
+   without changing their status colors or image elements. */
+.dashboard-theme-page.dashboard-dark {
+  color: #f8fafc;
+}
+
+.dashboard-theme-page.dashboard-dark .bg-white,
+.dashboard-theme-page.dashboard-dark .bg-gray-50,
+.dashboard-theme-page.dashboard-dark .bg-gray-100,
+.dashboard-theme-page.dashboard-dark .bg-slate-50,
+.dashboard-theme-page.dashboard-dark .bg-slate-100,
+.dashboard-theme-page.dashboard-dark .bg-slate-200 {
+  background-color: #111827 !important;
+}
+
+.dashboard-theme-page.dashboard-dark .bg-sky-50,
+.dashboard-theme-page.dashboard-dark .bg-blue-50,
+.dashboard-theme-page.dashboard-dark .bg-green-50,
+.dashboard-theme-page.dashboard-dark .bg-red-50,
+.dashboard-theme-page.dashboard-dark .bg-yellow-50 {
+  background-color: rgb(30 41 59 / 0.82) !important;
+}
+
+.dashboard-theme-page.dashboard-dark .border-gray-100,
+.dashboard-theme-page.dashboard-dark .border-gray-200,
+.dashboard-theme-page.dashboard-dark .border-gray-300,
+.dashboard-theme-page.dashboard-dark .border-slate-100,
+.dashboard-theme-page.dashboard-dark .border-slate-200,
+.dashboard-theme-page.dashboard-dark .border-slate-300 {
+  border-color: rgb(148 163 184 / 0.2) !important;
+}
+
+.dashboard-theme-page.dashboard-dark .text-gray-900,
+.dashboard-theme-page.dashboard-dark .text-slate-900,
+.dashboard-theme-page.dashboard-dark .text-gray-800,
+.dashboard-theme-page.dashboard-dark .text-slate-800,
+.dashboard-theme-page.dashboard-dark .text-gray-700,
+.dashboard-theme-page.dashboard-dark .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+.dashboard-theme-page.dashboard-dark .text-gray-600,
+.dashboard-theme-page.dashboard-dark .text-slate-600,
+.dashboard-theme-page.dashboard-dark .text-gray-500,
+.dashboard-theme-page.dashboard-dark .text-slate-500,
+.dashboard-theme-page.dashboard-dark .text-gray-400,
+.dashboard-theme-page.dashboard-dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.dashboard-theme-page.dashboard-dark input,
+.dashboard-theme-page.dashboard-dark select,
+.dashboard-theme-page.dashboard-dark textarea {
+  background-color: #0f172a !important;
+  border-color: rgb(148 163 184 / 0.25) !important;
+  color: #f8fafc !important;
+}
+
+.dashboard-theme-page.dashboard-dark input::placeholder,
+.dashboard-theme-page.dashboard-dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dashboard-theme-page.dashboard-dark table thead,
+.dashboard-theme-page.dashboard-dark table tr:nth-child(even) {
+  background-color: rgb(15 23 42 / 0.72) !important;
+}
+
+.dashboard-theme-page.dashboard-dark table td,
+.dashboard-theme-page.dashboard-dark table th {
+  border-color: rgb(148 163 184 / 0.18) !important;
+}
+
+.dashboard-theme-page.dashboard-dark .shadow-sm,
+.dashboard-theme-page.dashboard-dark .shadow-md,
+.dashboard-theme-page.dashboard-dark .shadow-lg {
+  --tw-shadow-color: rgb(2 6 23 / 0.35);
 }
