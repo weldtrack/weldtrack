@@ -132,7 +132,8 @@ const projectStatusBreakdown = computed(() => {
   const pending = bookings.value.filter((booking) => booking.status === 'pending').length
   const total = completed + ongoing + pending
 
-  const toPercent = (value: number) => (total > 0 ? Math.round((value / total) * 100) : 0)
+  // Use one decimal place so very small percentages don't round to 0
+  const toPercent = (value: number) => (total > 0 ? parseFloat(((value / total) * 100).toFixed(1)) : 0)
 
   return [
     { name: 'Completed', value: toPercent(completed), color: "var(--chart-completed, var(--chart-completed, #16a34a))" },
@@ -259,12 +260,12 @@ const pieStyle = computed(() => {
 
           <div class="w-full space-y-3 md:max-w-xs">
             <div v-for="item in projectStatusBreakdown" :key="item.name"
-              class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
-              <div class="flex items-center gap-3">
+              class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 min-w-0">
+              <div class="flex items-center gap-3 min-w-0">
                 <span class="h-3 w-3 rounded-full" :style="{ backgroundColor: item.color }"></span>
-                <span class="text-sm font-medium text-gray-700">{{ item.name }}</span>
+                <span class="text-sm font-medium text-gray-700 truncate">{{ item.name }}</span>
               </div>
-              <span class="text-sm text-gray-500">{{ item.value }}%</span>
+              <span class="text-sm text-gray-500 whitespace-nowrap">{{ item.value }}%</span>
             </div>
           </div>
         </div>
