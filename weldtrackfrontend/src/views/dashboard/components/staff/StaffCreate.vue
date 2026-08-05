@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { onMounted, reactive, ref } from 'vue'
 import api from '../../../../api/api'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
@@ -115,11 +116,21 @@ const getImageUrl = (url?: string | null) => {
   return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
 };
 
-onMounted(fetchStaffList)
+const isLoading = ref(true)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await fetchStaffList()
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <template>
-  <section class="space-y-4">
+  <section class="space-y-4 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="rounded-lg border border-gray-200 bg-white p-4">
       <div class="flex items-start gap-3 pb-4">
         <div

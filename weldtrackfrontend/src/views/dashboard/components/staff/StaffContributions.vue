@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { CheckCircle } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useStaffContributionsStore } from '../../../../stores/staffContributions'
@@ -68,17 +69,25 @@ function isCurrentUserContributor(email: string) {
   return email.toLowerCase() === authStore.email.toLowerCase()
 }
 
+const isLoading = ref(true)
+
 onMounted(async () => {
-  await Promise.all([
-    staffContributionsStore.fetchSnapshots(),
-    authStore.fetchStaffDirectory(),
-  ])
-  currentUserId.value = authStore.email
+  isLoading.value = true
+  try {
+    await Promise.all([
+      staffContributionsStore.fetchSnapshots(),
+      authStore.fetchStaffDirectory(),
+    ])
+    currentUserId.value = authStore.email
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>
 
 <template>
-  <section class="space-y-4">
+  <section class="space-y-4 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div
         class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">

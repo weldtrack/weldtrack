@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { Clock } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useBookingsStore } from '../../../../stores/bookings'
@@ -12,8 +13,15 @@ const loadError = ref('')
 
 const currentEmail = computed(() => authStore.email || '')
 
-onMounted(() => {
-  void loadBookings()
+const isLoading = ref(true)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await loadBookings()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 async function loadBookings() {
@@ -42,7 +50,8 @@ const cancelledBookings = computed(() => customerBookings.value.filter((b) => b.
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="mb-6 flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
         <Clock class="h-6 w-6 text-sky-600" />

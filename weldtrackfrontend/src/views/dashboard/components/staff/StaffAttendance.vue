@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { Calendar } from 'lucide-vue-next'
 import axios from 'axios'
 import L from 'leaflet'
@@ -348,24 +349,31 @@ const canConfirmAttendance = computed(() => {
   return userCoords.value.accuracy <= MAX_LOCATION_ACCURACY_METERS
 })
 
+const isLoading = ref(true)
+
 onMounted(async () => {
-  await fetchCurrentUser()
+  isLoading.value = true
   try {
-    if (authStore.role === 'admin') {
-      await authStore.fetchStaffDirectory()
-      await loadAttendanceLocation()
-      nextTick(() => {
-        initMap()
-      })
+    await fetchCurrentUser()
+    try {
+      if (authStore.role === 'admin') {
+        await authStore.fetchStaffDirectory()
+        await loadAttendanceLocation()
+        nextTick(() => {
+          initMap()
+        })
+      }
+    } catch (err) {
     }
-  } catch (err) {
+
+    await fetchAttendance()
+
+    tickTimer = window.setInterval(() => {
+      nowTick.value = Date.now()
+    }, 30000)
+  } finally {
+    isLoading.value = false
   }
-
-  await fetchAttendance()
-
-  tickTimer = window.setInterval(() => {
-    nowTick.value = Date.now()
-  }, 30000)
 })
 
 onUnmounted(() => {
@@ -512,7 +520,8 @@ function formatDuration(hours: number) {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-6 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="mb-6 flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
         <Calendar class="h-6 w-6 text-sky-600" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
 import { useCustomerAddressesStore } from '../../../../stores/customerAddresses'
 import { type CustomerAddressItem } from '../../../../types/customerAddresses'
@@ -24,8 +25,15 @@ const formData = reactive({
   isActive: false,
 })
 
-onMounted(() => {
-  addressesStore.fetchMyAddresses()
+const isLoading = ref(true)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await addressesStore.fetchMyAddresses()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 function resetForm() {
@@ -99,7 +107,8 @@ async function removeAddress(id: number) {
 </script>
 
 <template>
-  <section class="space-y-8">
+  <section class="space-y-8 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-100 to-sky-50 ring-1 ring-sky-200">

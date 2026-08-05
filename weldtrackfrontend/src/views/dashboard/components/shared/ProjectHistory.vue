@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { Folder } from 'lucide-vue-next'
 import { useBookingsStore } from '../../../../stores/bookings.ts'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage.ts'
@@ -8,8 +9,15 @@ import HistoryCard from './HistoryCard.vue'
 const bookingsStore = useBookingsStore()
 const loadError = ref('')
 
-onMounted(() => {
-  void loadProjects()
+const isLoading = ref(true)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await loadProjects()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 async function loadProjects() {
@@ -36,7 +44,8 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-6 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
         <Folder class="h-6 w-6 text-sky-600" />

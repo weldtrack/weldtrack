@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Star, ThumbsUp, MessageSquare, Send } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useFeedbackStore } from '../../../../stores/feedback'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import api from '../../../../api/api'
 import { type Feedback, type FeedbackComment } from '../../../../types/feedback'
 
@@ -212,7 +214,8 @@ function canManageFeedback(feedbackEmail: string) {
 </script>
 
 <template>
-  <section class="space-y-8">
+  <section class="space-y-8 relative">
+    <LocalLoader v-if="loadingServices" />
     <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { Briefcase } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useAdminSectionStore } from '../../../../stores/adminSection'
@@ -47,7 +48,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-6 relative">
+    <LocalLoader v-if="loading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-50 to-white ring-1 ring-cyan-100">

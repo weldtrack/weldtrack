@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { BarChart2 } from 'lucide-vue-next'
 import html2pdf from 'html2pdf.js'
 import axios from 'axios'
@@ -24,6 +25,7 @@ const modalStore = useModalStore()
 const attendanceRecords = ref<AttendanceRecord[]>([])
 const isExporting = ref(false)
 const SALES_MARKUP = 0.2
+const isLoading = ref(true)
 
 const fetchAttendanceData = async (startDate: string, endDate: string) => {
   try {
@@ -57,12 +59,17 @@ const fetchAttendanceData = async (startDate: string, endDate: string) => {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    bookingsStore.fetchBookings(),
-    inventoryStore.fetchInventory(),
-    inventoryStore.fetchMovements(),
-  ])
-  await onRangeChange()
+  isLoading.value = true
+  try {
+    await Promise.all([
+      bookingsStore.fetchBookings(),
+      inventoryStore.fetchInventory(),
+      inventoryStore.fetchMovements(),
+    ])
+    await onRangeChange()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const today = new Date()
@@ -617,7 +624,8 @@ async function generateStaffAttendanceReportPDF() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-6 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
         <BarChart2 class="h-6 w-6 text-sky-600" />

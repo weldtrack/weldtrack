@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Clipboard } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
@@ -21,6 +22,7 @@ const staffTasksStore = useStaffTasksStore()
 const bookingsStore = useBookingsStore()
 const modalStore = useModalStore()
 const servicePriceMap = ref<Record<string, number>>({})
+const isLoading = ref(true)
 const isAdmin = computed(() => authStore.role === 'admin')
 
 const staffList = computed(() => authStore.staffDirectory as StaffMember[])
@@ -169,17 +171,22 @@ function selectConfirmedBooking(bookingId: number) {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    authStore.fetchStaffDirectory(),
-    api.get('/auth/me').then(({ data }) => {
-      currentUserId.value = String(data?.id ?? '')
-    }),
-    bookingsStore.fetchBookings({ limit: 100 }),
-    staffTasksStore.fetchTasks(),
-    inventoryStore.fetchInventory(),
-    inventoryStore.fetchMovements(),
-    loadServicePriceMap().then((map) => (servicePriceMap.value = map)),
-  ])
+  isLoading.value = true
+  try {
+    await Promise.all([
+      authStore.fetchStaffDirectory(),
+      api.get('/auth/me').then(({ data }) => {
+        currentUserId.value = String(data?.id ?? '')
+      }),
+      bookingsStore.fetchBookings({ limit: 100 }),
+      staffTasksStore.fetchTasks(),
+      inventoryStore.fetchInventory(),
+      inventoryStore.fetchMovements(),
+      loadServicePriceMap().then((map) => (servicePriceMap.value = map)),
+    ])
+  } finally {
+    isLoading.value = false
+  }
 })
 
 function closeRecordModal() {
@@ -456,7 +463,8 @@ async function confirmRemoveTask() {
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="space-y-6 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
         <Clipboard class="h-6 w-6 text-sky-600" />

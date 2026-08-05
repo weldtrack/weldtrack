@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { LayoutDashboard } from 'lucide-vue-next'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { getServicePriceDisplay } from '../../../../services/servicePricing'
 
 const bookingsStore = useBookingsStore()
 
-onMounted(() => {
-  bookingsStore.fetchBookings()
+const isLoading = ref(true)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await bookingsStore.fetchBookings()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const bookings = computed(() => bookingsStore.bookings)
@@ -182,7 +190,8 @@ const pieStyle = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-50 to-sky-25 ring-1 ring-sky-100">
         <LayoutDashboard class="h-6 w-6 text-sky-600" />

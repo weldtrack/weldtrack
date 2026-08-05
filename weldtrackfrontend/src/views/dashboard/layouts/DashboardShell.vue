@@ -127,7 +127,7 @@ function handleLogout() {
     <header class="dashboard-header fixed top-0 right-0 z-30 flex h-14 w-full items-center justify-between px-4 sm:px-6 lg:w-[calc(100%-320px)]">
       <button
         type="button"
-        class="dashboard-icon-btn lg:hidden"
+        class="dashboard-icon-btn inline-flex lg:hidden"
         @click="isMobileSidebarOpen = true"
       >
         <Menu class="h-5 w-5" />
@@ -185,7 +185,7 @@ function handleLogout() {
 
           <button
             type="button"
-            class="dashboard-icon-btn lg:hidden"
+            class="dashboard-icon-btn inline-flex lg:hidden"
             @click="isMobileSidebarOpen = false"
           >
             <X class="h-4 w-4" />
@@ -382,7 +382,6 @@ function handleLogout() {
 }
 
 .dashboard-icon-btn {
-  display: inline-flex;
   height: 2.4rem;
   width: 2.4rem;
   align-items: center;

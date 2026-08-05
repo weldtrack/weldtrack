@@ -4,6 +4,7 @@ import { Briefcase } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 
 interface Service {
   id: number
@@ -223,7 +224,8 @@ function formatDate(value: string) {
 </script>
 
 <template>
-  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
+  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6 relative">
+    <LocalLoader v-if="loading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">

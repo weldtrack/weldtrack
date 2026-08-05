@@ -5,6 +5,7 @@ import { useInventoryStore } from '../../../../stores/inventory'
 import { type InventoryItem } from '../../../../types/inventory'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 
 const store = useInventoryStore()
 const modalStore = useModalStore()
@@ -36,8 +37,15 @@ const supplierCount = computed(() => new Set(store.items.map((item) => item.supp
 const selectedCount = computed(() => selectedItems.value.size)
 const allSelected = computed(() => selectedCount.value === filteredInventory.value.length && filteredInventory.value.length > 0)
 
+const isLoading = ref(true)
+
 onMounted(async () => {
-  await Promise.all([store.fetchInventory(), store.fetchMovements()])
+  isLoading.value = true
+  try {
+    await Promise.all([store.fetchInventory(), store.fetchMovements()])
+  } finally {
+    isLoading.value = false
+  }
 })
 
 function resetForm() {
@@ -189,7 +197,8 @@ function formatDateTime(value?: string) {
 </script>
 
 <template>
-  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
+  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">

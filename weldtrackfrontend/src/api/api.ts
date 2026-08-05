@@ -5,10 +5,12 @@ import { useLoadingStore } from '../stores/loading'
 type TrackedRequestConfig = InternalAxiosRequestConfig & {
   __loadingTracked?: boolean
   skipGlobalLoading?: boolean
+  useGlobalLoading?: boolean
 }
 
 function startGlobalLoading(config: TrackedRequestConfig) {
-  if (config.skipGlobalLoading) {
+  // Global loading is opt-in: only track requests where useGlobalLoading === true.
+  if (!config?.useGlobalLoading || config.skipGlobalLoading) {
     return
   }
   const loadingStore = useLoadingStore()

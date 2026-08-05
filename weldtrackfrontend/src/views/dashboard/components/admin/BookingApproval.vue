@@ -6,6 +6,7 @@ import { type BookingItem, type BookingStatus } from '../../../../types/bookings
 import { useInventoryStore } from '../../../../stores/inventory'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import api from '../../../../api/api'
 
@@ -135,9 +136,15 @@ async function loadServicePrices() {
   }
 }
 
-onMounted(() => {
-  void bookingsStore.fetchBookings()
-  void loadServicePrices()
+const isLoading = ref(true)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await Promise.all([bookingsStore.fetchBookings(), loadServicePrices()])
+  } finally {
+    isLoading.value = false
+  }
 })
 
 function getStatusLabel(status: BookingStatus) {
@@ -366,7 +373,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
 </script>
 
 <template>
-  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6">
+  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6 relative">
+    <LocalLoader v-if="isLoading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div

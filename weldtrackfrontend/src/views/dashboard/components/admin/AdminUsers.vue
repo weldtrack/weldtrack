@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { Users } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useModalStore } from '../../../../stores/modal'
@@ -126,7 +127,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+  <div class="overflow-hidden rounded-lg border border-gray-200 bg-white p-4 sm:p-6 relative">
+    <LocalLoader v-if="loading" />
     <div class="mb-4">
       <div class="mb-4 flex items-start gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-blue-50 to-white ring-1 ring-blue-100">
