@@ -94,7 +94,7 @@ const dialogLabel = computed(() => props.title || 'Dialog')
   background:
     radial-gradient(circle at top left, rgba(59, 130, 246, 0.24), transparent 32%),
     radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.16), transparent 28%),
-    rgba(15, 23, 42, 0.58);
+    var(--modal-backdrop, rgba(15, 23, 42, 0.58));
   backdrop-filter: blur(10px);
 }
 
@@ -105,10 +105,11 @@ const dialogLabel = computed(() => props.title || 'Dialog')
   flex-direction: column;
   max-height: min(92vh, 58rem);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--modal-border, rgba(15, 23, 42, 0.12));
   border-radius: 1.5rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
-  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.28);
+  background: var(--modal-surface, linear-gradient(180deg, #ffffff, #f8fafc));
+  color: var(--modal-text, #334155);
+  box-shadow: var(--modal-shadow, 0 30px 90px rgba(15, 23, 42, 0.28));
 }
 
 .modal-shell__glow {
@@ -159,13 +160,18 @@ const dialogLabel = computed(() => props.title || 'Dialog')
 .modal-shell__close {
   border: 0;
   border-radius: 9999px;
-  background: rgba(148, 163, 184, 0.15);
+  background: var(--modal-close-bg, rgba(148, 163, 184, 0.15));
   color: var(--modal-close, #475569);
   font-size: 1.5rem;
   line-height: 1;
   width: 2.25rem;
   height: 2.25rem;
   cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.modal-shell__close:hover {
+  background: var(--modal-close-bg-hover, rgba(148, 163, 184, 0.26));
 }
 
 .modal-shell__body {

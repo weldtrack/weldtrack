@@ -136,9 +136,9 @@ const projectStatusBreakdown = computed(() => {
   const toPercent = (value: number) => (total > 0 ? parseFloat(((value / total) * 100).toFixed(1)) : 0)
 
   return [
-    { name: 'Completed', value: toPercent(completed), color: "var(--chart-completed, var(--chart-completed, #16a34a))" },
-    { name: 'Ongoing', value: toPercent(ongoing), color: "var(--chart-ongoing, var(--chart-ongoing, #2563eb))" },
-    { name: 'Pending', value: toPercent(pending), color: "var(--chart-pending, var(--chart-pending, #f59e0b))" },
+    { name: 'Completed', value: toPercent(completed), color: "var(--chart-completed, #16a34a)" },
+    { name: 'Ongoing', value: toPercent(ongoing), color: "var(--chart-ongoing, #2563eb)" },
+    { name: 'Pending', value: toPercent(pending), color: "var(--chart-pending, #f59e0b)" },
   ]
 })
 
@@ -176,9 +176,14 @@ const lineChart = computed(() => {
 })
 
 const pieStyle = computed(() => {
-  const total = projectStatusBreakdown.value.reduce((sum, item) => sum + item.value, 0)
+  const items = projectStatusBreakdown.value
+  const total = items.reduce((sum, item) => sum + item.value, 0)
+
+  // when there's no data, return 'none' so the base bg-gray-200 shows
+  if (!total) return 'none'
+
   let start = 0
-  const segments = projectStatusBreakdown.value.map((item) => {
+  const segments = items.map((item) => {
     const end = start + (item.value / total) * 100
     const segment = `${item.color} ${start}% ${end}%`
     start = end
@@ -194,8 +199,8 @@ const pieStyle = computed(() => {
   <div class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-50 to-sky-25 ring-1 ring-sky-100">
-        <LayoutDashboard class="h-6 w-6 text-sky-600" />
+      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-50 to-sky-25 ring-1 ring-sky-100 text-sky-600 dark:text-sky-400">
+        <LayoutDashboard class="dashboard-view-icon h-6 w-6 text-current" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Admin Dashboard</h3>
@@ -231,7 +236,7 @@ const pieStyle = computed(() => {
     </div>
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
+      <div class="rounded-lg border border-gray-200 bg-transparent p-6">
         <h3 class="mb-4 text-lg font-semibold text-gray-900">Monthly Project Cost Trend</h3>
         <svg class="h-75 w-full" viewBox="0 0 640 300" role="img" aria-label="Monthly project cost trend chart">
           <line v-for="grid in lineChart.gridValues" :key="grid" x1="40" :x2="600" :y1="32 + (236 * grid)"
@@ -250,12 +255,11 @@ const pieStyle = computed(() => {
         </svg>
       </div>
 
-      <div class="rounded-lg border border-gray-200 bg-white p-6">
+      <div class="rounded-lg border border-gray-200 bg-transparent p-6">
         <h3 class="mb-4 text-lg font-semibold text-gray-900">Project Status Breakdown</h3>
         <div class="flex flex-col items-center gap-6 md:flex-row md:items-center md:justify-between">
-          <div class="relative flex h-64 w-64 items-center justify-center">
-            <div class="h-56 w-56 rounded-full" :style="{ background: pieStyle }"></div>
-            <div class="absolute h-32 w-32 rounded-full bg-white shadow-inner"></div>
+          <div class="relative flex h-48 w-48 items-center justify-center">
+            <div class="h-40 w-40 rounded-full" :style="{ backgroundImage: pieStyle }"></div>
           </div>
 
           <div class="w-full space-y-3 md:max-w-xs">
@@ -272,7 +276,7 @@ const pieStyle = computed(() => {
       </div>
     </div>
 
-    <div class="rounded-lg border border-gray-200 bg-white p-6">
+    <div class="rounded-lg border border-gray-200 bg-transparent p-6">
       <h3 class="mb-4 text-lg font-semibold text-gray-900">Recent Completed Projects</h3>
       <div class="overflow-x-auto">
         <table class="w-full min-w-180">

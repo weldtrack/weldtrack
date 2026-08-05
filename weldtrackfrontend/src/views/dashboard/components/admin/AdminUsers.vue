@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
     <div class="mb-4">
       <div class="mb-4 flex items-start gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-blue-50 to-white ring-1 ring-blue-100">
-          <Users class="h-5 w-5 text-blue-600" />
+          <Users class="dashboard-view-icon h-5 w-5 text-blue-600" />
         </div>
         <div>
           <h3 class="text-lg font-bold text-gray-900">Users</h3>

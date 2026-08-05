@@ -53,7 +53,7 @@ onMounted(() => {
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-50 to-white ring-1 ring-cyan-100">
-          <Briefcase class="h-6 w-6 text-cyan-600" />
+          <Briefcase class="dashboard-view-icon h-6 w-6 text-cyan-600 dark:text-cyan-400" />
         </div>
         <div>
           <h3 class="text-2xl font-semibold text-gray-900">Browse Services</h3>

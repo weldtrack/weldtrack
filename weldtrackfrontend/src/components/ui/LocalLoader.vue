@@ -18,7 +18,8 @@
   z-index: 40;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.6);
+  /* make overlay fully transparent to avoid white flicker */
+  background: transparent;
   color: #0f172a;
 }
 
@@ -28,9 +29,10 @@
   gap: 0.75rem;
   padding: 0.6rem 0.8rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+  /* remove card background/border/shadow to keep fully transparent */
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .local-loader__spinner {
@@ -56,14 +58,14 @@
 
 @media (prefers-color-scheme: dark) {
   .local-loader {
-    background: rgba(2, 6, 23, 0.6);
+    background: transparent; /* ensure dark mode is also transparent */
     color: #e6eef8;
   }
 
   .local-loader__card {
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(2, 6, 23, 0.9);
-    box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+    border: 1px solid transparent;
+    background: transparent;
+    box-shadow: none;
   }
 
   .local-loader__spinner {

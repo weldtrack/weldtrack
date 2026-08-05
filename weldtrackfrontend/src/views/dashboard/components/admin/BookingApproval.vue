@@ -378,8 +378,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div
-          class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
-          <CalendarCheck class="h-5 w-5 text-sky-600" />
+          class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100 text-sky-600 dark:text-sky-400">
+          <CalendarCheck class="dashboard-view-icon h-5 w-5 text-current" />
         </div>
         <div>
           <h2 class="text-2xl font-semibold text-gray-900">Booking Approval</h2>

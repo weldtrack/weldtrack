@@ -112,7 +112,7 @@ async function removeAddress(id: number) {
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-100 to-sky-50 ring-1 ring-sky-200">
-          <MapPin class="h-6 w-6 text-sky-600" />
+          <MapPin class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
         </div>
         <div>
           <h3 class="text-2xl font-bold text-gray-900">My Addresses</h3>
@@ -133,7 +133,7 @@ async function removeAddress(id: number) {
     <div v-if="activeAddress" class="rounded-2xl border border-sky-200/50 bg-linear-to-br from-sky-50 to-sky-50/50 p-6 shadow-sm">
       <div class="flex items-start gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 ring-1 ring-sky-200">
-          <Check class="h-5 w-5 text-sky-600" />
+          <Check class="dashboard-view-icon h-5 w-5 text-sky-600 dark:text-sky-400" />
         </div>
         <div class="flex-1">
           <p class="text-xs font-bold uppercase tracking-widest text-sky-600">✓ Active Address</p>
@@ -170,7 +170,7 @@ async function removeAddress(id: number) {
 
     <div v-if="!addresses.length" class="rounded-2xl border-2 border-dashed border-slate-300 bg-linear-to-br from-sky-50 to-sky-50/50 p-12 text-center">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sky-100">
-        <MapPin class="h-8 w-8 text-sky-600" />
+        <MapPin class="dashboard-view-icon h-8 w-8 text-sky-600 dark:text-sky-400" />
       </div>
       <p class="mt-4 text-base font-semibold text-slate-900">No saved addresses yet</p>
       <p class="mt-2 text-sm text-slate-600">Add your first address so new bookings can use it automatically.</p>
@@ -196,7 +196,7 @@ async function removeAddress(id: number) {
         <div class="flex items-start gap-4">
           <div class="shrink-0">
             <div :class="['h-12 w-12 flex items-center justify-center rounded-xl transition-colors', address.isActive ? 'bg-sky-100 ring-1 ring-sky-200' : 'bg-slate-100 ring-1 ring-slate-200']">
-              <MapPin :class="['h-6 w-6', address.isActive ? 'text-sky-600' : 'text-slate-400']" />
+              <MapPin :class="['h-6 w-6', address.isActive ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-400']" />
             </div>
           </div>
 

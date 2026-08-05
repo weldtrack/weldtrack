@@ -2,7 +2,7 @@
   <div class="max-w-2xl mx-auto p-6">
     <div class="flex items-center gap-3 mb-8">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
-        <User class="h-6 w-6 text-sky-600" />
+        <User class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <h1 class="text-2xl font-semibold text-gray-900">User Profile</h1>
     </div>

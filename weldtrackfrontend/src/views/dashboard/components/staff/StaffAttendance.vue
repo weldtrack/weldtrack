@@ -524,7 +524,7 @@ function formatDuration(hours: number) {
     <LocalLoader v-if="isLoading" />
     <div class="mb-6 flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
-        <Calendar class="h-6 w-6 text-sky-600" />
+        <Calendar class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Attendance</h3>
@@ -553,7 +553,7 @@ function formatDuration(hours: number) {
       <div class="rounded-lg border border-sky-200 bg-sky-50 p-6">
         <div class="flex items-center gap-3">
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -567,7 +567,7 @@ function formatDuration(hours: number) {
       <div class="rounded-lg border border-sky-200 bg-sky-50 p-6">
         <div class="flex items-center gap-3">
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 2.5M12 3a9 9 0 100 18 9 9 0 000-18z" />
             </svg>
           </div>
@@ -581,7 +581,7 @@ function formatDuration(hours: number) {
       <div class="rounded-lg border border-sky-200 bg-sky-50 p-6">
         <div class="flex items-center gap-3">
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>

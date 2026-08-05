@@ -40,7 +40,7 @@ const toneMap = {
 <style scoped>
 .global-modal__message {
   margin: 0;
-  color: var(--modal-eyebrow, #334155);
+  color: var(--modal-text, #334155);
   line-height: 1.6;
 }
 

@@ -373,7 +373,7 @@ function formatDate(isoDate: string) {
 
 function getStatusClass(status: TaskStatus) {
   if (status === 'done') return 'bg-green-100 text-green-700'
-  if (status === 'in-progress') return 'bg-blue-100 text-blue-700'
+  if (status === 'in-progress') return 'bg-sky-100 text-sky-700'
   return 'bg-gray-100 text-gray-700'
 }
 
@@ -467,7 +467,7 @@ async function confirmRemoveTask() {
     <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
-        <Clipboard class="h-6 w-6 text-sky-600" />
+        <Clipboard class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Tasks</h3>
@@ -478,13 +478,13 @@ async function confirmRemoveTask() {
     <div v-if="isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
       <h4 class="mb-4 text-lg font-semibold text-gray-900">Staff Management: Assign Tasks</h4>
 
-      <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+      <div class="mb-5 rounded-xl border border-sky-200 bg-sky-50 p-4">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <p class="text-sm font-semibold text-blue-900">Confirmed Bookings</p>
-            <p class="text-xs text-blue-700">Click a confirmed booking to auto-fill the task details.</p>
+            <p class="text-sm font-semibold text-sky-900">Confirmed Bookings</p>
+            <p class="text-xs text-sky-700">Click a confirmed booking to auto-fill the task details.</p>
           </div>
-          <p class="text-xs font-medium text-blue-700">Selected: {{ selectedBookingLabel }}</p>
+          <p class="text-xs font-medium text-sky-700">Selected: {{ selectedBookingLabel }}</p>
         </div>
 
         <div v-if="confirmedBookings.length === 0" class="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-gray-500">
@@ -497,7 +497,7 @@ async function confirmRemoveTask() {
             :key="booking.id"
             type="button"
             class="rounded-xl border px-4 py-3 text-left transition-colors"
-            :class="selectedBookingId === booking.id ? 'border-blue-500 bg-blue-100' : 'border-blue-200 bg-white hover:bg-blue-50'"
+            :class="selectedBookingId === booking.id ? 'border-sky-500 bg-sky-100' : 'border-sky-200 bg-white hover:bg-sky-50'"
             @click="selectConfirmedBooking(booking.id)"
           >
             <p class="text-sm font-semibold text-gray-900">{{ booking.projectType }}</p>
@@ -586,7 +586,7 @@ async function confirmRemoveTask() {
       </div>
 
       <div class="mt-3">
-        <button type="button" class="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300" :disabled="!selectedBookingId || hasDuplicateAssignees" @click="assignTask">Assign Task</button>
+        <button type="button" class="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!selectedBookingId || hasDuplicateAssignees" @click="assignTask">Assign Task</button>
         <p v-if="!selectedBookingId" class="mt-2 text-sm text-amber-600">⚠ Select a confirmed booking first to assign a task</p>
       </div>
 
@@ -658,7 +658,7 @@ async function confirmRemoveTask() {
               </div>
             </div>
 
-            <button type="button" class="w-full rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100" @click="addMaterialLine">
+            <button type="button" class="w-full rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-100" @click="addMaterialLine">
               + Add Another Material
             </button>
           </div>
@@ -732,7 +732,7 @@ async function confirmRemoveTask() {
 
     <div v-if="!isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
       <h4 class="mb-4 text-lg font-semibold text-gray-900">My Assigned Tasks</h4>
-      <p class="mb-4 text-sm text-blue-700">Record and submit used materials here. Booking completion is handled by admin in Booking Approval.</p>
+      <p class="mb-4 text-sm text-sky-700">Record and submit used materials here. Booking completion is handled by admin in Booking Approval.</p>
       <div v-if="myAssignedTasks.length === 0" class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">No tasks assigned yet.</div>
       <div v-else class="space-y-3">
         <div v-for="task in myAssignedTasks" :key="task.id" class="rounded-lg border border-gray-200 bg-gray-50 p-4">

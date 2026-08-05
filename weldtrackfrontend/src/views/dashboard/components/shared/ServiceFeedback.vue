@@ -218,7 +218,7 @@ function canManageFeedback(feedbackEmail: string) {
     <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
-          <Star class="h-6 w-6 text-sky-600" />
+          <Star class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
         </div>
         <div>
           <h1 class="text-3xl font-bold text-gray-900">

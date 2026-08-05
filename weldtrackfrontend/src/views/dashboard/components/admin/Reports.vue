@@ -628,7 +628,7 @@ async function generateStaffAttendanceReportPDF() {
     <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
-        <BarChart2 class="h-6 w-6 text-sky-600" />
+        <BarChart2 class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Reports</h3>
@@ -673,7 +673,7 @@ async function generateStaffAttendanceReportPDF() {
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Stock-In Report</h3>
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -719,7 +719,7 @@ async function generateStaffAttendanceReportPDF() {
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Financial Summary</h3>
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -787,7 +787,7 @@ async function generateStaffAttendanceReportPDF() {
         <div class="mb-4 flex items-center justify-between">
           <h3 class="text-gray-900">Staff Attendance</h3>
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"

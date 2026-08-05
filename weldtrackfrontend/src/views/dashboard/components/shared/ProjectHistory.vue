@@ -48,7 +48,7 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
     <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
-        <Folder class="h-6 w-6 text-sky-600" />
+        <Folder class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>
         <h3 class="mb-1 text-2xl font-semibold text-gray-900">Project History</h3>

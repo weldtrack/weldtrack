@@ -202,7 +202,7 @@ function formatDateTime(value?: string) {
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
         <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
-          <Archive class="h-5 w-5 text-sky-600" />
+          <Archive class="dashboard-view-icon h-5 w-5 text-sky-600 dark:text-sky-400" />
         </div>
         <div>
           <h3 class="mb-1 text-2xl font-semibold text-gray-900">Inventory Management</h3>
