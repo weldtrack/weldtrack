@@ -451,3 +451,20 @@ body {
 .dashboard-theme-page.dashboard-dark .shadow-lg {
   --tw-shadow-color: rgb(2 6 23 / 0.35);
 }
+
+/* Ensure lucide icons follow the active text color and theme.
+   Makes icons adapt to light/dark themes and prevents forced white or
+   visual filters that make them appear overly bright in dark mode. */
+.lucide, svg.lucide {
+  color: inherit;             /* inherit text color from parent */
+  stroke: currentColor !important; /* use currentColor for strokes */
+  fill: none !important;     /* default to no fill (lucide icons are stroked) */
+  filter: none !important;   /* remove glow/brightness filters if present */
+}
+
+/* If any lucide icons rely on fills, allow explicit fill via a utility
+   class (e.g., .icon-fill-current) which sets fill to currentColor. */
+.icon-fill-current {
+  fill: currentColor !important;
+}
+
