@@ -533,8 +533,11 @@ function handleLogout() {
   justify-content: center;
   border-radius: 0.6rem;
   border: 1px solid color-mix(in srgb, var(--db-border) 88%, transparent);
-  background: rgba(255, 255, 255, 0.04);
-  color: color-mix(in srgb, var(--db-sidebar-text) 85%, #fff 15%);
+  /* Use a theme-aware subtle surface instead of a semi-white overlay which
+     looks like a shine in dark mode. Keep icon color driven by the sidebar
+     text color so icons match the theme. */
+  background: color-mix(in srgb, var(--db-panel-solid) 6%, transparent);
+  color: var(--db-sidebar-text);
 }
 
 .dashboard-icon-wrap--active {
