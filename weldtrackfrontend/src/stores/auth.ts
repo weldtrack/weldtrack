@@ -121,7 +121,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const data = await fetchStaffDirectoryApi()
         this.staffDirectory = Array.isArray(data)
-          ? data.map((user: { id?: number; email?: string }) => ({
+          ? data.map((user: { id?: string; email?: string }) => ({
               id: String(user.id ?? ''),
               email: user.email || '',
             }))

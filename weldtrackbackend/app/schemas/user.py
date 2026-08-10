@@ -30,7 +30,7 @@ class LoginRequest(BaseModel):
 
 
 class UserRead(UserBase):
-    id: int
+    id: str
     role: UserRole
     created_at: datetime
     is_banned: bool = False

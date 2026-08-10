@@ -33,12 +33,12 @@ export async function fetchInventory() {
   return Array.isArray(data) ? data.map(toInventoryItem) : []
 }
 
-export async function fetchMovements(params?: { bookingId?: number; taskId?: string; itemId?: string }) {
+export async function fetchMovements(params?: { bookingId?: string; taskId?: string; itemId?: string }) {
   const { data } = await api.get<BackendStockMovement[]>('/inventory/movements/history', {
     params: {
       booking_id: params?.bookingId,
       task_id: params?.taskId,
-      item_id: params?.itemId ? Number(params.itemId) : undefined,
+      item_id: params?.itemId,
     },
   })
   return Array.isArray(data) ? data.map(toStockMovement) : []

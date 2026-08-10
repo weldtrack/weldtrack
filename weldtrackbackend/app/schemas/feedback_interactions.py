@@ -11,8 +11,8 @@ class FeedbackCommentCreate(FeedbackCommentBase):
 
 
 class FeedbackCommentResponse(FeedbackCommentBase):
-    id: int
-    feedback_id: int
+    id: str
+    feedback_id: str
     user_email: EmailStr
     date: datetime
     profile_image: str | None = None
@@ -22,8 +22,8 @@ class FeedbackCommentResponse(FeedbackCommentBase):
 
 
 class FeedbackLikeResponse(BaseModel):
-    id: int
-    feedback_id: int
+    id: str
+    feedback_id: str
     user_email: EmailStr
 
     class Config:

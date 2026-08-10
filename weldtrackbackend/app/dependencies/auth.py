@@ -33,7 +33,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
 
     try:
         payload = decode_jwt(token)
-        user_id = int(payload["sub"])
+        user_id = payload["sub"]
         token_iat = int(payload.get("iat", 0))
     except (KeyError, ValueError, TypeError, json.JSONDecodeError):
         raise HTTPException(

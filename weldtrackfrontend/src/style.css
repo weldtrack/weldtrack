@@ -10,6 +10,40 @@ html {
 
 body {
   font-family: var(--font-sans);
+  margin: 0;
+  min-width: 320px;
+  background: #f8fafc;
+  color: #0f172a;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgb(14 165 233 / 0.24);
 }
 
 :root {
@@ -377,6 +411,23 @@ html[data-theme="dark"] {
   color: #334155 !important;
 }
 
+.public-theme-page.theme-light .public-proof-strip {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.public-theme-page.theme-light .public-about-overlay,
+.public-theme-page.theme-light .public-about-overlay .text-white {
+  background: rgba(15, 23, 42, 0.82) !important;
+  color: #ffffff !important;
+}
+
+.public-contact-noise {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 0.6px, transparent 0.6px);
+  background-size: 5px 5px;
+}
+
 /* Explicit dark surfaces prevent light-mode utility overrides or browser
    refreshes from leaving white gaps in the dark landing page. */
 .public-theme-page.theme-dark {
@@ -485,6 +536,104 @@ html[data-theme="dark"] {
 
 .dashboard-theme-page.dashboard-light table tbody tr:hover {
   background-color: rgb(241 245 249 / 0.9) !important;
+}
+
+.dashboard-theme-page .booking-reset-button:hover {
+  background-color: rgb(241 245 249 / 0.9);
+}
+
+.dashboard-theme-page.dashboard-dark .booking-reset-button:hover {
+  background-color: rgb(51 65 85 / 0.82) !important;
+  border-color: rgb(148 163 184 / 0.35) !important;
+  color: #f8fafc !important;
+}
+
+/* Shared dashboard primitives. Older feature screens use utility classes,
+   so these scoped rules normalize their rhythm without changing markup or
+   feature-specific status colors. */
+.dashboard-theme-page {
+  overflow-x: clip;
+}
+
+.dashboard-theme-page main,
+.dashboard-theme-page section,
+.dashboard-theme-page form,
+.dashboard-theme-page table {
+  min-width: 0;
+}
+
+.dashboard-theme-page input:not([type="checkbox"]):not([type="radio"]),
+.dashboard-theme-page select,
+.dashboard-theme-page textarea {
+  min-height: 2.625rem;
+  border-radius: 0.625rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.dashboard-theme-page textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.dashboard-theme-page input:focus,
+.dashboard-theme-page select:focus,
+.dashboard-theme-page textarea:focus {
+  border-color: color-mix(in srgb, var(--role-accent) 72%, #94a3b8) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--role-accent) 18%, transparent);
+  outline: none;
+}
+
+.dashboard-theme-page button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dashboard-theme-page button:focus-visible,
+.dashboard-theme-page a:focus-visible {
+  outline-color: var(--role-accent);
+}
+
+.dashboard-theme-page table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.dashboard-theme-page table th {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dashboard-theme-page table td,
+.dashboard-theme-page table th {
+  vertical-align: middle;
+}
+
+.dashboard-theme-page img {
+  max-width: 100%;
+}
+
+@media (max-width: 639px) {
+  .dashboard-theme-page table th,
+  .dashboard-theme-page table td {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Modal content uses the same older neutral utility classes as dashboard

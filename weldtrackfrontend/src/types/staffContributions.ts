@@ -1,7 +1,7 @@
 export interface StaffContributionSnapshot {
   id: string
   taskId: string
-  bookingId: number | null
+  bookingId: string | null
   projectName: string
   taskTitle: string
   contributorIds: string[]
@@ -10,12 +10,12 @@ export interface StaffContributionSnapshot {
 }
 
 export type BackendStaffContributionSnapshot = {
-  id: number
+  id: string
   taskId: string
-  bookingId?: number | null
+  bookingId?: string | null
   projectName: string
   taskTitle: string
-  contributorIds?: number[]
+  contributorIds?: string[]
   contributorEmails?: string[]
   completedAt: string
 }

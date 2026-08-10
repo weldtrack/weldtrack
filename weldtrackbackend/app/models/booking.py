@@ -15,6 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.core.id import ulid_foreign_key, ulid_primary_key
 
 
 class BookingStatus(str, enum.Enum):
@@ -32,7 +33,7 @@ class CancelledBy(str, enum.Enum):
 class Booking(Base):
     __tablename__ = "bookings"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[str] = ulid_primary_key(index=True)
     project_type: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[BookingStatus] = mapped_column(
         Enum(BookingStatus), nullable=False, default=BookingStatus.pending
@@ -83,9 +84,9 @@ class Booking(Base):
 class RecordMaterial(Base):
     __tablename__ = "booking_materials"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    booking_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False
+    id: Mapped[str] = ulid_primary_key(index=True)
+    booking_id: Mapped[str] = ulid_foreign_key(
+        "bookings.id", ondelete="CASCADE", nullable=False
     )
     item_id: Mapped[str] = mapped_column(String(100), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)

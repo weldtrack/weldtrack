@@ -27,7 +27,7 @@ export const useFeedbackStore = defineStore('feedback', {
       return created
     },
 
-    async updateFeedback(id: number, feedback: Partial<Omit<Feedback, 'id'>>) {
+    async updateFeedback(id: string, feedback: Partial<Omit<Feedback, 'id'>>) {
       const updated = await feedbackService.updateFeedback(id, feedback)
       const idx = this.feedbacks.findIndex((f) => f.id === id)
       if (idx !== -1) {
@@ -36,17 +36,17 @@ export const useFeedbackStore = defineStore('feedback', {
       return updated
     },
 
-    async toggleLike(feedbackId: number) {
+    async toggleLike(feedbackId: string) {
       await feedbackService.toggleLike(feedbackId)
       await this.fetchFeedbacks() // Refresh feedback to update likes count/state
     },
 
-    async addComment(feedbackId: number, comment: string) {
+    async addComment(feedbackId: string, comment: string) {
       await feedbackService.addComment(feedbackId, comment)
       await this.fetchFeedbacks() // Refresh feedback to update comments
     },
 
-    async deleteFeedback(id: number) {
+    async deleteFeedback(id: string) {
       await feedbackService.deleteFeedback(id)
       this.feedbacks = this.feedbacks.filter((f) => f.id !== id)
     },

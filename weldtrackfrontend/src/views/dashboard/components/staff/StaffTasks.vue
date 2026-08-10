@@ -30,7 +30,7 @@ const assignedBookingIds = computed(() => {
   return new Set(
     staffTasksStore.tasks
       .map((task) => task.bookingId)
-      .filter((bookingId): bookingId is number => bookingId != null),
+      .filter((bookingId): bookingId is string => bookingId != null),
   )
 })
 const confirmedBookings = computed(() =>
@@ -44,7 +44,7 @@ const confirmedBookings = computed(() =>
 const staffCountOptions = [2, 4, 6, 8, 10]
 
 const currentUserId = ref('')
-const selectedBookingId = ref<number | null>(null)
+const selectedBookingId = ref<string | null>(null)
 
 const myAssignedTasks = computed(() => {
   return staffTasksStore.tasks.filter((task) => task.assignedStaffIds.includes(currentUserId.value))
@@ -152,7 +152,7 @@ async function openRecordModal(taskId: string) {
   isRecordModalOpen.value = true
 }
 
-function selectConfirmedBooking(bookingId: number) {
+function selectConfirmedBooking(bookingId: string) {
   const booking = confirmedBookings.value.find((item) => item.id === bookingId)
   if (!booking) return
 
@@ -173,17 +173,21 @@ function selectConfirmedBooking(bookingId: number) {
 onMounted(async () => {
   isLoading.value = true
   try {
-    await Promise.all([
-      authStore.fetchStaffDirectory(),
-      api.get('/auth/me').then(({ data }) => {
-        currentUserId.value = String(data?.id ?? '')
-      }),
+    currentUserId.value = String(authStore.user?.id ?? '')
+
+    const requests: Promise<unknown>[] = [
       bookingsStore.fetchBookings({ limit: 100 }),
       staffTasksStore.fetchTasks(),
       inventoryStore.fetchInventory(),
       inventoryStore.fetchMovements(),
       loadServicePriceMap().then((map) => (servicePriceMap.value = map)),
-    ])
+    ]
+
+    // Staff assignment controls are admin-only, so only an admin needs the
+    // complete staff directory on this shared screen.
+    if (isAdmin.value) requests.push(authStore.fetchStaffDirectory())
+
+    await Promise.all(requests)
   } finally {
     isLoading.value = false
   }
@@ -274,7 +278,7 @@ function calculateTotalLaborCost(taskId: string) {
 async function recordMaterialsUsage() {
   if (!recordingTask.value) return
   const bookingId = getTaskBookingId(recordingTask.value)
-  if (!Number.isFinite(Number(bookingId)) || Number(bookingId) <= 0) {
+  if (!bookingId) {
     modalStore.open({
       title: 'Missing booking link',
       message: 'This task is not linked to a booking yet. Reassign it from a confirmed booking first.',
@@ -298,21 +302,21 @@ async function recordMaterialsUsage() {
   }
 
   const payload = {
-    submittedBy: Number(currentUserId.value) || undefined,
+    submittedBy: currentUserId.value || undefined,
     taskId,
     movementType: 'stock_out',
-    lines: validLines.map((l) => ({ itemId: Number(l.itemId), quantity: l.quantity })),
+    lines: validLines.map((l) => ({ itemId: l.itemId, quantity: l.quantity })),
     laborHours: recordForm.laborHours,
     beforeImage: recordForm.beforeImagePreview || undefined,
     afterImage: recordForm.afterImagePreview || undefined,
   }
-  await api.post(`/bookings/${Number(bookingId)}/materials`, payload)
+  await api.post(`/bookings/${bookingId}/materials`, payload)
   await inventoryStore.fetchInventory()
   await inventoryStore.fetchMovements()
 
   await staffTasksStore.updateTaskStatus(recordingTask.value, 'done')
 
-  await bookingsStore.getBooking(Number(bookingId))
+  await bookingsStore.getBooking(bookingId)
 
   closeRecordModal()
 }

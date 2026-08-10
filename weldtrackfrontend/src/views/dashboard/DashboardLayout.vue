@@ -17,6 +17,7 @@ import {
   MapPin,
   Menu,
   MessageCircle,
+  ReceiptText,
   Star,
   Users,
   X,
@@ -78,14 +79,7 @@ const sidebarItems = computed<SidebarEntry[]>(() => {
           { kind: 'item', id: 'admin-approval', label: 'Booking', icon: Calendar },
           { kind: 'item', id: 'admin-inventory', label: 'Inventory', icon: Archive },
           { kind: 'item', id: 'admin-services', label: 'Services', icon: Briefcase },
-        ],
-      },
-      {
-        kind: 'group',
-        id: 'admin-group-people',
-        label: 'People',
-        icon: Users,
-        children: [
+          { kind: 'item', id: 'admin-payroll', label: 'Payroll', icon: ReceiptText },
           { kind: 'item', id: 'admin-staff', label: 'Staff', icon: Users, routeName: 'admin-staff-attendance' },
           { kind: 'item', id: 'admin-users', label: 'Users', icon: Users },
         ],
@@ -101,6 +95,7 @@ const sidebarItems = computed<SidebarEntry[]>(() => {
       { kind: 'item', id: 'staff-attendance', label: 'Attendance', icon: Calendar },
       { kind: 'item', id: 'staff-tasks', label: 'Tasks', icon: ClipboardList },
       { kind: 'item', id: 'staff-contributions', label: 'Contributions', icon: BarChart2 },
+      { kind: 'item', id: 'staff-payslips', label: 'My Payslips', icon: ReceiptText },
       { kind: 'item', id: 'staff-feedback', label: 'Service Feedback', icon: MessageCircle },
     ]
   }

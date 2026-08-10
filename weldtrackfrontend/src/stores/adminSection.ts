@@ -15,9 +15,9 @@ function getInitialSection(): AdminSection {
 export const useAdminSectionStore = defineStore('admin-section', {
   state: () => ({
     section: getInitialSection() as AdminSection,
-    selectedMaterial: null as null | { id: number; name: string; price: number; requestedQuantity?: number },
+    selectedMaterial: null as null | { id: string; name: string; price: number; requestedQuantity?: number },
     selectedService: null as null | {
-      id: number
+      id: string
       name: string
       description?: string | null
       price: number
@@ -31,10 +31,10 @@ export const useAdminSectionStore = defineStore('admin-section', {
         window.localStorage.setItem(STORAGE_KEY, section)
       }
     },
-    setSelectedMaterial(payload: { id: number; name: string; price: number; requestedQuantity?: number }) {
+    setSelectedMaterial(payload: { id: string; name: string; price: number; requestedQuantity?: number }) {
       this.selectedMaterial = payload
     },
-    setSelectedService(payload: { id: number; name: string; description?: string | null; price: number; image_url?: string | null }) {
+    setSelectedService(payload: { id: string; name: string; description?: string | null; price: number; image_url?: string | null }) {
       this.selectedService = payload
     },
     clearSelectedMaterial() {

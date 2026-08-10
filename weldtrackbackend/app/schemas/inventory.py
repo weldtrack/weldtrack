@@ -24,24 +24,24 @@ class InventoryItemUpdate(BaseModel):
 
 
 class InventoryItemResponse(InventoryItemBase):
-    id: int
+    id: str
     date_added: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class StockMovementBase(BaseModel):
-    item_id: int
+    item_id: str
     item_name: str
     quantity: int
     type: str  # "stock-in" or "stock-out"
-    booking_id: Optional[int] = None
+    booking_id: Optional[str] = None
     task_id: Optional[str] = None
     team_emails: list[str] = Field(default_factory=list)
 
 
 class StockMovementResponse(StockMovementBase):
-    id: int
+    id: str
     timestamp: datetime
 
     model_config = ConfigDict(from_attributes=True)

@@ -6,7 +6,7 @@ import api from '../../../../api/api'
 import { useModalStore } from '../../../../stores/modal'
 
 type User = {
-  id: number
+  id: string
   email: string
   role: string
   created_at: string
@@ -48,7 +48,7 @@ async function refresh() {
   else await fetchUsers()
 }
 
-function banUser(id: number) {
+function banUser(id: string) {
   modalStore.open({
     title: 'Confirm Ban',
     message: 'Are you sure you want to ban this user?',
@@ -68,7 +68,7 @@ function banUser(id: number) {
   })
 }
 
-function unbanUser(id: number) {
+function unbanUser(id: string) {
   modalStore.open({
     title: 'Confirm Unban',
     message: 'Are you sure you want to unban this user?',

@@ -12,7 +12,7 @@ const addresses = computed(() => addressesStore.addresses)
 const activeAddress = computed(() => addressesStore.activeAddress)
 const isDialogOpen = ref(false)
 const isSubmitting = ref(false)
-const editingAddressId = ref<number | null>(null)
+const editingAddressId = ref<string | null>(null)
 
 const formData = reactive({
   label: '',
@@ -97,11 +97,11 @@ async function submitAddress() {
   }
 }
 
-async function activateAddress(id: number) {
+async function activateAddress(id: string) {
   await addressesStore.activateAddress(id)
 }
 
-async function removeAddress(id: number) {
+async function removeAddress(id: string) {
   await addressesStore.deleteAddress(id)
 }
 </script>

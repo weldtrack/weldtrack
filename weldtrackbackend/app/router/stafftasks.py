@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
-from uuid import UUID
 from app.db import get_db
 from app.models.stafftask import StaffTask, TaskStatus
 from app.models.staffcontribution import StaffContributionSnapshot
@@ -86,7 +85,7 @@ def list_staff_tasks(
 
 @router.get("/{task_id}", response_model=TaskOut)
 def get_staff_task(
-    task_id: UUID,
+    task_id: str,
     db: Session = Depends(get_db),
 ):
     """Get a specific task"""
@@ -165,7 +164,7 @@ def create_staff_task(
 
 @router.put("/{task_id}/status", response_model=TaskOut)
 def update_staff_task_status(
-    task_id: UUID,
+    task_id: str,
     payload: TaskStatusUpdate,
     db: Session = Depends(get_db),
 ):
@@ -187,7 +186,7 @@ def update_staff_task_status(
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_staff_task(
-    task_id: UUID,
+    task_id: str,
     _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):

@@ -1,7 +1,7 @@
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 
 export interface BookingItem {
-  id: number
+  id: string
   customerName?: string
   projectType: string
   email?: string
@@ -37,8 +37,8 @@ export interface BookingItem {
 }
 
 export type BackendMaterial = {
-  id?: number
-  booking_id?: number
+  id?: string
+  booking_id?: string
   item_id: string
   name: string
   qty: number
@@ -48,7 +48,7 @@ export type BackendMaterial = {
 }
 
 export type BackendBooking = {
-  id: number
+  id: string
   customer_name?: string
   project_type: string
   email?: string

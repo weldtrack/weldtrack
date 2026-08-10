@@ -42,16 +42,16 @@ export async function createAddress(payload: Partial<CustomerAddressItem>) {
   return toFrontendAddress(data as BackendCustomerAddress)
 }
 
-export async function updateAddress(id: number, payload: Partial<CustomerAddressItem>) {
+export async function updateAddress(id: string, payload: Partial<CustomerAddressItem>) {
   const { data } = await api.patch(`/customer-addresses/${id}`, toBackendAddressPayload(payload))
   return toFrontendAddress(data as BackendCustomerAddress)
 }
 
-export async function activateAddress(id: number) {
+export async function activateAddress(id: string) {
   const { data } = await api.post(`/customer-addresses/${id}/activate`)
   return toFrontendAddress(data as BackendCustomerAddress)
 }
 
-export async function deleteAddress(id: number) {
+export async function deleteAddress(id: string) {
   await api.delete(`/customer-addresses/${id}`)
 }

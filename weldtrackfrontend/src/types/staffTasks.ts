@@ -2,7 +2,7 @@ export type TaskStatus = 'pending' | 'in-progress' | 'done'
 
 export interface StaffTask {
   id: string
-  bookingId: number | null
+  bookingId: string | null
   projectName: string
   title: string
   description: string
@@ -23,11 +23,11 @@ export interface StaffTask {
 
 export type BackendStaffTask = {
   id: string
-  bookingId?: number | null
+  bookingId?: string | null
   projectName: string
   title: string
   description?: string | null
-  assignedStaffIds: number[]
+  assignedStaffIds: string[]
   assignedStaffEmails?: string[]
   assignedAt: string
   dueDate: string

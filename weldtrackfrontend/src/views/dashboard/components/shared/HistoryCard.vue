@@ -9,7 +9,7 @@ const inventoryStore = useInventoryStore()
 
 
 
-function getMaterialLines(bookingId: number, materials?: any[]) {
+function getMaterialLines(bookingId: string, materials?: any[]) {
   if (Array.isArray(materials) && materials.length > 0) return materials
 
   const movements = inventoryStore.getMovementsForBooking(bookingId).filter((m) => m.type === 'stock-out')
@@ -37,7 +37,7 @@ function getMaterialLines(bookingId: number, materials?: any[]) {
   return []
 }
 
-function getMaterialsTotal(bookingId: number, materials?: any[]) {
+function getMaterialsTotal(bookingId: string, materials?: any[]) {
   return getMaterialLines(bookingId, materials).reduce((sum: number, line: any) => sum + (line.subtotal || 0), 0)
 }
 

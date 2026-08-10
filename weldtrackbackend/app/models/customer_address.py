@@ -1,17 +1,18 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.core.id import ulid_foreign_key, ulid_primary_key
 
 
 class CustomerAddress(Base):
     __tablename__ = "customer_addresses"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    id: Mapped[str] = ulid_primary_key(index=True)
+    user_id: Mapped[str] = ulid_foreign_key(
+        "users.id", ondelete="CASCADE", nullable=False, index=True
     )
     label: Mapped[str] = mapped_column(String(100), nullable=False)
     country: Mapped[str] = mapped_column(String(8), default="PH", nullable=False)

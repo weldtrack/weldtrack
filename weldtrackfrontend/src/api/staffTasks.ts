@@ -35,7 +35,7 @@ export async function fetchTasks(params?: { status?: TaskStatus }) {
 }
 
 export async function assignTask(payload: {
-  bookingId?: number | null
+  bookingId?: string | null
   projectName: string
   title: string
   description: string
@@ -53,7 +53,7 @@ export async function assignTask(payload: {
     projectName: payload.projectName,
     title: payload.title,
     description: payload.description,
-    assignedStaffIds: payload.assignedStaffIds.map((id) => Number(id)),
+    assignedStaffIds: payload.assignedStaffIds,
     dueDate: payload.dueDate,
     location: {
       province: payload.location.province,

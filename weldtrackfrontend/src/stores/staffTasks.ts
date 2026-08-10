@@ -22,7 +22,7 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
     },
 
     async assignTask(payload: {
-      bookingId?: number | null
+      bookingId?: string | null
       projectName: string
       title: string
       description: string

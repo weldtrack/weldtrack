@@ -12,7 +12,7 @@ import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import { getServicePriceDisplay } from '../../../../services/servicePricing'
 
 interface AttendanceRecord {
-  id: number
+  id: string
   email: string
   date: string
   hours_worked: number

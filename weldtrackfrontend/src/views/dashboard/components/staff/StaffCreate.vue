@@ -7,7 +7,7 @@ import ModalShell from '../../../../components/ui/ModalShell.vue'
 import { User } from 'lucide-vue-next'
 
 interface StaffMember {
-  id: number
+  id: string
   email: string
   role: string
   created_at: string

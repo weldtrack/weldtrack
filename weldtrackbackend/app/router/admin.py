@@ -89,7 +89,7 @@ def admin_create_staff(
 
 @router.delete("/staff/{staff_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_staff(
-    staff_id: int,
+    staff_id: str,
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -157,7 +157,7 @@ def admin_get_online_users(
 
 @router.post("/admin/ban/{user_id}")
 def admin_ban_user(
-    user_id: int,
+    user_id: str,
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, bool | str]:
@@ -196,7 +196,7 @@ def admin_ban_user(
 
 @router.post("/admin/unban/{user_id}")
 def admin_unban_user(
-    user_id: int,
+    user_id: str,
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, bool | str]:

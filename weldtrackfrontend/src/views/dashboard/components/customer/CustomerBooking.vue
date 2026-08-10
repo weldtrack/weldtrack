@@ -39,7 +39,7 @@ const cancelForm = reactive({
 
 const isSubmitting = ref(false)
 
-const services = ref<Array<{ id: number; name: string; price: number }>>([])
+const services = ref<Array<{ id: string; name: string; price: number }>>([])
 const loadingServices = ref(false)
 
 const selectedLaborPrice = computed(() => {

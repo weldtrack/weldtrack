@@ -28,7 +28,7 @@ def list_services(
 
 @router.get("/{service_id}", response_model=ServiceResponse)
 def get_service(
-    service_id: int,
+    service_id: str,
     db: Session = Depends(get_db),
 ):
     """Get a specific service"""
@@ -64,7 +64,7 @@ def create_service(
 
 @router.put("/{service_id}", response_model=ServiceResponse)
 def update_service(
-    service_id: int,
+    service_id: str,
     payload: ServiceUpdate,
     _admin=Depends(require_admin),
     db: Session = Depends(get_db),
@@ -98,7 +98,7 @@ def update_service(
 
 @router.delete("/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_service(
-    service_id: int,
+    service_id: str,
     _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):

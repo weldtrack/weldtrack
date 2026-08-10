@@ -1,8 +1,9 @@
 from datetime import datetime
-from sqlalchemy import DateTime, ForeignKey, String, func, Integer
+from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.core.id import ulid_foreign_key, ulid_primary_key
 
 
 class EmailVerificationCode(Base):
@@ -10,7 +11,7 @@ class EmailVerificationCode(Base):
 
     __tablename__ = "email_verification_codes"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[str] = ulid_primary_key(index=True)
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
@@ -28,10 +29,10 @@ class EmailVerification(Base):
 
     __tablename__ = "email_verifications"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+    id: Mapped[str] = ulid_primary_key(index=True)
+    user_id: Mapped[str] = ulid_foreign_key(
+        "users.id",
+        ondelete="CASCADE",
         unique=True,
         nullable=False,
         index=True,

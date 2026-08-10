@@ -22,7 +22,7 @@ class ServiceUpdate(BaseModel):
 
 
 class ServiceResponse(ServiceBase):
-    id: int
+    id: str
     created_at: datetime
     updated_at: datetime
 

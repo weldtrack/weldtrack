@@ -24,7 +24,7 @@ def require_customer(current_user: User) -> User:
 
 
 def get_owned_address(
-    address_id: int, current_user: User, db: Session
+    address_id: str, current_user: User, db: Session
 ) -> CustomerAddress:
     address = db.scalar(
         select(CustomerAddress).where(
@@ -40,7 +40,7 @@ def get_owned_address(
 
 
 def deactivate_other_addresses(
-    user_id: int, active_address_id: int | None, db: Session
+    user_id: str, active_address_id: str | None, db: Session
 ) -> None:
     addresses = db.scalars(
         select(CustomerAddress).where(CustomerAddress.user_id == user_id)
@@ -99,7 +99,7 @@ def create_address(
 
 @router.patch("/{address_id}", response_model=CustomerAddressResponse)
 def update_address(
-    address_id: int,
+    address_id: str,
     payload: CustomerAddressUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -141,7 +141,7 @@ def update_address(
 
 @router.post("/{address_id}/activate", response_model=CustomerAddressResponse)
 def activate_address(
-    address_id: int,
+    address_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -157,7 +157,7 @@ def activate_address(
 
 @router.delete("/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_address(
-    address_id: int,
+    address_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

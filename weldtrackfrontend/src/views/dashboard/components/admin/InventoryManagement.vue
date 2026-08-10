@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Archive } from 'lucide-vue-next'
+import { Archive, Info, LoaderCircle, PackagePlus } from 'lucide-vue-next'
 import { useInventoryStore } from '../../../../stores/inventory'
 import { type InventoryItem } from '../../../../types/inventory'
 import { useModalStore } from '../../../../stores/modal'
@@ -17,6 +17,9 @@ const selectedItems = ref<Set<string>>(new Set())
 const selectedStockAdjustment = ref<number | null>(null)
 const searchTerm = ref('')
 const isSubmitting = ref(false)
+const isStockSubmitting = ref(false)
+const formError = ref('')
+const stockError = ref('')
 const formData = reactive({
   name: '',
   unitPrice: '',
@@ -36,6 +39,7 @@ const lowStockCount = computed(() => store.items.filter((item) => item.quantity 
 const supplierCount = computed(() => new Set(store.items.map((item) => item.supplier)).size)
 const selectedCount = computed(() => selectedItems.value.size)
 const allSelected = computed(() => selectedCount.value === filteredInventory.value.length && filteredInventory.value.length > 0)
+const selectedInventoryItems = computed(() => store.items.filter((item) => selectedItems.value.has(item.id)))
 
 const isLoading = ref(true)
 
@@ -49,6 +53,7 @@ onMounted(async () => {
 })
 
 function resetForm() {
+  formError.value = ''
   formData.name = ''
   formData.unitPrice = ''
   formData.supplier = ''
@@ -99,34 +104,47 @@ function openStockModal() {
     return
   }
   selectedStockAdjustment.value = null
+  stockError.value = ''
   isStockModalOpen.value = true
 }
 
 function closeStockModal() {
+  if (isStockSubmitting.value) return
   isStockModalOpen.value = false
   selectedStockAdjustment.value = null
 }
 
 async function applyStockAdjustment() {
   if (selectedStockAdjustment.value === null) {
-    modalStore.open({
-      title: 'Quantity required',
-      message: 'Please select a quantity to add before continuing.',
-      variant: 'warning',
-    })
+    stockError.value = 'Select or enter a quantity before continuing.'
     return
   }
 
+  isStockSubmitting.value = true
+  stockError.value = ''
   const adjustment = selectedStockAdjustment.value
-  for (const itemId of selectedItems.value) {
-    await store.stockIn(itemId, adjustment)
+  try {
+    for (const item of selectedInventoryItems.value) {
+      await store.updateItem(item.id, { quantity: item.quantity + adjustment })
+    }
+    await store.fetchMovements()
+    selectedItems.value.clear()
+    isStockModalOpen.value = false
+    selectedStockAdjustment.value = null
+  } catch (error: any) {
+    stockError.value = error?.response?.data?.detail || 'Stock could not be updated. Please try again.'
+  } finally {
+    isStockSubmitting.value = false
   }
-  selectedItems.value.clear()
-  closeStockModal()
 }
 
 async function handleSubmit() {
+  if (!formData.name.trim() || !formData.supplier.trim()) {
+    formError.value = 'Material name and supplier are required.'
+    return
+  }
   isSubmitting.value = true
+  formError.value = ''
   try {
     const currentDateString = new Date().toISOString().split('T')[0]
 
@@ -151,6 +169,8 @@ async function handleSubmit() {
     }
 
     closeDialog()
+  } catch (error: any) {
+    formError.value = error?.response?.data?.detail || 'The material could not be saved. Please try again.'
   } finally {
     isSubmitting.value = false
   }
@@ -336,23 +356,29 @@ function formatDateTime(value?: string) {
       :title="editingItem ? 'Edit Material' : 'Add New Material'"
       subtitle="Inventory record"
       tone="blue"
-      size="md"
+      size="lg"
       @close="closeDialog"
     >
-      <form class="space-y-4" @submit.prevent="handleSubmit">
+      <form id="inventory-item-form" class="space-y-5" @submit.prevent="handleSubmit">
+          <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+            <Info class="mt-0.5 h-4 w-4 shrink-0" />
+            <p>Create the material record first, then select it from the inventory table to add its opening stock.</p>
+          </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700" for="name">Material Name</label>
+            <label class="block text-sm font-semibold text-gray-700" for="name">Material Name <span class="text-red-500">*</span></label>
             <input
               id="name"
               v-model="formData.name"
               required
+              autocomplete="off"
+              placeholder="e.g. Welding rod E6013"
               class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-gray-700" for="unitPrice">Unit Price (₱)</label>
+              <label class="block text-sm font-semibold text-gray-700" for="unitPrice">Unit Price <span class="text-red-500">*</span></label>
               <input
                 id="unitPrice"
                 v-model="formData.unitPrice"
@@ -360,16 +386,19 @@ function formatDateTime(value?: string) {
                 step="0.01"
                 min="0"
                 required
+                placeholder="0.00"
                 class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700" for="supplier">Supplier</label>
+              <label class="block text-sm font-semibold text-gray-700" for="supplier">Supplier <span class="text-red-500">*</span></label>
               <input
                 id="supplier"
                 v-model="formData.supplier"
                 required
+                autocomplete="off"
+                placeholder="Supplier or store name"
                 class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               />
             </div>
@@ -377,7 +406,7 @@ function formatDateTime(value?: string) {
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-gray-700" for="dateAdded">
+              <label class="block text-sm font-semibold text-gray-700" for="dateAdded">
                 {{ editingItem ? 'Date Updated' : 'Date Added' }}
               </label>
               <input
@@ -390,51 +419,59 @@ function formatDateTime(value?: string) {
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700" for="lowStockThreshold">Low Stock Alert</label>
+              <label class="block text-sm font-semibold text-gray-700" for="lowStockThreshold">Low Stock Alert</label>
               <input
                 id="lowStockThreshold"
                 v-model="formData.lowStockThreshold"
                 type="number"
                 min="0"
                 required
+                placeholder="10"
                 class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
               />
             </div>
           </div>
 
-          <div class="flex gap-3 pt-2">
-            <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting" @click="closeDialog">
+          <div class="rounded-xl bg-slate-50 p-4 text-sm text-gray-600"><strong class="text-gray-800">Low-stock alert:</strong> the material will be flagged whenever its available quantity reaches this threshold.</div>
+          <div v-if="formError" role="alert" class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ formError }}</div>
+      </form>
+      <template #footer>
+            <button type="button" class="rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting" @click="closeDialog">
               Cancel
             </button>
-            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting">
-              <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <button form="inventory-item-form" type="submit" class="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-5 py-3 font-semibold text-white shadow-lg shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting">
+              <LoaderCircle v-if="isSubmitting" class="h-4 w-4 animate-spin" />
               <span>{{ isSubmitting ? (editingItem ? 'Updating...' : 'Adding...') : (editingItem ? 'Update' : 'Add') }} Material</span>
             </button>
-          </div>
-      </form>
+      </template>
     </ModalShell>
 
     <ModalShell
       :show="isStockModalOpen"
-      :title="`Add Stock to ${selectedCount} item(s)`"
+      title="Stock In"
       subtitle="Bulk stock adjustment"
       tone="green"
       size="md"
       @close="closeStockModal"
     >
-      <div class="space-y-4">
+      <div class="space-y-5">
+          <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <PackagePlus class="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+            <div><p class="font-semibold text-emerald-900">{{ selectedCount }} material{{ selectedCount === 1 ? '' : 's' }} selected</p><p class="mt-1 text-sm text-emerald-700">The quantity you choose will be added to every selected material.</p></div>
+          </div>
+
+          <div class="max-h-32 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div v-for="item in selectedInventoryItems" :key="item.id" class="flex items-center justify-between gap-4 py-1.5 text-sm"><span class="truncate font-medium text-gray-800">{{ item.name }}</span><span class="shrink-0 text-gray-500">Current: {{ item.quantity }}</span></div>
+          </div>
           <div>
-            <label class="mb-3 block text-sm font-medium text-gray-700">Select Quantity to Add</label>
-            <div class="flex flex-wrap gap-2">
+            <label class="mb-3 block text-sm font-semibold text-gray-700">Quick quantity</label>
+            <div class="grid grid-cols-4 gap-2">
               <button
                 v-for="qty in [5, 10, 20, 50]"
                 :key="qty"
                 type="button"
                 :class="[
-                  'rounded-xl border px-4 py-2.5 font-semibold transition-all',
+                  'rounded-xl border px-3 py-3 font-semibold transition-all',
                   selectedStockAdjustment === qty
                     ? 'border-green-600 bg-green-100 text-green-800 shadow-sm'
                     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
@@ -447,40 +484,42 @@ function formatDateTime(value?: string) {
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700" for="manual-qty">Or Enter Manually</label>
+            <label class="block text-sm font-semibold text-gray-700" for="manual-qty">Custom quantity</label>
             <input
               id="manual-qty"
               type="number"
               min="1"
               placeholder="Enter custom quantity"
-              class="mt-2 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-200"
+              class="mt-2 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-200"
               @input="(e) => selectedStockAdjustment = Number((e.target as HTMLInputElement).value) || null"
             />
           </div>
 
-          <div v-if="selectedStockAdjustment !== null" class="rounded-xl border border-green-200 bg-green-50 p-3">
-            <p class="text-sm text-green-600">
-              Will add {{ selectedStockAdjustment }} unit(s) to each selected item
-            </p>
+          <div v-if="selectedStockAdjustment !== null" class="rounded-xl border border-green-200 bg-green-50 p-4">
+            <p class="font-semibold text-green-800">+{{ selectedStockAdjustment }} each · {{ selectedStockAdjustment * selectedCount }} total units</p>
+            <p class="mt-1 text-sm text-green-700">Review the selected materials above before applying.</p>
           </div>
-
-          <div class="flex gap-3 pt-2">
+          <div v-if="stockError" role="alert" class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ stockError }}</div>
+      </div>
+      <template #footer>
             <button
               type="button"
-              class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+              class="rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+              :disabled="isStockSubmitting"
               @click="closeStockModal"
             >
               Cancel
             </button>
             <button
               type="button"
-              class="flex-1 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700"
+              class="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-5 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
+              :disabled="isStockSubmitting || selectedStockAdjustment === null"
               @click="applyStockAdjustment"
             >
-              Apply
+              <LoaderCircle v-if="isStockSubmitting" class="h-4 w-4 animate-spin" />
+              {{ isStockSubmitting ? 'Updating…' : 'Apply Stock' }}
             </button>
-          </div>
-      </div>
+      </template>
     </ModalShell>
 
     <div class="rounded-lg border border-gray-200 bg-white p-6">

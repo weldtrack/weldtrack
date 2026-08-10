@@ -1,10 +1,11 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Enum, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.core.id import ULID_LENGTH, ulid_foreign_key, ulid_primary_key
 from app.models.booking import Booking
 
 
@@ -29,10 +30,10 @@ class ProjectHistoryAction(str, enum.Enum):
 class BookingHistory(Base):
     __tablename__ = "booking_history"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    booking_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("bookings.id", ondelete="CASCADE"),
+    id: Mapped[str] = ulid_primary_key(index=True)
+    booking_id: Mapped[str] = ulid_foreign_key(
+        "bookings.id",
+        ondelete="CASCADE",
         nullable=False,
         index=True,
     )
@@ -53,14 +54,14 @@ class BookingHistory(Base):
 class ProjectHistory(Base):
     __tablename__ = "project_history"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    booking_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("bookings.id", ondelete="SET NULL"),
+    id: Mapped[str] = ulid_primary_key(index=True)
+    booking_id: Mapped[str | None] = ulid_foreign_key(
+        "bookings.id",
+        ondelete="SET NULL",
         nullable=True,
         index=True,
     )
-    task_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    task_id: Mapped[str | None] = mapped_column(String(ULID_LENGTH), nullable=True, index=True)
     action: Mapped[ProjectHistoryAction] = mapped_column(
         Enum(ProjectHistoryAction), nullable=False
     )

@@ -1,6 +1,6 @@
 export interface CustomerAddressItem {
-  id: number
-  userId: number
+  id: string
+  userId: string
   label: string
   country: string
   region: string
@@ -13,8 +13,8 @@ export interface CustomerAddressItem {
 }
 
 export type BackendCustomerAddress = {
-  id: number
-  user_id: number
+  id: string
+  user_id: string
   label: string
   country: string
   region: string

@@ -11,5 +11,6 @@ from .inventory import *
 from .service import *
 from .staffcontribution import *
 from .stafftask import *
+from .payroll import *
 
 __all__ = ["User", "EmailVerificationCode", "EmailVerification"]

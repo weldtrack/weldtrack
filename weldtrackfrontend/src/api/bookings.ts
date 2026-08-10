@@ -108,12 +108,12 @@ export async function createBooking(payload: Partial<BookingItem>) {
   return toFrontendBooking(res.data as BackendBooking)
 }
 
-export async function getBooking(id: number) {
+export async function getBooking(id: string) {
   const res = await api.get(`/bookings/${id}`)
   return toFrontendBooking(res.data as BackendBooking)
 }
 
-export async function updateBooking(id: number, patch: Partial<BookingItem>) {
+export async function updateBooking(id: string, patch: Partial<BookingItem>) {
   const res = await api.patch(`/bookings/${id}`, toBackendBookingPayload(patch))
   return toFrontendBooking(res.data as BackendBooking)
 }

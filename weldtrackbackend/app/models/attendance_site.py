@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, func
+from sqlalchemy import DateTime, Float, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+from app.core.id import ulid_primary_key
 
 
 class AttendanceSite(Base):
@@ -15,7 +16,7 @@ class AttendanceSite(Base):
 
     __tablename__ = "attendance_site"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[str] = ulid_primary_key(index=True)
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)
     radius_meters: Mapped[float] = mapped_column(Float, nullable=False, default=150.0)

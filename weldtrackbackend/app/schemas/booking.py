@@ -18,8 +18,8 @@ class MaterialCreate(MaterialBase):
 
 
 class MaterialResponse(MaterialBase):
-    id: int
-    booking_id: int
+    id: str
+    booking_id: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -75,7 +75,7 @@ class BookingUpdate(BaseModel):
 
 
 class BookingResponse(BookingBase):
-    id: int
+    id: str
     status: BookingStatus
     created_date: Optional[datetime] = None
     cancel_reason: Optional[str] = None

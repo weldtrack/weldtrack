@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDown,
@@ -52,6 +52,18 @@ const isMobileSidebarOpen = ref(false)
 const isLoggingOut = ref(false)
 const isSidebarMetaCollapsed = ref(true)
 const openGroups = reactive<Record<string, boolean>>({})
+
+function closeMobileSidebar() {
+  isMobileSidebarOpen.value = false
+}
+
+function handleEscape(event: KeyboardEvent) {
+  if (event.key === 'Escape') closeMobileSidebar()
+}
+
+onMounted(() => window.addEventListener('keydown', handleEscape))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleEscape))
+watch(() => route.fullPath, closeMobileSidebar)
 
 const currentDateLabel = computed(() =>
   new Intl.DateTimeFormat('en-US', {
@@ -128,6 +140,9 @@ function handleLogout() {
       <button
         type="button"
         class="dashboard-icon-btn inline-flex lg:hidden"
+        aria-label="Open navigation"
+        :aria-expanded="isMobileSidebarOpen"
+        aria-controls="dashboard-navigation"
         @click="isMobileSidebarOpen = true"
       >
         <Menu class="h-5 w-5" />
@@ -146,6 +161,7 @@ function handleLogout() {
         <button
           type="button"
           class="dashboard-avatar-btn"
+          aria-label="Open profile"
           @click="$router.push({ name: `${props.role}-profile` })"
         >
           <img
@@ -166,6 +182,7 @@ function handleLogout() {
     />
 
     <aside
+      id="dashboard-navigation"
       class="dashboard-sidebar fixed inset-y-0 left-0 z-50 flex h-screen w-80 flex-col transition-transform duration-200 lg:translate-x-0"
       :class="isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
@@ -186,6 +203,7 @@ function handleLogout() {
           <button
             type="button"
             class="dashboard-icon-btn inline-flex lg:hidden"
+            aria-label="Close navigation"
             @click="isMobileSidebarOpen = false"
           >
             <X class="h-4 w-4" />
@@ -250,6 +268,7 @@ function handleLogout() {
                 type="button"
                 class="nav-row group flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-left text-sm font-medium"
                 :class="isEntryActive(entry) && !isGroupOpen(entry) ? 'nav-row--active' : ''"
+                :aria-expanded="isGroupOpen(entry)"
                 @click="toggleGroup(entry)"
               >
                 <span class="dashboard-icon-wrap" :class="isEntryActive(entry) ? 'dashboard-icon-wrap--active' : ''">
@@ -296,9 +315,7 @@ function handleLogout() {
 
     <div class="flex-1 lg:h-screen lg:overflow-y-auto">
       <section class="p-4 pt-18 sm:p-6 sm:pt-20 lg:p-8 lg:pt-18">
-        <div class="dashboard-content-panel rounded-2xl p-4 sm:p-6">
-          <slot />
-        </div>
+        <slot />
       </section>
     </div>
   </div>
@@ -350,12 +367,6 @@ function handleLogout() {
   border-right: 1px solid var(--db-border);
   box-shadow: var(--db-shadow);
   padding-left: 3px;
-}
-
-.dashboard-content-panel {
-  background: var(--db-panel);
-  border: 1px solid var(--db-border);
-  box-shadow: var(--db-shadow);
 }
 
 .dashboard-border-soft {

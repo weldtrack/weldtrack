@@ -54,7 +54,7 @@ def list_feedbacks(
 
 @router.post("/{feedback_id}/comments", response_model=FeedbackCommentResponse)
 def add_comment(
-    feedback_id: int,
+    feedback_id: str,
     payload: FeedbackCommentCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -77,7 +77,7 @@ def add_comment(
 
 @router.post("/{feedback_id}/likes", status_code=status.HTTP_201_CREATED)
 def toggle_like(
-    feedback_id: int,
+    feedback_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -105,7 +105,7 @@ def toggle_like(
 
 @router.get("/{feedback_id}", response_model=FeedbackResponse)
 def get_feedback(
-    feedback_id: int,
+    feedback_id: str,
     db: Session = Depends(get_db),
 ):
     """Get a specific feedback by ID"""
@@ -134,7 +134,7 @@ def create_feedback(
 
 @router.put("/{feedback_id}", response_model=FeedbackResponse)
 def update_feedback(
-    feedback_id: int,
+    feedback_id: str,
     payload: FeedbackUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -159,7 +159,7 @@ def update_feedback(
 
 @router.patch("/{feedback_id}", response_model=FeedbackResponse)
 def partial_update_feedback(
-    feedback_id: int,
+    feedback_id: str,
     payload: FeedbackUpdate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -184,7 +184,7 @@ def partial_update_feedback(
 
 @router.delete("/{feedback_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_feedback(
-    feedback_id: int,
+    feedback_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

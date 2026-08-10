@@ -4,6 +4,7 @@ import {
   Calendar,
   ClipboardList,
   MessageCircle,
+  ReceiptText,
 } from 'lucide-vue-next'
 import DashboardShell from './DashboardShell.vue'
 import type { SidebarEntry } from './DashboardShell.vue'
@@ -12,6 +13,7 @@ const staffNavigation: SidebarEntry[] = [
   { kind: 'item', id: 'staff-attendance', label: 'Attendance', icon: Calendar },
   { kind: 'item', id: 'staff-tasks', label: 'Tasks', icon: ClipboardList },
   { kind: 'item', id: 'staff-contributions', label: 'Contributions', icon: BarChart2 },
+  { kind: 'item', id: 'staff-payslips', label: 'My Payslips', icon: ReceiptText },
   { kind: 'item', id: 'staff-feedback', label: 'Service Feedback', icon: MessageCircle },
 ]
 </script>

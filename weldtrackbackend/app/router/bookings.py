@@ -42,7 +42,7 @@ def list_bookings(
 
 @router.get("/{booking_id}", response_model=BookingResponse)
 def get_booking(
-    booking_id: int,
+    booking_id: str,
     db: Session = Depends(get_db),
 ):
     """Get a specific booking by ID"""
@@ -124,7 +124,7 @@ def create_booking(
 
 @router.put("/{booking_id}", response_model=BookingResponse)
 def update_booking(
-    booking_id: int,
+    booking_id: str,
     payload: BookingUpdate,
     db: Session = Depends(get_db),
 ):
@@ -146,7 +146,7 @@ def update_booking(
 
 @router.patch("/{booking_id}", response_model=BookingResponse)
 def partial_update_booking(
-    booking_id: int,
+    booking_id: str,
     payload: BookingUpdate,
     db: Session = Depends(get_db),
 ):
@@ -168,7 +168,7 @@ def partial_update_booking(
 
 @router.delete("/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_booking(
-    booking_id: int,
+    booking_id: str,
     db: Session = Depends(get_db),
 ):
     """Delete a booking"""
@@ -184,7 +184,7 @@ def delete_booking(
 
 @router.post("/{booking_id}/materials", response_model=list[StockMovementResponse])
 def add_booking_materials(
-    booking_id: int,
+    booking_id: str,
     payload: TaskMaterialsCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

@@ -17,6 +17,12 @@ const trustPoints = [
     'One customer workspace',
 ]
 
+const proofPoints = [
+    { value: '4 steps', label: 'From request to completion' },
+    { value: '24/7', label: 'Booking status visibility' },
+    { value: '1 portal', label: 'For every service update' },
+]
+
 const timeline = [
     { label: 'Request received', time: '8:42 AM', complete: true },
     { label: 'Schedule confirmed', time: '9:15 AM', complete: true },
@@ -25,7 +31,7 @@ const timeline = [
 </script>
 
 <template>
-    <section id="home" class="public-hero relative mx-auto max-w-7xl px-6 pb-24 pt-16 sm:px-12 sm:pt-20 lg:pb-32 lg:pt-24">
+    <section id="home" class="public-hero relative mx-auto max-w-7xl px-6 pb-20 pt-14 sm:px-12 sm:pt-20 lg:pb-28 lg:pt-24">
         <div class="grid items-center gap-16 lg:grid-cols-[1.02fr_0.98fr] lg:gap-20">
             <div class="relative z-10 max-w-2xl">
                 <div class="mb-7 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold tracking-[0.18em] text-cyan-300 uppercase">
@@ -137,6 +143,13 @@ const timeline = [
                         <div class="text-sm font-extrabold text-white">We’ll keep you updated</div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="public-proof-strip mt-24 grid overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] backdrop-blur sm:grid-cols-3 lg:mt-28">
+            <div v-for="(proof, index) in proofPoints" :key="proof.label" class="relative px-6 py-6 text-center sm:px-8 sm:text-left" :class="index > 0 ? 'border-t border-white/10 sm:border-l sm:border-t-0' : ''">
+                <p class="text-2xl font-black tracking-tight text-cyan-300">{{ proof.value }}</p>
+                <p class="mt-1 text-sm font-medium text-slate-400">{{ proof.label }}</p>
             </div>
         </div>
     </section>

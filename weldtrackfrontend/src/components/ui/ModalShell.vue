@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -39,6 +39,32 @@ const toneClasses = {
 } as const
 
 const dialogLabel = computed(() => props.title || 'Dialog')
+
+let previousBodyOverflow = ''
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && props.show && props.closeable) emit('close')
+}
+
+watch(
+  () => props.show,
+  (show) => {
+    if (show) {
+      previousBodyOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      window.addEventListener('keydown', handleKeydown)
+    } else {
+      document.body.style.overflow = previousBodyOverflow
+      window.removeEventListener('keydown', handleKeydown)
+    }
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = previousBodyOverflow
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
@@ -196,5 +222,32 @@ const dialogLabel = computed(() => props.title || 'Dialog')
 .modal-shell-fade-enter-from,
 .modal-shell-fade-leave-to {
   opacity: 0;
+}
+
+@media (max-width: 479px) {
+  .modal-shell {
+    align-items: end;
+    padding: 0;
+  }
+
+  .modal-shell__panel {
+    max-height: 94vh;
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .modal-shell__header,
+  .modal-shell__body {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .modal-shell__footer {
+    flex-direction: column-reverse;
+    padding: 0 1rem 1rem;
+  }
+
+  .modal-shell__footer :deep(button) {
+    width: 100%;
+  }
 }
 </style>

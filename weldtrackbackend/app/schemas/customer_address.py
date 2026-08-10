@@ -29,8 +29,8 @@ class CustomerAddressUpdate(BaseModel):
 
 
 class CustomerAddressResponse(CustomerAddressBase):
-    id: int
-    user_id: int
+    id: str
+    user_id: str
     is_active: bool
     created_at: datetime | None = None
 

@@ -9,7 +9,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 interface Service {
-  id: number
+  id: string
   name: string
   description: string | null
   price: number

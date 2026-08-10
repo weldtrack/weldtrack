@@ -20,10 +20,10 @@ const canSubmitFeedback = computed(() => !props.isAdmin && !isStaff.value)
 
 const isDialogOpen = ref(false)
 const currentEmail = computed(() => authStore.email || '')
-const editingFeedbackId = ref<number | null>(null)
+const editingFeedbackId = ref<string | null>(null)
 const isSubmitting = ref(false)
-const newCommentText = ref<Record<number, string>>({})
-const showComments = ref<Record<number, boolean>>({})
+const newCommentText = ref<Record<string, string>>({})
+const showComments = ref<Record<string, boolean>>({})
 const activeRatingFilter = ref<number | null>(null)
 
 const formData = reactive({
@@ -32,7 +32,7 @@ const formData = reactive({
   comment: '',
 })
 
-const services = ref<Array<{ id: number; name: string }>>([])
+const services = ref<Array<{ id: string; name: string }>>([])
 const loadingServices = ref(false)
 
 const getImageUrl = (url?: string) => {
@@ -52,11 +52,11 @@ const isLiked = (feedback: Feedback) => {
   return feedback.likes.some(l => l.userEmail.toLowerCase() === currentEmail.value.toLowerCase())
 }
 
-const toggleComments = (feedbackId: number) => {
+const toggleComments = (feedbackId: string) => {
   showComments.value[feedbackId] = !showComments.value[feedbackId]
 }
 
-async function handleAddComment(feedbackId: number) {
+async function handleAddComment(feedbackId: string) {
   const comment = newCommentText.value[feedbackId]
   if (!comment || !comment.trim()) return
   await feedbackStore.addComment(feedbackId, comment)
@@ -112,10 +112,7 @@ const starPercentage = (rating: number) => {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    feedbackStore.fetchFeedbacks(),
-    fetchServices(),
-  ])
+  await feedbackStore.fetchFeedbacks()
 })
 
 function resetForm() {
@@ -124,10 +121,15 @@ function resetForm() {
   formData.comment = ''
 }
 
+async function ensureServicesLoaded() {
+  if (services.value.length === 0 && !loadingServices.value) await fetchServices()
+}
+
 function openDialog() {
   editingFeedbackId.value = null
   resetForm()
   isDialogOpen.value = true
+  void ensureServicesLoaded()
 }
 
 function closeDialog() {
@@ -135,16 +137,17 @@ function closeDialog() {
   editingFeedbackId.value = null
 }
 
-function openEditDialog(feedback: { id: number; email: string; projectType: string; rating: number; comment: string }) {
+function openEditDialog(feedback: { id: string; email: string; projectType: string; rating: number; comment: string }) {
   if (feedback.email.toLowerCase() !== currentEmail.value.toLowerCase()) return
   editingFeedbackId.value = feedback.id
   formData.projectType = feedback.projectType
   formData.rating = feedback.rating
   formData.comment = feedback.comment
   isDialogOpen.value = true
+  void ensureServicesLoaded()
 }
 
-async function deleteFeedback(feedbackId: number, feedbackEmail: string) {
+async function deleteFeedback(feedbackId: string, feedbackEmail: string) {
   if (feedbackEmail.toLowerCase() !== currentEmail.value.toLowerCase()) return
   modalStore.open({
     title: 'Delete feedback?',

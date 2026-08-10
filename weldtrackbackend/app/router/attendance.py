@@ -1,252 +1,392 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import date, datetime, time
+from zoneinfo import ZoneInfo
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, desc, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from sqlalchemy import select, desc, and_
-from datetime import datetime, timezone
+
+from app.core.config import (
+    ATTENDANCE_AFTERNOON_IN_OPEN,
+    ATTENDANCE_LATE_AFTER,
+    ATTENDANCE_MORNING_OPEN,
+    ATTENDANCE_MORNING_OUT_OPEN,
+    ATTENDANCE_REGULAR_HOURS,
+    ATTENDANCE_TIMEZONE,
+)
 from app.db import get_db
+from app.geo import haversine_meters
 from app.models.attendance import AttendanceRecord
 from app.models.attendance_site import AttendanceSite
 from app.models.user import User, UserRole
+from app.router.auth import get_current_user
 from app.schemas.attendance import (
-    AttendanceCheckIn,
-    AttendanceCheckOut,
+    AttendanceCorrection,
+    AttendanceLocation,
     AttendanceResponse,
 )
-from app.router.auth import get_current_user
-from app.geo import haversine_meters
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 
-# Mirrors the frontend's own GPS-accuracy gate, but this is the copy that
-# actually matters since the client can't be trusted to enforce itself.
-MAX_CHECK_IN_ACCURACY_M = 75
+ATTENDANCE_TZ = ZoneInfo(ATTENDANCE_TIMEZONE)
+MAX_ATTENDANCE_ACCURACY_M = 75
 
 
-def _get_configured_site(db: Session) -> AttendanceSite | None:
-    return db.scalar(select(AttendanceSite).order_by(desc(AttendanceSite.updated_at)))
+def _schedule_time(value: str) -> time:
+    try:
+        return time.fromisoformat(value)
+    except ValueError as exc:
+        raise RuntimeError(f"Invalid attendance schedule time: {value}") from exc
 
 
-def _enforce_geofence(db: Session, lat: float | None, lng: float | None, accuracy: float | None) -> None:
-    """Raise a 400 if a site is configured and the given point falls outside it.
+MORNING_OPEN = _schedule_time(ATTENDANCE_MORNING_OPEN)
+LATE_AFTER = _schedule_time(ATTENDANCE_LATE_AFTER)
+MORNING_OUT_OPEN = _schedule_time(ATTENDANCE_MORNING_OUT_OPEN)
+AFTERNOON_IN_OPEN = _schedule_time(ATTENDANCE_AFTERNOON_IN_OPEN)
 
-    No-ops if the admin hasn't configured a site yet, so nobody is locked
-    out of check-in before that's been set up.
-    """
-    site = _get_configured_site(db)
+
+def _now_manila() -> datetime:
+    return datetime.now(ATTENDANCE_TZ)
+
+
+def _as_manila(value: datetime) -> datetime:
+    # SQLite can return timezone-naive values even for timezone=True columns.
+    # Existing values were written as UTC; treat naive historical values as UTC.
+    if value.tzinfo is None:
+        return value.replace(tzinfo=ZoneInfo("UTC")).astimezone(ATTENDANCE_TZ)
+    return value.astimezone(ATTENDANCE_TZ)
+
+
+def _require_attendance_role(user: User) -> None:
+    if user.role not in (UserRole.admin, UserRole.staff):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Attendance access is restricted to staff and admins")
+
+
+def _require_admin(user: User) -> None:
+    if user.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can perform this action")
+
+
+def _configured_site(db: Session) -> AttendanceSite:
+    site = db.scalar(select(AttendanceSite).order_by(desc(AttendanceSite.updated_at)))
     if not site:
-        return
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Attendance location is not configured. Ask an admin to configure the attendance geofence.",
+        )
+    return site
 
-    if lat is None or lng is None:
+
+def _enforce_geofence(db: Session, payload: AttendanceLocation) -> None:
+    site = _configured_site(db)
+    if payload.lat is None or payload.lng is None or payload.accuracy is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Latitude, longitude, and GPS accuracy are required")
+    if payload.accuracy > MAX_ATTENDANCE_ACCURACY_M:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Location is required to check in or out at this site",
+            detail=f"GPS accuracy is insufficient (±{round(payload.accuracy)}m). Move to an open area and try again.",
         )
-
-    if accuracy is not None and accuracy > MAX_CHECK_IN_ACCURACY_M:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"Location signal is too weak (±{round(accuracy)}m). "
-                "Move to an open area and try again."
-            ),
-        )
-
-    distance = haversine_meters(site.lat, site.lng, lat, lng)
+    distance = haversine_meters(site.lat, site.lng, payload.lat, payload.lng)
     if distance > site.radius_meters:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"You're {round(distance)}m from the job site — check-in "
-                f"requires being within {round(site.radius_meters)}m."
-            ),
+            detail=f"You are outside the authorized attendance area ({round(distance)}m away; allowed radius is {round(site.radius_meters)}m).",
         )
+
+
+def _hours_between(start: datetime | None, end: datetime | None) -> float:
+    if not start or not end:
+        return 0.0
+    return max(0.0, (_as_manila(end) - _as_manila(start)).total_seconds() / 3600)
+
+
+def _recalculate(record: AttendanceRecord) -> tuple[float, float]:
+    # Records completed before the four-event model have only the legacy
+    # check_in_at/check_out_at pair. Preserve their stored totals and treat
+    # them as completed history instead of incorrectly recalculating zero.
+    if record.check_out_at and not record.morning_out_at and not record.afternoon_in_at:
+        record.attendance_status = "Completed"
+        return 0.0, 0.0
+    morning = _hours_between(record.check_in_at, record.morning_out_at)
+    afternoon = _hours_between(record.afternoon_in_at, record.check_out_at)
+    total = round(morning + afternoon, 2)
+    record.hours_worked = total
+    record.regular_hours = round(min(total, ATTENDANCE_REGULAR_HOURS), 2)
+    record.overtime_hours = round(max(0.0, total - ATTENDANCE_REGULAR_HOURS), 2)
+    record.attendance_status = "Completed" if all((record.check_in_at, record.morning_out_at, record.afternoon_in_at, record.check_out_at)) else "Incomplete"
+    return round(morning, 2), round(afternoon, 2)
+
+
+def _next_action(record: AttendanceRecord | None, now: datetime) -> tuple[str | None, bool, str]:
+    current_time = now.timetz().replace(tzinfo=None)
+    if record and record.check_out_at and not record.morning_out_at and not record.afternoon_in_at:
+        return None, False, "Attendance for this legacy record is already completed."
+    if record is None or record.check_in_at is None:
+        allowed = current_time >= MORNING_OPEN
+        message = "Morning attendance is open." if allowed else f"Attendance opens at {MORNING_OPEN.strftime('%-I:%M %p')}."
+        return "morning-in", allowed, message
+    if record.morning_out_at is None:
+        allowed = current_time >= MORNING_OUT_OPEN
+        message = "Morning time-out is available." if allowed else f"Morning time-out is available at {MORNING_OUT_OPEN.strftime('%-I:%M %p')}."
+        return "morning-out", allowed, message
+    if record.afternoon_in_at is None:
+        allowed = current_time >= AFTERNOON_IN_OPEN
+        message = "Afternoon time-in is available." if allowed else f"Afternoon time-in is available at {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')}."
+        return "afternoon-in", allowed, message
+    if record.check_out_at is None:
+        return "afternoon-out", True, "Afternoon time-out is available."
+    return None, False, "Attendance for today is already completed."
+
+
+def _next_action_available_at(action: str | None, attendance_date: str) -> datetime | None:
+    schedule = {
+        "morning-in": MORNING_OPEN,
+        "morning-out": MORNING_OUT_OPEN,
+        "afternoon-in": AFTERNOON_IN_OPEN,
+    }
+    action_time = schedule.get(action)
+    if action_time is None:
+        return None
+    return datetime.combine(date.fromisoformat(attendance_date), action_time, ATTENDANCE_TZ)
+
+
+def _serialize(record: AttendanceRecord, now: datetime | None = None) -> dict:
+    morning, afternoon = _recalculate(record)
+    next_action, available, message = _next_action(record, now or _now_manila())
+    return {
+        "id": record.id,
+        "email": record.email,
+        "date": record.date,
+        "check_in_at": record.check_in_at,
+        "check_out_at": record.check_out_at,
+        "morning_in_at": record.check_in_at,
+        "morning_out_at": record.morning_out_at,
+        "afternoon_in_at": record.afternoon_in_at,
+        "afternoon_out_at": record.check_out_at,
+        "morning_hours": morning,
+        "afternoon_hours": afternoon,
+        "total_hours_worked": record.hours_worked,
+        "hours_worked": record.hours_worked,
+        "regular_hours": record.regular_hours,
+        "overtime_hours": record.overtime_hours,
+        "arrival_status": record.arrival_status,
+        "attendance_status": record.attendance_status,
+        "next_action": next_action,
+        "next_action_available": available,
+        "next_action_available_at": _next_action_available_at(next_action, record.date),
+        "next_action_message": message,
+        "attendance_date": record.date,
+        "timezone": ATTENDANCE_TIMEZONE,
+        "manually_modified": record.manually_modified,
+        "correction_note": record.correction_note,
+        "corrected_at": record.corrected_at,
+        "corrected_by_email": record.corrected_by_email,
+    }
+
+
+def _validate_transition(record: AttendanceRecord | None, action: str, now: datetime) -> None:
+    current_time = now.timetz().replace(tzinfo=None)
+    if record and record.check_out_at and not record.morning_out_at and not record.afternoon_in_at:
+        raise HTTPException(status_code=400, detail="Attendance for today was already completed under the previous attendance format")
+    if action == "morning-in":
+        if record and record.check_in_at:
+            raise HTTPException(status_code=400, detail="Morning time-in already recorded")
+        if current_time < MORNING_OPEN:
+            raise HTTPException(status_code=400, detail=f"Attendance has not opened yet. Morning time-in starts at {MORNING_OPEN.strftime('%-I:%M %p')}.")
+        return
+    if not record or not record.check_in_at:
+        raise HTTPException(status_code=400, detail="Morning Time In must be recorded first")
+    if action == "morning-out":
+        if record.morning_out_at:
+            raise HTTPException(status_code=400, detail="Morning time-out already recorded")
+        if current_time < MORNING_OUT_OPEN:
+            raise HTTPException(status_code=400, detail=f"Morning time-out is available at {MORNING_OUT_OPEN.strftime('%-I:%M %p')}.")
+        return
+    if not record.morning_out_at:
+        raise HTTPException(status_code=400, detail="Morning Time Out must be recorded first")
+    if action == "afternoon-in":
+        if record.afternoon_in_at:
+            raise HTTPException(status_code=400, detail="Afternoon time-in already recorded")
+        if current_time < AFTERNOON_IN_OPEN:
+            raise HTTPException(status_code=400, detail=f"Afternoon time-in is available at {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')}.")
+        return
+    if not record.afternoon_in_at:
+        raise HTTPException(status_code=400, detail="Afternoon Time In must be recorded first")
+    if record.check_out_at:
+        raise HTTPException(status_code=400, detail="Attendance for today is already completed")
+
+
+def _record_action(action: str, payload: AttendanceLocation, current_user: User, db: Session) -> dict:
+    if current_user.role != UserRole.staff:
+        raise HTTPException(status_code=403, detail="Only staff can submit attendance actions")
+    _enforce_geofence(db, payload)
+    now = _now_manila()
+    today = now.date().isoformat()
+    record = db.scalar(
+        select(AttendanceRecord)
+        .where(and_(AttendanceRecord.email == current_user.email, AttendanceRecord.date == today))
+        .with_for_update()
+    )
+    _validate_transition(record, action, now)
+    if record is None:
+        record = AttendanceRecord(email=current_user.email, date=today, check_in_at=now)
+        db.add(record)
+    if action == "morning-in":
+        record.check_in_at = now
+        record.check_in_lat, record.check_in_lng, record.check_in_accuracy_m = payload.lat, payload.lng, payload.accuracy
+        record.arrival_status = "Late" if now.timetz().replace(tzinfo=None) >= LATE_AFTER else "On Time"
+    elif action == "morning-out":
+        record.morning_out_at = now
+        record.morning_out_lat, record.morning_out_lng, record.morning_out_accuracy_m = payload.lat, payload.lng, payload.accuracy
+    elif action == "afternoon-in":
+        record.afternoon_in_at = now
+        record.afternoon_in_lat, record.afternoon_in_lng, record.afternoon_in_accuracy_m = payload.lat, payload.lng, payload.accuracy
+    else:
+        record.check_out_at = now
+        record.check_out_lat, record.check_out_lng, record.check_out_accuracy_m = payload.lat, payload.lng, payload.accuracy
+    _recalculate(record)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="This attendance action was already recorded. Refresh and try again.")
+    db.refresh(record)
+    return _serialize(record, now)
 
 
 @router.get("", response_model=list[AttendanceResponse])
 def list_attendance(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=200),
-    user_id: int | None = None,
-    user_email: str | None = None,
-    date: str | None = None,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    skip: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=200),
+    user_id: str | None = None, user_email: str | None = None, date: str | None = None,
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db),
 ):
-    """Get attendance records. Staff can only see their own."""
-    query = select(AttendanceRecord).order_by(desc(AttendanceRecord.created_at))
-
+    _require_attendance_role(current_user)
+    query = select(AttendanceRecord).order_by(desc(AttendanceRecord.date), desc(AttendanceRecord.created_at))
     if current_user.role == UserRole.staff:
         query = query.where(AttendanceRecord.email == current_user.email)
-    elif user_id and not user_email:
-        user = db.get(User, user_id)
-        if user:
-            user_email = user.email
-
-    if user_email and current_user.role == UserRole.admin:
-        query = query.where(AttendanceRecord.email == user_email)
-
+    else:
+        if user_id and not user_email:
+            user = db.get(User, user_id)
+            user_email = user.email if user else None
+        if user_email:
+            query = query.where(AttendanceRecord.email == user_email)
     if date:
         query = query.where(AttendanceRecord.date == date)
+    return [_serialize(record) for record in db.scalars(query.offset(skip).limit(limit)).all()]
 
-    query = query.offset(skip).limit(limit)
-    records = db.scalars(query).all()
-    return records
+
+@router.get("/today", response_model=list[AttendanceResponse])
+def today_attendance(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _require_attendance_role(current_user)
+    today = _now_manila().date().isoformat()
+    query = select(AttendanceRecord).where(AttendanceRecord.date == today).order_by(AttendanceRecord.email)
+    if current_user.role == UserRole.staff:
+        query = query.where(AttendanceRecord.email == current_user.email)
+    return [_serialize(record) for record in db.scalars(query).all()]
+
+
+@router.get("/state/today")
+def today_attendance_state(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.staff:
+        raise HTTPException(status_code=403, detail="This attendance state is available to staff only")
+    now = _now_manila()
+    attendance_date = now.date().isoformat()
+    record = db.scalar(select(AttendanceRecord).where(
+        and_(AttendanceRecord.email == current_user.email, AttendanceRecord.date == attendance_date)
+    ))
+    action, available, message = _next_action(record, now)
+    return {
+        "attendance_date": attendance_date,
+        "timezone": ATTENDANCE_TIMEZONE,
+        "next_action": action,
+        "next_action_available": available,
+        "next_action_available_at": _next_action_available_at(action, attendance_date),
+        "next_action_message": message,
+        "record": _serialize(record, now) if record else None,
+    }
 
 
 @router.get("/user/{user_id}", response_model=list[AttendanceResponse])
-def get_user_attendance(
-    user_id: int,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(30, ge=1, le=100),
-    db: Session = Depends(get_db),
-):
-    """Get attendance records for a specific user"""
+def get_user_attendance(user_id: str, skip: int = Query(0, ge=0), limit: int = Query(30, ge=1, le=100), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _require_attendance_role(current_user)
     user = db.get(User, user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    query = (
-        select(AttendanceRecord)
-        .where(AttendanceRecord.email == user.email)
-        .order_by(desc(AttendanceRecord.date))
-        .offset(skip)
-        .limit(limit)
-    )
-    records = db.scalars(query).all()
-    return records
+        raise HTTPException(status_code=404, detail="User not found")
+    if current_user.role == UserRole.staff and user.email != current_user.email:
+        raise HTTPException(status_code=403, detail="Staff can only view their own attendance")
+    records = db.scalars(select(AttendanceRecord).where(AttendanceRecord.email == user.email).order_by(desc(AttendanceRecord.date)).offset(skip).limit(limit)).all()
+    return [_serialize(record) for record in records]
 
 
 @router.get("/user/email/{email}", response_model=list[AttendanceResponse])
-def get_user_attendance_by_email(
-    email: str,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(30, ge=1, le=100),
-    db: Session = Depends(get_db),
-):
-    """Get attendance records for a specific user by email"""
-    query = (
-        select(AttendanceRecord)
-        .where(AttendanceRecord.email == email)
-        .order_by(desc(AttendanceRecord.date))
-        .offset(skip)
-        .limit(limit)
-    )
-    records = db.scalars(query).all()
-    return records
+def get_user_attendance_by_email(email: str, skip: int = Query(0, ge=0), limit: int = Query(30, ge=1, le=100), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _require_attendance_role(current_user)
+    if current_user.role == UserRole.staff and email.lower() != current_user.email.lower():
+        raise HTTPException(status_code=403, detail="Staff can only view their own attendance")
+    records = db.scalars(select(AttendanceRecord).where(AttendanceRecord.email == email).order_by(desc(AttendanceRecord.date)).offset(skip).limit(limit)).all()
+    return [_serialize(record) for record in records]
 
 
-@router.post("/check-in", response_model=AttendanceResponse)
-def check_in(
-    payload: AttendanceCheckIn,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Check in for the current user, enforcing the configured job-site radius."""
-    if current_user.role != UserRole.staff:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only staff can check in",
-        )
-
-    _enforce_geofence(db, payload.lat, payload.lng, payload.accuracy)
-
-    today = datetime.now(timezone.utc).date().isoformat()
-
-    existing = db.scalar(
-        select(AttendanceRecord).where(
-            and_(
-                AttendanceRecord.email == current_user.email,
-                AttendanceRecord.date == today,
-            )
-        )
-    )
-
-    if existing and existing.check_in_at is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already checked in today",
-        )
-
-    record = AttendanceRecord(
-        email=current_user.email,
-        date=today,
-        check_in_at=datetime.now(timezone.utc),
-        check_in_lat=payload.lat,
-        check_in_lng=payload.lng,
-        check_in_accuracy_m=payload.accuracy,
-    )
-
-    db.add(record)
-    db.commit()
-    db.refresh(record)
-    return record
+@router.post("/morning-in", response_model=AttendanceResponse)
+def morning_in(payload: AttendanceLocation, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return _record_action("morning-in", payload, current_user, db)
 
 
-@router.post("/check-out", response_model=AttendanceResponse)
-def check_out(
-    payload: AttendanceCheckOut,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Check out for the current user, enforcing the configured job-site radius."""
-    if current_user.role != UserRole.staff:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only staff can check out",
-        )
+@router.post("/morning-out", response_model=AttendanceResponse)
+def morning_out(payload: AttendanceLocation, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return _record_action("morning-out", payload, current_user, db)
 
-    _enforce_geofence(db, payload.lat, payload.lng, payload.accuracy)
 
-    today = datetime.now(timezone.utc).date().isoformat()
+@router.post("/afternoon-in", response_model=AttendanceResponse)
+def afternoon_in(payload: AttendanceLocation, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return _record_action("afternoon-in", payload, current_user, db)
 
-    record = db.scalar(
-        select(AttendanceRecord).where(
-            and_(
-                AttendanceRecord.email == current_user.email,
-                AttendanceRecord.date == today,
-            )
-        )
-    )
 
+@router.post("/afternoon-out", response_model=AttendanceResponse)
+def afternoon_out(payload: AttendanceLocation, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return _record_action("afternoon-out", payload, current_user, db)
+
+
+@router.patch("/{record_id}/correction", response_model=AttendanceResponse)
+def correct_attendance(record_id: str, payload: AttendanceCorrection, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _require_admin(current_user)
+    record = db.scalar(select(AttendanceRecord).where(AttendanceRecord.id == record_id).with_for_update())
     if not record:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No check-in found for today",
-        )
-
-    if record.check_out_at is not None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already checked out today",
-        )
-
-    check_out_time = datetime.now(timezone.utc)
-    record.check_out_at = check_out_time
-    record.check_out_lat = payload.lat
-    record.check_out_lng = payload.lng
-    record.check_out_accuracy_m = payload.accuracy
-
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+    mapping = {
+        "morning_in_at": "check_in_at", "morning_out_at": "morning_out_at",
+        "afternoon_in_at": "afternoon_in_at", "afternoon_out_at": "check_out_at",
+    }
+    for field, target in mapping.items():
+        if field in payload.model_fields_set:
+            value = getattr(payload, field)
+            if value is not None:
+                local_value = _as_manila(value)
+                if local_value.date().isoformat() != record.date:
+                    raise HTTPException(status_code=400, detail=f"{field} must fall on the attendance date")
+                setattr(record, target, local_value)
+    timestamps = [record.check_in_at, record.morning_out_at, record.afternoon_in_at, record.check_out_at]
+    present = [_as_manila(value) for value in timestamps if value is not None]
+    if any(later < earlier for earlier, later in zip(present, present[1:])):
+        raise HTTPException(status_code=400, detail="Attendance timestamps must follow the daily sequence")
     if record.check_in_at:
-        hours = (check_out_time - record.check_in_at).total_seconds() / 3600
-        record.hours_worked = round(hours, 2)
-        record.regular_hours = min(hours, 8)  # 8-hour workday
-        record.overtime_hours = max(0, hours - 8)
-
+        record.arrival_status = "Late" if _as_manila(record.check_in_at).timetz().replace(tzinfo=None) >= LATE_AFTER else "On Time"
+    record.manually_modified = True
+    record.correction_note = payload.reason.strip()
+    record.corrected_at = _now_manila()
+    record.corrected_by_email = current_user.email
+    _recalculate(record)
     db.commit()
     db.refresh(record)
-    return record
+    return _serialize(record)
 
 
 @router.get("/{record_id}", response_model=AttendanceResponse)
-def get_attendance_record(
-    record_id: int,
-    db: Session = Depends(get_db),
-):
-    """Get a specific attendance record"""
+def get_attendance_record(record_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _require_attendance_role(current_user)
     record = db.get(AttendanceRecord, record_id)
     if not record:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Record not found",
-        )
-    return record
+        raise HTTPException(status_code=404, detail="Record not found")
+    if current_user.role == UserRole.staff and record.email != current_user.email:
+        raise HTTPException(status_code=403, detail="Staff can only view their own attendance")
+    return _serialize(record)

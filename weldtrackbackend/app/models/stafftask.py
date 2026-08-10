@@ -1,14 +1,11 @@
 import enum
-import uuid
 from datetime import date, datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     String,
     Text,
     Date,
     DateTime,
-    ForeignKey,
     Enum,
     Integer,
     func,
@@ -17,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from app.core.id import ULID_LENGTH, ulid_foreign_key, ulid_primary_key
 
 
 class TaskStatus(str, enum.Enum):
@@ -32,12 +30,14 @@ class MovementType(str, enum.Enum):
 class StaffTask(Base):
     __tablename__ = "staff_tasks"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    id: Mapped[str] = ulid_primary_key()
 
     project_name: Mapped[str] = mapped_column(String(200), nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    booking_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    booking_id: Mapped[str | None] = mapped_column(
+        String(ULID_LENGTH), nullable=True, index=True
+    )
 
     assigned_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -78,13 +78,15 @@ class StaffTask(Base):
 class StaffTaskAssignee(Base):
     __tablename__ = "staff_task_assignees"
 
-    task_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("staff_tasks.id", ondelete="CASCADE"),
+    task_id: Mapped[str] = ulid_foreign_key(
+        "staff_tasks.id",
+        ondelete="CASCADE",
         primary_key=True,
     )
 
-    staff_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
+    staff_id: Mapped[str] = ulid_foreign_key(
+        "users.id",
+        ondelete="CASCADE",
         primary_key=True,
     )
 
@@ -97,17 +99,21 @@ class StaffTaskAssignee(Base):
 class TaskMaterialUsage(Base):
     __tablename__ = "task_material_usages"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[str] = ulid_primary_key()
 
-    task_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("staff_tasks.id", ondelete="CASCADE"),
+    task_id: Mapped[str] = ulid_foreign_key(
+        "staff_tasks.id",
+        ondelete="CASCADE",
         nullable=False,
     )
 
-    booking_id: Mapped[int | None] = mapped_column(nullable=True)
+    booking_id: Mapped[str | None] = mapped_column(
+        String(ULID_LENGTH), nullable=True
+    )
 
-    submitted_by_staff_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL"),
+    submitted_by_staff_id: Mapped[str | None] = ulid_foreign_key(
+        "users.id",
+        ondelete="SET NULL",
         nullable=True,
     )
 
@@ -145,14 +151,15 @@ class TaskMaterialUsage(Base):
 class TaskMaterialUsageLine(Base):
     __tablename__ = "task_material_usage_lines"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[str] = ulid_primary_key()
 
-    usage_id: Mapped[int] = mapped_column(
-        ForeignKey("task_material_usages.id", ondelete="CASCADE"),
+    usage_id: Mapped[str] = ulid_foreign_key(
+        "task_material_usages.id",
+        ondelete="CASCADE",
         nullable=False,
     )
 
-    item_id: Mapped[int] = mapped_column(nullable=False)
+    item_id: Mapped[str] = mapped_column(String(ULID_LENGTH), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
 
     usage = relationship("TaskMaterialUsage", back_populates="lines")

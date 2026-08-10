@@ -22,7 +22,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 
 @router.get("/attendance-location", response_model=AttendanceSiteResponse)
 def get_attendance_location(
-    current_user: User = Depends(get_current_user),
+    _admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """Return the configured attendance site, if one has been set."""

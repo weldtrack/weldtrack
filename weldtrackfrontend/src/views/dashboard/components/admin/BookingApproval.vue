@@ -311,7 +311,7 @@ async function completeBookingForce() {
 
 async function loadMaterialsForBooking() {
   if (!selectedBooking.value) return
-  const bookingId = Number(selectedBooking.value.id)
+  const bookingId = selectedBooking.value.id
 
   try {
     const remote = await bookingsStore.getBooking(bookingId)
@@ -360,7 +360,7 @@ async function loadMaterialsForBooking() {
   completionForm.materialCost = String(total)
 }
 
-function hasStaffMaterialSubmission(bookingId: number) {
+function hasStaffMaterialSubmission(bookingId: string) {
   const hasMovements = inventoryStore.getMovementsForBooking(bookingId).some((m) => m.type === 'stock-out')
   const booking = bookingsStore.bookings.find((b) => b.id === bookingId)
   const hasImages = Boolean(booking && ((booking.beforeImages && booking.beforeImages.length > 0) || (booking.afterImages && booking.afterImages.length > 0)))
@@ -428,7 +428,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
         </select>
 
         <button type="button"
-          class="rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          class="booking-reset-button rounded-xl border border-gray-300 bg-transparent px-4 py-3 text-sm font-medium text-gray-700 transition"
           @click="resetFilters">
           Reset Filters
         </button>

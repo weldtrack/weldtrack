@@ -88,11 +88,16 @@ export function createRouter() {
                 meta: { roles: [] },
                 component: () => import('../views/dashboard/components/staff/StaffCreate.vue'),
               },
-              {
-                path: 'feedback',
-                name: 'staff-feedback',
-                component: () => import('../views/dashboard/components/shared/ServiceFeedback.vue'),
-              },
+          {
+            path: 'feedback',
+            name: 'staff-feedback',
+            component: () => import('../views/dashboard/components/shared/ServiceFeedback.vue'),
+          },
+          {
+            path: 'payslips',
+            name: 'staff-payslips',
+            component: () => import('../views/dashboard/components/staff/MyPayslips.vue'),
+          },
               {
                 path: 'profile',
                 name: 'staff-profile',
@@ -165,6 +170,11 @@ export function createRouter() {
             path: 'services',
             name: 'admin-services',
             component: () => import('../views/dashboard/components/admin/ServiceManagement.vue'),
+          },
+          {
+            path: 'payroll',
+            name: 'admin-payroll',
+            component: () => import('../views/dashboard/components/admin/PayrollManagement.vue'),
           },
           {
             path: 'projects',

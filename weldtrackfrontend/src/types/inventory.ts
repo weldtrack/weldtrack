@@ -18,13 +18,13 @@ export interface StockMovement {
   type: MovementType
   timestamp: string
   rawTimestamp?: string
-  bookingId?: number | null
+  bookingId?: string | null
   taskId?: string | null
   teamEmails: string[]
 }
 
 export type BackendInventoryItem = {
-  id: number
+  id: string
   name: string
   quantity: number
   unit_price: number
@@ -34,13 +34,13 @@ export type BackendInventoryItem = {
 }
 
 export type BackendStockMovement = {
-  id: number
-  item_id: number
+  id: string
+  item_id: string
   item_name: string
   quantity: number
   type: MovementType
   timestamp?: string
-  booking_id?: number | null
+  booking_id?: string | null
   task_id?: string | null
   team_emails?: string[]
 }

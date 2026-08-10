@@ -22,7 +22,7 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
 
-    async fetchMovements(params?: { bookingId?: number; taskId?: string; itemId?: string }) {
+    async fetchMovements(params?: { bookingId?: string; taskId?: string; itemId?: string }) {
       try {
         this.movements = await inventoryService.fetchMovements(params)
         return this.movements
@@ -71,7 +71,7 @@ export const useInventoryStore = defineStore('inventory', {
       await this.fetchMovements()
     },
 
-    getMovementsForBooking(bookingId: number) {
+    getMovementsForBooking(bookingId: string) {
       return this.movements.filter((m) => m.bookingId === bookingId)
     },
 

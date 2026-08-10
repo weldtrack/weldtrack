@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Briefcase } from 'lucide-vue-next'
+import { Briefcase, ImagePlus, Info, LoaderCircle } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useModalStore } from '../../../../stores/modal'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 
 interface Service {
-  id: number
+  id: string
   name: string
   description: string | null
   price: number
@@ -27,8 +27,9 @@ const modalStore = useModalStore()
 const services = ref<Service[]>([])
 const loading = ref(false)
 const isDialogOpen = ref(false)
-const editingId = ref<number | null>(null)
+const editingId = ref<string | null>(null)
 const isSubmitting = ref(false)
+const formError = ref('')
 const searchTerm = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const imagePreview = ref<string | null>(null)
@@ -70,6 +71,7 @@ async function fetchServices() {
 }
 
 function resetForm() {
+  formError.value = ''
   formData.name = ''
   formData.description = ''
   formData.price = ''
@@ -142,25 +144,18 @@ function closeDialog() {
 
 async function saveService() {
   if (!formData.name.trim()) {
-    modalStore.open({
-      title: 'Service name required',
-      message: 'Please enter a service name',
-      variant: 'warning',
-    })
+    formError.value = 'Enter a service name before continuing.'
     return
   }
 
   const price = Number(formData.price)
   if (isNaN(price) || price < 0) {
-    modalStore.open({
-      title: 'Invalid price',
-      message: 'Price must be a valid positive number',
-      variant: 'warning',
-    })
+    formError.value = 'Enter a valid labor price of zero or more.'
     return
   }
 
   isSubmitting.value = true
+  formError.value = ''
   try {
     const payload = {
       name: formData.name.trim(),
@@ -178,17 +173,13 @@ async function saveService() {
     closeDialog()
     await fetchServices()
   } catch (err: any) {
-    modalStore.open({
-      title: 'Error saving service',
-      message: err.response?.data?.detail || 'Failed to save service',
-      variant: 'error',
-    })
+    formError.value = err.response?.data?.detail || 'The service could not be saved. Please try again.'
   } finally {
     isSubmitting.value = false
   }
 }
 
-function deleteService(id: number, name: string) {
+function deleteService(id: string, name: string) {
   modalStore.open({
     title: 'Delete service?',
     message: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
@@ -262,54 +253,60 @@ function formatDate(value: string) {
       :title="editingId ? 'Edit Service' : 'Add New Service'"
       subtitle="Service offering"
       tone="blue"
-      size="md"
+      size="lg"
       @close="closeDialog"
     >
-      <form class="space-y-4" @submit.prevent="saveService">
+      <form id="service-form" class="space-y-5" @submit.prevent="saveService">
+        <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+          <Info class="mt-0.5 h-4 w-4 shrink-0" />
+          <p>This information appears in the customer service catalogue. Use a clear name, useful description, and accurate starting labor price.</p>
+        </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700">Service Name *</label>
+          <label class="block text-sm font-semibold text-gray-700">Service Name <span class="text-red-500">*</span></label>
           <input
             v-model="formData.name"
             type="text"
             class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            placeholder="e.g., Gate Welding"
+            required
+            autocomplete="off"
+            placeholder="e.g. Steel gate fabrication"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700">Description</label>
+          <div class="flex items-center justify-between gap-4"><label class="block text-sm font-semibold text-gray-700">Description</label><span class="text-xs text-gray-500">{{ formData.description.length }}/500</span></div>
           <textarea
             v-model="formData.description"
             rows="3"
+            maxlength="500"
             class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            placeholder="Service description"
+            placeholder="Describe what is included and what customers should expect."
           ></textarea>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Labor Price (₱) /hour *</label>
+            <label class="block text-sm font-semibold text-gray-700">Labor Price per Hour <span class="text-red-500">*</span></label>
             <input
               v-model="formData.price"
               type="number"
               step="0.01"
               min="0"
+              required
               class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="0"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700">Service Image</label>
+            <label class="block text-sm font-semibold text-gray-700">Service Image</label>
             <button
               type="button"
               @click="triggerFileInput"
               class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-700 shadow-sm outline-none transition hover:bg-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
-              <svg class="mr-2 inline h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Choose Image
+              <ImagePlus class="mr-2 inline h-4 w-4" />
+              {{ imagePreview ? 'Replace Image' : 'Choose Image' }}
             </button>
             <input
               ref="fileInputRef"
@@ -321,33 +318,32 @@ function formatDate(value: string) {
           </div>
         </div>
 
-        <div v-if="imagePreview" class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p class="mb-2 text-sm font-medium text-gray-700">Image Preview</p>
-          <img :src="imagePreview" :alt="formData.name" class="h-48 w-full rounded-lg object-cover" />
+        <div v-if="imagePreview" class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <img :src="imagePreview" :alt="formData.name || 'Service image preview'" class="h-52 w-full rounded-lg object-cover" />
+          <p class="mt-2 text-xs text-gray-500">Preview · JPG, PNG, GIF or WebP · maximum 5 MB</p>
         </div>
-
-        <div class="flex gap-3 pt-2">
+        <p v-else class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-gray-500">Add a landscape image to make this service easier to recognize.</p>
+        <div v-if="formError" role="alert" class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ formError }}</div>
+      </form>
+      <template #footer>
           <button
             type="button"
-            class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="isSubmitting"
             @click="closeDialog"
           >
             Cancel
           </button>
           <button
+            form="service-form"
             type="submit"
-            class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+            class="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="isSubmitting"
           >
-            <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <LoaderCircle v-if="isSubmitting" class="h-4 w-4 animate-spin" />
             <span>{{ isSubmitting ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update' : 'Add') }} Service</span>
           </button>
-        </div>
-      </form>
+      </template>
     </ModalShell>
 
     <!-- Services Table -->

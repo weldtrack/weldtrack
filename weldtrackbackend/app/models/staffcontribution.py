@@ -1,19 +1,22 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, JSON, String, func
+from sqlalchemy import DateTime, JSON, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+from app.core.id import ULID_LENGTH, ulid_primary_key
 
 
 class StaffContributionSnapshot(Base):
     __tablename__ = "staff_contribution_snapshots"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[str] = ulid_primary_key(index=True)
     task_id: Mapped[str] = mapped_column(
-        String(100), unique=True, index=True, nullable=False
+        String(ULID_LENGTH), unique=True, index=True, nullable=False
     )
-    booking_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    booking_id: Mapped[str | None] = mapped_column(
+        String(ULID_LENGTH), nullable=True, index=True
+    )
     project_name: Mapped[str] = mapped_column(String(200), nullable=False)
     task_title: Mapped[str] = mapped_column(String(200), nullable=False)
     contributor_ids: Mapped[list] = mapped_column(JSON, nullable=False, default=list)

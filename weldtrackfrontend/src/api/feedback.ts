@@ -47,20 +47,20 @@ export async function addFeedback(feedback: Omit<Feedback, 'id' | 'date'>) {
   return toFrontendFeedback(response.data as BackendFeedback)
 }
 
-export async function updateFeedback(id: number, feedback: Partial<Omit<Feedback, 'id'>>) {
+export async function updateFeedback(id: string, feedback: Partial<Omit<Feedback, 'id'>>) {
   const response = await api.put(`/feedbacks/${id}`, toBackendFeedbackPayload(feedback))
   return toFrontendFeedback(response.data as BackendFeedback)
 }
 
-export async function deleteFeedback(id: number) {
+export async function deleteFeedback(id: string) {
   await api.delete(`/feedbacks/${id}`)
 }
 
-export async function toggleLike(feedbackId: number) {
+export async function toggleLike(feedbackId: string) {
   await api.post(`/feedbacks/${feedbackId}/likes`)
 }
 
-export async function addComment(feedbackId: number, comment: string) {
+export async function addComment(feedbackId: string, comment: string) {
   const response = await api.post(`/feedbacks/${feedbackId}/comments`, { comment })
   return {
     id: response.data.id,

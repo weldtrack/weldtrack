@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from uuid import UUID
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
@@ -31,7 +30,7 @@ def list_inventory(
 
 @router.get("/{item_id}", response_model=InventoryItemResponse)
 def get_inventory_item(
-    item_id: int,
+    item_id: str,
     db: Session = Depends(get_db),
 ):
     """Get a specific inventory item"""
@@ -61,7 +60,7 @@ def create_inventory_item(
 
 @router.put("/{item_id}", response_model=InventoryItemResponse)
 def update_inventory_item(
-    item_id: int,
+    item_id: str,
     payload: InventoryItemUpdate,
     _admin=Depends(require_admin),
     db: Session = Depends(get_db),
@@ -84,7 +83,7 @@ def update_inventory_item(
 
 @router.patch("/{item_id}", response_model=InventoryItemResponse)
 def partial_update_inventory_item(
-    item_id: int,
+    item_id: str,
     payload: InventoryItemUpdate,
     _admin=Depends(require_admin),
     db: Session = Depends(get_db),
@@ -124,7 +123,7 @@ def partial_update_inventory_item(
 
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_inventory_item(
-    item_id: int,
+    item_id: str,
     _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -143,8 +142,8 @@ def delete_inventory_item(
 def get_stock_movements(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    item_id: int | None = None,
-    booking_id: int | None = None,
+    item_id: str | None = None,
+    booking_id: str | None = None,
     task_id: str | None = None,
     db: Session = Depends(get_db),
 ):
@@ -160,14 +159,11 @@ def get_stock_movements(
 
     query = query.offset(skip).limit(limit)
     movements = db.scalars(query).all()
-    task_ids: list[UUID] = []
+    task_ids: list[str] = []
     for movement in movements:
         if not movement.task_id:
             continue
-        try:
-            task_ids.append(UUID(movement.task_id))
-        except ValueError:
-            continue
+        task_ids.append(movement.task_id)
 
     tasks_by_id: dict[str, StaffTask] = {}
     if task_ids:

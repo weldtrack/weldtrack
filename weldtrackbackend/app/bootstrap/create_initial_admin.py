@@ -37,6 +37,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from sqlalchemy import text
 
+from app.core.id import new_ulid
 from app.core.security import hash_password
 from app.db import SessionLocal
 from app.models.user import UserRole
@@ -97,14 +98,15 @@ def seed_admin() -> None:
 
         # 2. Insert user directly (explicitly passing NOT NULL columns with defaults)
         insert_user_query = text("""
-            INSERT INTO users (email, hashed_password, role, is_banned, is_online)
-            VALUES (:email, :hashed_password, :role, :is_banned, :is_online)
+            INSERT INTO users (id, email, hashed_password, role, is_banned, is_online)
+            VALUES (:id, :email, :hashed_password, :role, :is_banned, :is_online)
             RETURNING id
         """)
 
         user_id = db.execute(
             insert_user_query,
             {
+                "id": new_ulid(),
                 "email": admin_email,
                 "hashed_password": hash_password(admin_password),
                 "role": role_value,
@@ -115,11 +117,14 @@ def seed_admin() -> None:
 
         # 3. Insert email verification record matching the schema name
         insert_verification_query = text("""
-            INSERT INTO email_verifications (user_id, is_verified)
-            VALUES (:user_id, :is_verified)
+            INSERT INTO email_verifications (id, user_id, is_verified)
+            VALUES (:id, :user_id, :is_verified)
         """)
 
-        db.execute(insert_verification_query, {"user_id": user_id, "is_verified": True})
+        db.execute(
+            insert_verification_query,
+            {"id": new_ulid(), "user_id": user_id, "is_verified": True},
+        )
 
         db.commit()
         print(f"Successfully created admin account: {admin_email}")

@@ -1,5 +1,4 @@
 from datetime import datetime, date
-from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal
 
@@ -12,11 +11,11 @@ class TaskLocationIn(BaseModel):
 
 
 class TaskCreate(BaseModel):
-    bookingId: int | None = None
+    bookingId: str | None = None
     projectName: str
     title: str
     description: str | None = ""
-    assignedStaffIds: list[int] = Field(min_length=1)
+    assignedStaffIds: list[str] = Field(min_length=1)
     dueDate: date
     location: TaskLocationIn | None = None
 
@@ -28,12 +27,12 @@ class TaskStatusUpdate(BaseModel):
 class TaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
-    bookingId: int | None
+    id: str
+    bookingId: str | None
     projectName: str
     title: str
     description: str | None
-    assignedStaffIds: list[int]
+    assignedStaffIds: list[str]
     assignedStaffEmails: list[str]
     assignedAt: datetime
     dueDate: date
@@ -42,13 +41,13 @@ class TaskOut(BaseModel):
 
 
 class MaterialLineIn(BaseModel):
-    itemId: int
+    itemId: str
     quantity: int = Field(gt=0)
 
 
 class TaskMaterialsCreate(BaseModel):
-    submittedBy: int | None = None
-    taskId: UUID
+    submittedBy: str | None = None
+    taskId: str
     movementType: Literal["stock_out"]
     lines: list[MaterialLineIn] = Field(min_length=1)
     laborHours: float = Field(default=0, ge=0)

@@ -23,19 +23,19 @@ export const useCustomerAddressesStore = defineStore('customer-addresses', {
       return created
     },
 
-    async updateAddress(id: number, payload: Partial<CustomerAddressItem>) {
+    async updateAddress(id: string, payload: Partial<CustomerAddressItem>) {
       const updated = await customerAddressService.updateAddress(id, payload)
       await this.fetchMyAddresses()
       return updated
     },
 
-    async activateAddress(id: number) {
+    async activateAddress(id: string) {
       const activated = await customerAddressService.activateAddress(id)
       await this.fetchMyAddresses()
       return activated
     },
 
-    async deleteAddress(id: number) {
+    async deleteAddress(id: string) {
       await customerAddressService.deleteAddress(id)
       await this.fetchMyAddresses()
     },

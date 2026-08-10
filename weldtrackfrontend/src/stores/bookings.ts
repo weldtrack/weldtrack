@@ -28,7 +28,7 @@ export const useBookingsStore = defineStore('bookings', {
       return created
     },
 
-    async getBooking(id: number) {
+    async getBooking(id: string) {
       const booking = await bookingService.getBooking(id)
       const idx = this.bookings.findIndex((b) => b.id === id)
       if (idx > -1) this.bookings[idx] = booking
@@ -36,7 +36,7 @@ export const useBookingsStore = defineStore('bookings', {
       return booking
     },
 
-    async updateBooking(id: number, patch: Partial<BookingItem>) {
+    async updateBooking(id: string, patch: Partial<BookingItem>) {
       const updated = await bookingService.updateBooking(id, patch)
       const idx = this.bookings.findIndex((b) => b.id === id)
       if (idx > -1) this.bookings[idx] = updated

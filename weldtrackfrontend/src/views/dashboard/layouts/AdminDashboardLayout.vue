@@ -6,6 +6,7 @@ import {
   Calendar,
   Folder,
   LayoutDashboard,
+  ReceiptText,
   Star,
   Users,
 } from 'lucide-vue-next'
@@ -23,14 +24,7 @@ const adminNavigation: SidebarEntry[] = [
       { kind: 'item', id: 'admin-approval', label: 'Booking', icon: Calendar },
       { kind: 'item', id: 'admin-inventory', label: 'Inventory', icon: Archive },
       { kind: 'item', id: 'admin-services', label: 'Services', icon: Briefcase },
-    ],
-  },
-  {
-    kind: 'group',
-    id: 'admin-group-people',
-    label: 'People',
-    icon: Users,
-    children: [
+      { kind: 'item', id: 'admin-payroll', label: 'Payroll', icon: ReceiptText },
       { kind: 'item', id: 'admin-staff', label: 'Staff', icon: Users, routeName: 'admin-staff-attendance' },
       { kind: 'item', id: 'admin-users', label: 'Users', icon: Users },
     ],
