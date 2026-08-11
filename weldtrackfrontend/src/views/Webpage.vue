@@ -6,6 +6,9 @@ import WebpageHero from './publicpagecomponents/WebpageHero.vue'
 import WebpageAbout from './publicpagecomponents/WebpageAbout.vue'
 import WebpageServices from './publicpagecomponents/WebpageServices.vue'
 import WebpageContact from './publicpagecomponents/WebpageContact.vue'
+import WebpageTestimonials from './publicpagecomponents/WebpageTestimonials.vue'
+import WebpageFAQ from './publicpagecomponents/WebpageFAQ.vue'
+import WebpageCTA from './publicpagecomponents/WebpageCTA.vue'
 import WebpageFooter from './publicpagecomponents/WebpageFooter.vue'
 
 const { isDarkMode } = useThemeMode()
@@ -36,18 +39,21 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div :class="['public-theme-page relative min-h-screen overflow-hidden', isDarkMode ? 'theme-dark' : 'theme-light']">
+    <div :class="['public-theme-page relative min-h-screen overflow-x-hidden', isDarkMode ? 'theme-dark' : 'theme-light']">
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
-            <div class="absolute -left-[10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-[120px]"></div>
-            <div class="absolute -right-[5%] top-[20%] h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[140px]"></div>
-            <div class="absolute bottom-[-10%] left-[20%] h-[400px] w-[400px] rounded-full bg-emerald-500/5 blur-[100px]"></div>
-            <div class="landing-grid absolute inset-x-0 top-0 h-[52rem] opacity-40"></div>
+            <div class="absolute -left-[10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-cyan-500/[0.06] blur-[80px]"></div>
+            <div class="absolute -right-[5%] top-[20%] h-[600px] w-[600px] rounded-full bg-blue-600/[0.06] blur-[80px]"></div>
+            <div class="absolute bottom-[-10%] left-[20%] h-[400px] w-[400px] rounded-full bg-emerald-500/[0.03] blur-[80px]"></div>
+            <div class="landing-grid absolute inset-x-0 top-0 h-[52rem] opacity-30"></div>
         </div>
         <WebpageNavBar />
         <WebpageHero />
         <WebpageAbout />
         <WebpageServices />
+        <WebpageTestimonials />
+        <WebpageFAQ />
         <WebpageContact />
+        <WebpageCTA />
         <WebpageFooter />
     </div>
 </template>

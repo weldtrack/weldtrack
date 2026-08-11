@@ -1,55 +1,71 @@
 <template>
-  <div class="max-w-2xl mx-auto p-6">
-    <div class="flex items-center gap-3 mb-8">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
-        <User class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
+  <section class="mx-auto max-w-5xl space-y-7">
+    <header class="flex flex-col gap-2 border-b border-slate-200 pb-6 dark:border-slate-800 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-400">Account settings</p>
+        <h1 class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-slate-100">Profile and security</h1>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Manage your contact details, profile photo, and password.</p>
       </div>
-      <h1 class="text-2xl font-semibold text-gray-900">User Profile</h1>
-    </div>
+      <div class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
+        <ShieldCheck class="h-3.5 w-3.5" /> Account protected
+      </div>
+    </header>
     
-    <div v-if="user" class="bg-white border border-slate-200 shadow-sm rounded-2xl p-8">
-      <div class="flex flex-col items-center mb-8">
+    <div v-if="user" class="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-[18rem_1fr]">
+      <aside class="flex flex-col items-center border-b border-slate-200 bg-slate-50/70 px-6 py-8 text-center dark:border-slate-800 dark:bg-slate-950/40 lg:border-r lg:border-b-0">
         <div class="relative group">
-          <img :src="getImageUrl(user.profile_image)" alt="Profile" class="w-32 h-32 rounded-full object-cover border-4 border-slate-100 shadow-md">
-          <label class="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full cursor-pointer shadow-lg hover:bg-blue-700 transition">
-            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.66-.9l.82-1.23A2 2 0 0110.93 4h2.14a2 2 0 011.66.9l.82 1.23A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <input type="file" @change="handleImageUpload" accept="image/*" class="hidden">
+          <img v-if="user.profile_image" :src="getImageUrl(user.profile_image)" alt="Profile" class="h-28 w-28 rounded-2xl border border-slate-200 object-cover shadow-sm dark:border-slate-700">
+          <div v-else class="flex h-28 w-28 items-center justify-center rounded-2xl border border-slate-200 bg-white text-3xl font-semibold text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ profileInitial }}</div>
+          <label class="absolute -right-2 -bottom-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-slate-50 bg-sky-600 text-white shadow-md transition hover:bg-sky-700 dark:border-slate-950" title="Upload profile photo">
+            <Camera class="h-4 w-4" />
+            <input type="file" accept="image/*" class="hidden" @change="handleImageUpload">
           </label>
         </div>
-        <p class="mt-4 text-xl font-semibold text-slate-900">{{ user.email }}</p>
-      </div>
+        <p class="mt-5 max-w-full truncate text-base font-semibold text-slate-900 dark:text-slate-100">{{ user.email }}</p>
+        <span class="mt-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">{{ roleLabel }}</span>
+        <p class="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Use a clear photo so your account is easier to identify across WeldTrack.</p>
+      </aside>
 
-      <div class="space-y-6">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2" for="email">Email</label>
-          <div :class="['flex rounded-xl border border-slate-200 bg-slate-50 shadow-sm overflow-hidden transition', !['staff', 'admin'].includes(authStore.role.trim().toLowerCase()) ? 'opacity-70 cursor-not-allowed' : 'focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200']">
+      <div class="p-6 sm:p-8">
+        <div class="mb-6">
+          <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">Personal information</h2>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Valid changes are saved automatically.</p>
+        </div>
+
+        <div class="space-y-5">
+          <div>
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="email">Email address</label>
+              <span v-if="!canEditEmail" class="text-[11px] font-medium text-slate-400">Managed account</span>
+            </div>
+          <div :class="['flex overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition dark:border-slate-700 dark:bg-slate-800/60', !canEditEmail ? 'cursor-not-allowed opacity-70' : 'focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200 dark:focus-within:ring-sky-900']">
             <input
               id="email"
               v-model="form.email"
               type="email"
               placeholder="newemail@example.com"
-              :disabled="!['staff', 'admin'].includes(authStore.role.trim().toLowerCase())"
-              :class="['w-full bg-transparent px-4 py-3 outline-none text-slate-900', !['staff', 'admin'].includes(authStore.role.trim().toLowerCase()) ? 'cursor-not-allowed' : '']"
+              :disabled="!canEditEmail"
+              :class="['w-full bg-transparent px-4 py-3 outline-none text-slate-900 dark:text-slate-100', !canEditEmail ? 'cursor-not-allowed' : '']"
             />
-            <button type="button" class="px-4 bg-slate-100 text-slate-500 hover:text-blue-600 transition" :disabled="!['staff', 'admin'].includes(authStore.role.trim().toLowerCase())">
+            <span class="flex items-center border-l border-slate-200 px-4 text-slate-400 dark:border-slate-700">
               <Mail class="h-5 w-5" />
-            </button>
+            </span>
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">Password</label>
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
           <button
             @click="openPasswordModal"
-            class="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 hover:bg-slate-100 transition"
+            class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800"
           >
-            <Key class="h-4 w-4" />
-            Change Password
+            <span class="flex items-center gap-3"><Key class="h-4 w-4 text-slate-400" /><span><span class="block text-sm font-medium">Change password</span><span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Verify your email before setting a new password</span></span></span>
+            <ChevronRight class="h-4 w-4 text-slate-400" />
           </button>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2" for="mobile_phone">Mobile Phone</label>
-          <div class="flex rounded-xl border border-slate-200 bg-slate-50 shadow-sm overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition">
-            <span class="inline-flex items-center px-4 bg-slate-100 text-slate-500 font-semibold text-sm border-r border-slate-200 select-none">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300" for="mobile_phone">Mobile phone</label>
+          <div class="flex overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-200 dark:border-slate-700 dark:bg-slate-800/60 dark:focus-within:ring-sky-900">
+            <span class="inline-flex select-none items-center border-r border-slate-200 bg-slate-100 px-4 text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
               +63
             </span>
             <input 
@@ -58,17 +74,18 @@
               type="tel" 
               maxlength="10"
               placeholder="9123456789"
-              class="w-full bg-transparent px-4 py-3 outline-none text-slate-900" 
+              class="w-full bg-transparent px-4 py-3 text-slate-900 outline-none dark:text-slate-100"
             />
-            <button type="button" class="px-4 bg-slate-100 text-slate-500 hover:text-blue-600 transition border-l border-slate-200">
+            <span class="flex items-center border-l border-slate-200 px-4 text-slate-400 dark:border-slate-700">
               <Phone class="h-5 w-5" />
-            </button>
+            </span>
           </div>
-          <p class="text-xs text-slate-500 mt-2">Enter a 10-digit number starting with 9 (e.g., 9123456789).</p>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Enter a 10-digit Philippine mobile number starting with 9.</p>
+        </div>
         </div>
       </div>
     </div>
-    <div v-else class="text-center py-12 text-slate-500">Loading profile...</div>
+    <div v-else class="rounded-2xl border border-slate-200 bg-white py-16 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">Loading profile...</div>
 
     <ModalShell
       :show="showPasswordModal"
@@ -117,12 +134,12 @@
         </div>
       </div>
     </ModalShell>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { User, Mail, Key, Phone } from 'lucide-vue-next';
+import { computed, ref, onMounted, watch } from 'vue';
+import { Camera, ChevronRight, Mail, Key, Phone, ShieldCheck } from 'lucide-vue-next';
 import { getProfile, updateProfile, uploadProfileImage } from '../../services/profile.service';
 import type { UserRead } from '../../types/auth';
 import { useAuthStore } from '../../stores/auth';
@@ -140,6 +157,12 @@ const resetStep = ref(1);
 const resetForm = ref({ email: '', code: '', newPassword: '', confirmPassword: '' });
 const resetError = ref('');
 const isSubmitting = ref(false);
+const canEditEmail = computed(() => ['staff', 'admin'].includes(authStore.role.trim().toLowerCase()));
+const profileInitial = computed(() => user.value?.email?.charAt(0).toUpperCase() || 'U');
+const roleLabel = computed(() => {
+  const role = authStore.role.trim().toLowerCase();
+  return role === 'admin' ? 'Administrator' : role === 'staff' ? 'Staff member' : 'Customer';
+});
 
 const openPasswordModal = () => {
     resetForm.value = { email: user.value?.email || '', code: '', newPassword: '', confirmPassword: '' };
@@ -269,7 +292,7 @@ const handleImageUpload = async (event: any) => {
 };
 
 const getImageUrl = (url?: string) => {
-    if (!url) return 'https://via.placeholder.com/150';
+    if (!url) return '';
     // If it's a data URI, return as is
     if (url.startsWith('data:')) return url;
     // Otherwise, handle as API path

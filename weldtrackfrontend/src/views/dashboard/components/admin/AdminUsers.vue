@@ -127,20 +127,22 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-lg border border-gray-200 bg-white p-4 sm:p-6 relative">
+  <section class="relative space-y-6">
     <LocalLoader v-if="loading" />
-    <div class="mb-4">
-      <div class="mb-4 flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-blue-50 to-white ring-1 ring-blue-100">
-          <Users class="dashboard-view-icon h-5 w-5 text-blue-600" />
-        </div>
-        <div>
-          <h3 class="text-lg font-bold text-gray-900">Users</h3>
-          <p class="mt-0.5 text-sm text-gray-500">Manage customer and staff accounts</p>
-        </div>
+    <header class="flex items-start gap-3">
+      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 ring-1 ring-blue-100">
+        <Users class="dashboard-view-icon h-6 w-6 text-blue-600" />
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
-        <input v-model="search" placeholder="Search users..." class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-slate-900 sm:flex-1" />
+      <div>
+        <h2 class="text-2xl font-semibold text-gray-900">Users</h2>
+        <p class="mt-1 text-sm text-gray-600">Manage customer and staff accounts</p>
+      </div>
+    </header>
+
+    <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div class="border-b border-gray-200 px-5 py-4">
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+          <input v-model="search" placeholder="Search users..." class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-slate-900 sm:flex-1" />
 
         <div class="w-32 sm:w-40">
           <div class="relative">
@@ -171,7 +173,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="overflow-x-auto">
-      <table class="w-full text-xs sm:text-sm">
+      <table class="w-full min-w-[700px] text-xs sm:text-sm">
         <thead>
           <tr class="border-b border-gray-200 text-left">
             <th class="px-2 py-2 sm:px-4 sm:py-3 font-semibold text-gray-700">ID</th>
@@ -224,7 +226,8 @@ onBeforeUnmount(() => {
         </tbody>
       </table>
     </div>
-  </div>
+    </article>
+  </section>
 </template>
 
 <style scoped>

@@ -4,8 +4,6 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect
 import { useRoute, useRouter } from 'vue-router'
 import {
   ChevronDown,
-  ChevronUp,
-  Flame,
   LogOut,
   Menu,
   X,
@@ -14,6 +12,7 @@ import api from '../../../api/api'
 import { useThemeMode } from '../../../composables/useThemeMode'
 import { useAuthStore } from '../../../stores/auth'
 import ThemeToggle from '../../../components/ui/ThemeToggle.vue'
+import NotificationDropdown from '../components/shared/NotificationDropdown.vue'
 
 export type SidebarLeaf = {
   kind: 'item'
@@ -50,7 +49,6 @@ const { isDarkMode } = useThemeMode()
 
 const isMobileSidebarOpen = ref(false)
 const isLoggingOut = ref(false)
-const isSidebarMetaCollapsed = ref(true)
 const openGroups = reactive<Record<string, boolean>>({})
 
 function closeMobileSidebar() {
@@ -81,10 +79,6 @@ function getImageUrl(url?: string) {
   if (url.startsWith('data:')) return url
   const cleanUrl = url.replace('/api', '')
   return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`
-}
-
-function toggleSidebarMeta() {
-  isSidebarMetaCollapsed.value = !isSidebarMetaCollapsed.value
 }
 
 function isEntryActive(entry: SidebarEntry): boolean {
@@ -133,10 +127,10 @@ function handleLogout() {
 
 <template>
   <div
-    :class="['dashboard-theme-page min-h-screen lg:pl-80', dashboardThemeClass]"
+    :class="['dashboard-theme-page min-h-screen overflow-x-hidden lg:pl-80', dashboardThemeClass]"
     :style="{ '--role-accent': props.accent }"
   >
-    <header class="dashboard-header fixed top-0 right-0 z-30 flex h-14 w-full items-center justify-between px-4 sm:px-6 lg:w-[calc(100%-320px)]">
+    <header class="dashboard-header fixed top-0 right-0 z-30 flex h-[3.25rem] w-full items-center justify-between px-4 sm:px-6 lg:w-[calc(100%-320px)]">
       <button
         type="button"
         class="dashboard-icon-btn inline-flex lg:hidden"
@@ -154,10 +148,11 @@ function handleLogout() {
       </div>
 
       <div class="ml-auto flex items-center gap-2 sm:gap-3">
-        <div class="hidden rounded-full border px-3 py-1 text-xs font-medium sm:block dashboard-soft-pill">
+        <div class="hidden rounded-full border px-3 py-0.5 text-[11px] font-medium sm:block dashboard-soft-pill">
           {{ currentDateLabel }}
         </div>
         <ThemeToggle />
+        <NotificationDropdown />
         <button
           type="button"
           class="dashboard-avatar-btn"
@@ -183,7 +178,7 @@ function handleLogout() {
 
     <aside
       id="dashboard-navigation"
-      class="dashboard-sidebar fixed inset-y-0 left-0 z-50 flex h-screen w-80 flex-col transition-transform duration-200 lg:translate-x-0"
+      class="dashboard-sidebar fixed inset-y-0 left-0 z-50 flex h-screen w-[75vw] max-w-[320px] sm:w-80 flex-col transition-transform duration-200 lg:translate-x-0"
       :class="isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
       <div class="gauge-rail" aria-hidden="true"></div>
@@ -191,9 +186,7 @@ function handleLogout() {
       <div class="border-b px-5 py-5 lg:px-6 dashboard-border-soft">
         <div class="flex items-start justify-between gap-4">
           <div class="flex items-center gap-3">
-            <div class="dashboard-brand-icon">
-              <Flame class="h-5 w-5" stroke-width="2.25" />
-            </div>
+            <img src="/weldtrack.png" alt="WeldTrack Logo" class="h-10 w-auto shrink-0 object-contain" />
             <div>
               <h2 class="brand-mark text-lg leading-tight">WeldTrack</h2>
               <p class="mono-label mt-0.5 text-[10px]">Operations Console</p>
@@ -210,37 +203,6 @@ function handleLogout() {
           </button>
         </div>
 
-        <button
-          type="button"
-          class="mt-4 inline-flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition dashboard-ghost-btn"
-          @click="toggleSidebarMeta"
-        >
-          <div>
-            <p class="mono-label">Workspace Overview</p>
-            <p class="mt-1 text-sm font-medium">{{ isSidebarMetaCollapsed ? 'Show info' : 'Hide info' }}</p>
-          </div>
-          <component :is="isSidebarMetaCollapsed ? ChevronDown : ChevronUp" class="h-4 w-4" />
-        </button>
-
-        <div v-show="!isSidebarMetaCollapsed" class="mt-3 rounded-xl border px-4 py-3 dashboard-panel dashboard-border-soft">
-          <p class="mono-label">{{ props.roleLabel }}</p>
-          <p class="mt-1 text-sm font-medium">{{ props.roleHint }}</p>
-        </div>
-      </div>
-
-      <div v-show="!isSidebarMetaCollapsed" class="border-b px-5 py-4 lg:px-6 dashboard-border-soft">
-        <div class="flex items-center gap-3 rounded-xl border px-3 py-3 dashboard-panel dashboard-border-soft">
-          <div class="dashboard-initial">
-            {{ authStore.email?.slice(0, 1).toUpperCase() || 'U' }}
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium" :title="authStore.email || 'Guest'">
-              {{ authStore.email || 'Guest' }}
-            </p>
-            <p class="truncate text-xs capitalize">{{ props.role }}</p>
-          </div>
-          <span class="status-dot" aria-hidden="true"></span>
-        </div>
       </div>
 
       <nav class="sidebar-nav min-h-0 flex-1 overflow-y-auto px-4 py-4 lg:px-5">
@@ -253,7 +215,7 @@ function handleLogout() {
             <button
               v-if="entry.kind === 'item'"
               type="button"
-              class="nav-row group flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-left text-sm font-medium"
+              class="nav-row group flex w-full items-center gap-3 rounded-lg px-3.5 py-2 text-left text-sm font-medium"
               :class="isEntryActive(entry) ? 'nav-row--active' : ''"
               @click="selectSection(entry)"
             >
@@ -266,7 +228,7 @@ function handleLogout() {
             <div v-else class="nav-group">
               <button
                 type="button"
-                class="nav-row group flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-left text-sm font-medium"
+                class="nav-row group flex w-full items-center gap-3 rounded-lg px-3.5 py-2 text-left text-sm font-medium"
                 :class="isEntryActive(entry) && !isGroupOpen(entry) ? 'nav-row--active' : ''"
                 :aria-expanded="isGroupOpen(entry)"
                 @click="toggleGroup(entry)"
@@ -303,7 +265,7 @@ function handleLogout() {
       <div class="border-t px-5 py-5 lg:px-6 dashboard-border-soft">
         <button
           type="button"
-          class="flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition dashboard-ghost-btn"
+          class="flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition dashboard-ghost-btn"
           :disabled="isLoggingOut"
           @click="handleLogout"
         >
@@ -322,51 +284,52 @@ function handleLogout() {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=JetBrains+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
 .dashboard-theme-page {
-  --db-bg: #f8fafc;
-  --db-text: #0f172a;
-  --db-muted: #475569;
-  --db-border: rgba(15, 23, 42, 0.1);
+  font-family: 'Inter', sans-serif;
+  --db-bg: #fafafa;
+  --db-text: #09090b;
+  --db-muted: #71717a;
+  --db-border: #e4e4e7;
   --db-sidebar: #ffffff;
-  --db-sidebar-text: #334155;
-  --db-panel: rgba(255, 255, 255, 0.9);
+  --db-sidebar-text: #52525b;
+  --db-panel: #ffffff;
   --db-panel-solid: #ffffff;
-  --db-header: rgba(248, 250, 252, 0.92);
-  --db-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+  --db-header: rgba(250, 250, 250, 0.85);
+  --db-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --db-shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --db-hover: #f4f4f5;
   background: var(--db-bg);
   color: var(--db-text);
 }
 
 .dashboard-theme-page.dashboard-dark {
-  --db-bg: #020617;
+  --db-bg: #0f172a;
   --db-text: #f8fafc;
   --db-muted: #94a3b8;
-  --db-border: rgba(255, 255, 255, 0.08);
-  --db-sidebar: #0b1220;
+  --db-border: #1e293b;
+  --db-sidebar: #0f172a;
   --db-sidebar-text: #cbd5e1;
-  --db-panel: rgba(15, 23, 42, 0.72);
-  --db-panel-solid: rgba(15, 23, 42, 0.86);
-  --db-header: rgba(2, 6, 23, 0.82);
-  --db-shadow: 0 24px 60px rgba(2, 6, 23, 0.4);
+  --db-panel: #0f172a;
+  --db-panel-solid: #1e293b;
+  --db-header: rgba(15, 23, 42, 0.85);
+  --db-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --db-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --db-hover: #1e293b;
 }
 
 .dashboard-header {
   border-bottom: 1px solid var(--db-border);
   background: var(--db-header);
   color: var(--db-text);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(12px);
 }
 
 .dashboard-sidebar {
-  background:
-    radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
-    linear-gradient(180deg, color-mix(in srgb, var(--db-sidebar) 97%, #000) 0%, var(--db-sidebar) 100%);
+  background: var(--db-sidebar);
   color: var(--db-sidebar-text);
   border-right: 1px solid var(--db-border);
-  box-shadow: var(--db-shadow);
-  padding-left: 3px;
 }
 
 .dashboard-border-soft {
@@ -374,193 +337,177 @@ function handleLogout() {
 }
 
 .dashboard-panel {
-  background: color-mix(in srgb, var(--db-panel-solid) 62%, transparent);
+  background: var(--db-panel-solid);
+  border: 1px solid var(--db-border);
+  box-shadow: var(--db-shadow);
 }
 
 .dashboard-soft-pill {
   border-color: var(--db-border);
-  background: color-mix(in srgb, var(--db-panel-solid) 70%, transparent);
+  background: var(--db-panel-solid);
+  color: var(--db-muted);
 }
 
 .dashboard-theme-page :deep(.theme-toggle) {
-  border-color: var(--db-border);
-  background: color-mix(in srgb, var(--db-panel-solid) 72%, transparent);
-  color: var(--db-text);
+  border: 1px solid var(--db-border);
+  background: var(--db-panel-solid);
+  color: var(--db-muted);
+  box-shadow: var(--db-shadow);
+  transition: all 0.2s ease;
 }
 
 .dashboard-theme-page :deep(.theme-toggle:hover) {
-  background: color-mix(in srgb, var(--db-panel-solid) 96%, transparent);
+  background: var(--db-hover);
+  color: var(--db-text);
 }
 
 .dashboard-icon-btn {
-  height: 2.4rem;
-  width: 2.4rem;
+  height: 2.25rem;
+  width: 2.25rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--db-border);
-  background: color-mix(in srgb, var(--db-panel-solid) 74%, transparent);
-  transition: background-color 0.16s ease;
+  background: var(--db-panel-solid);
+  color: var(--db-muted);
+  box-shadow: var(--db-shadow);
+  transition: all 0.2s ease;
 }
 
 .dashboard-icon-btn:hover {
-  background: color-mix(in srgb, var(--db-panel-solid) 94%, transparent);
+  background: var(--db-hover);
+  color: var(--db-text);
 }
 
 .dashboard-avatar-btn {
-  height: 2.15rem;
-  width: 2.15rem;
+  height: 2.25rem;
+  width: 2.25rem;
   overflow: hidden;
   border-radius: 9999px;
-  border: 2px solid transparent;
-  background: color-mix(in srgb, var(--db-panel-solid) 80%, transparent);
-  transition: border-color 0.16s ease;
+  border: 1px solid var(--db-border);
+  background: var(--db-panel-solid);
+  box-shadow: var(--db-shadow);
+  transition: all 0.2s ease;
 }
 
 .dashboard-avatar-btn:hover {
-  border-color: var(--role-accent);
+  border-color: var(--db-muted);
 }
 
 .dashboard-brand-icon {
   display: flex;
-  height: 2.75rem;
-  width: 2.75rem;
+  height: 2.25rem;
+  width: 2.25rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
-  border: 1px solid color-mix(in srgb, var(--role-accent) 35%, transparent);
-  background: color-mix(in srgb, var(--role-accent) 14%, transparent);
-  color: var(--role-accent);
+  border-radius: 0.5rem;
+  background: var(--db-text);
+  color: var(--db-bg);
+  transition: opacity 0.2s ease;
+}
+
+.dashboard-brand-icon:hover {
+  opacity: 0.9;
 }
 
 .dashboard-initial {
   display: flex;
-  height: 2.75rem;
-  width: 2.75rem;
+  height: 2.25rem;
+  width: 2.25rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--role-accent) 14%, transparent);
-  color: var(--role-accent);
-  font-size: 0.9rem;
-  font-weight: 700;
+  border-radius: 0.5rem;
+  background: var(--db-hover);
+  color: var(--db-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid var(--db-border);
 }
 
 .dashboard-eyebrow {
   color: var(--db-muted);
-  font-size: 0.72rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
 }
 
 .dashboard-ghost-btn {
   border-color: var(--db-border);
-  background: color-mix(in srgb, var(--db-panel-solid) 45%, transparent);
+  background: transparent;
+  color: var(--db-text);
 }
 
 .dashboard-ghost-btn:hover {
-  background: color-mix(in srgb, var(--db-panel-solid) 72%, transparent);
+  background: var(--db-hover);
 }
 
 .brand-mark {
-  font-family: 'Oswald', 'Inter', sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--db-text);
 }
 
 .mono-label {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--db-muted) 88%, #fff 12%);
+  color: var(--db-muted);
 }
 
 .gauge-rail {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background:
-    repeating-linear-gradient(180deg,
-      color-mix(in srgb, var(--role-accent) 58%, transparent) 0px,
-      color-mix(in srgb, var(--role-accent) 58%, transparent) 2px,
-      transparent 2px,
-      transparent 14px);
-  opacity: 0.6;
+  display: none; /* Removed for a cleaner look */
 }
 
 .status-dot {
   height: 8px;
   width: 8px;
   border-radius: 9999px;
-  background: var(--role-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--role-accent) 20%, transparent);
+  background: #10b981;
 }
 
 .nav-row {
   color: var(--db-sidebar-text);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .nav-row:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.dashboard-theme-page.dashboard-light .nav-row:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.dashboard-theme-page.dashboard-light .dashboard-icon-wrap {
-  background: #f8fafc;
-  color: #475569;
-}
-
-.dashboard-theme-page.dashboard-light .dashboard-icon-wrap--active {
-  border-color: color-mix(in srgb, var(--role-accent) 45%, #cbd5e1);
-  background: color-mix(in srgb, var(--role-accent) 14%, white);
-  color: color-mix(in srgb, var(--role-accent) 78%, #0f172a);
+  background: var(--db-hover);
+  color: var(--db-text);
 }
 
 .nav-row:focus-visible {
-  outline: 2px solid var(--role-accent);
+  outline: 2px solid var(--db-border);
   outline-offset: 2px;
 }
 
-.dashboard-theme-page.dashboard-light .nav-row--active {
-  background: color-mix(in srgb, var(--role-accent) 13%, white);
-  color: #0f172a;
-}
-
-.dashboard-theme-page.dashboard-dark .nav-row--active {
-  background: color-mix(in srgb, var(--role-accent) 16%, transparent);
+.dashboard-theme-page .nav-row--active {
+  background: var(--db-hover);
   color: var(--db-text);
+  font-weight: 600;
 }
 
 .dashboard-icon-wrap {
   display: flex;
-  height: 2rem;
-  width: 2rem;
+  height: 1.25rem;
+  width: 1.25rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.6rem;
-  border: 1px solid color-mix(in srgb, var(--db-border) 88%, transparent);
-  /* Use a theme-aware subtle surface instead of a semi-white overlay which
-     looks like a shine in dark mode. Keep icon color driven by the sidebar
-     text color so icons match the theme. */
-  background: color-mix(in srgb, var(--db-panel-solid) 6%, transparent);
-  color: var(--db-sidebar-text);
+  color: var(--db-muted);
+  transition: color 0.15s ease;
 }
 
-.dashboard-icon-wrap--active {
-  border-color: color-mix(in srgb, var(--role-accent) 40%, transparent);
-  background: color-mix(in srgb, var(--role-accent) 16%, transparent);
-  color: var(--role-accent);
+.dashboard-theme-page .nav-row:hover .dashboard-icon-wrap,
+.dashboard-theme-page .nav-row--active .dashboard-icon-wrap {
+  color: var(--db-text);
 }
 
 .nav-subgroup {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.22s ease;
+  transition: grid-template-rows 0.2s ease;
 }
 
 .nav-subgroup--open {
@@ -569,35 +516,25 @@ function handleLogout() {
 
 .nav-subgroup-inner {
   overflow: hidden;
-  padding-left: 1.35rem;
+  padding-left: 1.5rem;
   margin-top: 2px;
-  border-left: 1px dashed color-mix(in srgb, var(--db-border) 92%, transparent);
-  margin-left: 1.15rem;
 }
 
 .nav-subgroup-inner > * + * {
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .child-tick {
-  height: 4px;
-  width: 4px;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--db-muted) 70%, transparent);
-  flex-shrink: 0;
-}
-
-.child-tick--active {
-  background: currentColor;
+  display: none; /* Removed for a cleaner look */
 }
 
 .sidebar-nav {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  scrollbar-color: var(--db-border) transparent;
 }
 
 .sidebar-nav::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
 }
 
 .sidebar-nav::-webkit-scrollbar-track {
@@ -605,14 +542,12 @@ function handleLogout() {
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.35);
+  background-color: var(--db-border);
   border-radius: 9999px;
-  border: 2px solid transparent;
-  background-clip: content-box;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(148, 163, 184, 0.55);
+  background-color: var(--db-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

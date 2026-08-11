@@ -20,7 +20,7 @@ const dateFilter = ref('all')
 
 const filteredBookings = computed(() => {
   let data = bookings.value.filter(
-    (booking) => booking.status === 'pending' || booking.status === 'confirmed',
+    (booking) => booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'in-progress',
   )
 
   const query = searchTerm.value.trim().toLowerCase()
@@ -75,7 +75,7 @@ function resetFilters() {
 }
 
 const pendingCount = computed(() => bookings.value.filter((booking) => booking.status === 'pending').length)
-const confirmedCount = computed(() => bookings.value.filter((booking) => booking.status === 'confirmed').length)
+const confirmedCount = computed(() => bookings.value.filter((booking) => booking.status === 'confirmed' || booking.status === 'in-progress').length)
 const completedCount = computed(() => bookings.value.filter((booking) => booking.status === 'completed').length)
 
 const isApprovalModalOpen = ref(false)
@@ -169,11 +169,13 @@ function getStatusClass(status: BookingStatus) {
     case 'confirmed':
       return 'bg-blue-50 text-blue-800 ring-blue-600/20'
     case 'completed':
-      return 'bg-green-50 text-green-800 ring-green-600/20'
+      return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+    case 'in-progress':
+      return 'bg-indigo-50 text-indigo-700 ring-indigo-200'
     case 'cancelled':
       return 'bg-red-50 text-red-800 ring-red-600/10'
     default:
-      return 'bg-gray-50 text-gray-700 ring-gray-600/10'
+      return 'bg-gray-50 text-gray-700 ring-gray-200'
   }
 }
 
@@ -373,7 +375,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
 </script>
 
 <template>
-  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6 relative">
+  <section class="relative space-y-6">
     <LocalLoader v-if="isLoading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
@@ -434,9 +436,9 @@ function getDisplayedLaborCost(booking: BookingItem) {
         </button>
       </div>
     </div>
-    <div class="overflow-hidden rounded-xl border border-gray-200">
-      <div class="h-screen overflow-x-auto">
-        <table class="w-full min-w-300 divide-y divide-gray-200">
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[1000px] divide-y divide-gray-200">
           <thead class="bg-gray-50/70">
             <tr class="text-left">
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Email/Contact No.</th>
@@ -468,7 +470,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
                       class="text-gray-500">After completion</span></p>
                   <p class="font-semibold">Total: ₱{{ (getDisplayedLaborCost(booking) + (booking.materialCost ??
                     0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
-                  <p v-if="booking.status === 'confirmed' && !hasStaffMaterialSubmission(booking.id)"
+                  <p v-if="(booking.status === 'confirmed' || booking.status === 'in-progress') && !hasStaffMaterialSubmission(booking.id)"
                     class="text-xs font-semibold text-amber-700">
                     Staff materials not submitted yet
                   </p>
@@ -488,7 +490,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
                     @click="openApprovalModal(booking)">
                     Approve
                   </button>
-                  <button v-if="booking.status === 'confirmed'" type="button"
+                  <button v-if="booking.status === 'confirmed' || booking.status === 'in-progress'" type="button"
                     class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
                     @click="openCompleteModal(booking)">
                     Complete

@@ -210,11 +210,9 @@ onBeforeUnmount(() => {
           <div class="absolute inset-0 bg-slate-950/30 mix-blend-multiply"></div>
           <div class="relative z-10 flex h-full w-full flex-col justify-between p-10 text-white">
             <div>
-              <div class="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_8px_30px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-              <svg class="h-8 w-8 !text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              </div>
+              <RouterLink to="/" class="mb-8 block transition hover:opacity-80">
+                <img src="/weldtrack.png" alt="WeldTrack Logo" class="h-20 w-auto object-contain" />
+              </RouterLink>
               <div class="mb-4 inline-block rounded-full border border-cyan-400/20 bg-cyan-500/15 px-4 py-1 text-[10px] font-bold tracking-[0.2em] !text-cyan-200 uppercase backdrop-blur-md">Create Your Account</div>
               <h1 class="max-w-md text-4xl font-black leading-tight tracking-tight !text-white">
                 Book welding services <br> without the hassle.
@@ -248,9 +246,9 @@ onBeforeUnmount(() => {
         <div class="auth-form-panel flex items-center justify-center p-8 sm:p-12 xl:p-16">
           <div class="w-full max-w-sm">
                 <div class="mb-10 text-center xl:text-left">
-                    <div class="mb-6 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 to-blue-600 p-0.5 xl:hidden">
-                        <div class="flex h-full w-full items-center justify-center rounded-[10px] bg-public-dark text-xl">⚙️</div>
-                    </div>
+                        <RouterLink to="/" class="mb-6 inline-block xl:hidden transition hover:opacity-80">
+                          <img src="/weldtrack.png" alt="WeldTrack Logo" class="h-16 w-auto object-contain" />
+                        </RouterLink>
                 <h2 class="text-3xl font-black tracking-tight text-white">Create Account</h2>
                 <p class="mt-2 text-slate-400">Create your customer account to book welding services.</p>
                 </div>

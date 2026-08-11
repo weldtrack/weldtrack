@@ -90,7 +90,7 @@ onMounted(async () => {
     <LocalLoader v-if="isLoading" />
     <div class="flex items-start gap-3">
       <div
-        class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+        class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
         <CheckCircle class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>

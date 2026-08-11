@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Check, CircleDollarSign, Plus, Trash2 } from 'lucide-vue-next'
+import { Check, PhilippinePeso, Plus, Trash2 } from 'lucide-vue-next'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
 import { fetchStaffDirectoryApi } from '../../../../api/auth'
@@ -94,12 +94,12 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="relative space-y-6 rounded-lg border border-gray-200 bg-white p-6">
+  <section class="relative space-y-6">
     <LocalLoader v-if="loading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
-          <CircleDollarSign class="dashboard-view-icon h-5 w-5 text-sky-600 dark:text-sky-400" />
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
+          <PhilippinePeso class="dashboard-view-icon h-5 w-5 text-sky-600 dark:text-sky-400" />
         </div>
         <div>
           <h2 class="text-2xl font-semibold text-gray-900">Payroll Management</h2>
@@ -134,10 +134,10 @@ onMounted(load)
     </ModalShell>
 
     <p v-if="error" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</p>
-    <div class="overflow-hidden rounded-lg border border-gray-200">
+    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
       <div v-if="loading" class="p-8 text-center text-gray-500">Loading payroll…</div>
       <div v-else-if="!payslips.length" class="p-8 text-center text-gray-500">No payslips created yet.</div>
-      <div v-else class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="border-b bg-gray-50 text-gray-500"><tr><th class="p-4">Staff</th><th class="p-4">Period</th><th class="p-4">Hours</th><th class="p-4">Net pay</th><th class="p-4">Status</th><th class="p-4 text-right">Actions</th></tr></thead><tbody><tr v-for="item in payslips" :key="item.id" class="border-b last:border-0"><td class="p-4 font-medium">{{ item.staff_email }}</td><td class="p-4">{{ period(item) }}</td><td class="p-4">{{ item.regular_hours }} + {{ item.overtime_hours }} OT</td><td class="p-4 font-semibold">{{ currency(item.net_pay) }}</td><td class="p-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize">{{ item.status }}</span></td><td class="p-4"><div class="flex justify-end gap-2"><button v-if="item.status !== 'paid'" class="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5" @click="advance(item)"><Check class="h-3.5 w-3.5" />{{ item.status === 'draft' ? 'Approve' : 'Mark paid' }}</button><button v-if="item.status === 'draft'" class="rounded-lg border p-2 text-red-600" aria-label="Delete draft" @click="remove(item)"><Trash2 class="h-4 w-4" /></button></div></td></tr></tbody></table></div>
+      <div v-else class="overflow-x-auto"><table class="w-full min-w-[700px] text-left text-sm"><thead class="border-b bg-gray-50 text-gray-500"><tr><th class="p-4">Staff</th><th class="p-4">Period</th><th class="p-4">Hours</th><th class="p-4">Net pay</th><th class="p-4">Status</th><th class="p-4 text-right">Actions</th></tr></thead><tbody><tr v-for="item in payslips" :key="item.id" class="border-b last:border-0"><td class="p-4 font-medium">{{ item.staff_email }}</td><td class="p-4">{{ period(item) }}</td><td class="p-4">{{ item.regular_hours }} + {{ item.overtime_hours }} OT</td><td class="p-4 font-semibold">{{ currency(item.net_pay) }}</td><td class="p-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize">{{ item.status }}</span></td><td class="p-4"><div class="flex justify-end gap-2"><button v-if="item.status !== 'paid'" class="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5" @click="advance(item)"><Check class="h-3.5 w-3.5" />{{ item.status === 'draft' ? 'Approve' : 'Mark paid' }}</button><button v-if="item.status === 'draft'" class="rounded-lg border p-2 text-red-600" aria-label="Delete draft" @click="remove(item)"><Trash2 class="h-4 w-4" /></button></div></td></tr></tbody></table></div>
     </div>
   </section>
 </template>

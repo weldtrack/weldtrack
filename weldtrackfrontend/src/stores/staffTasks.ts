@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import type { StaffTask, TaskStatus } from '../types/staffTasks'
 import * as staffTaskService from '../api/staffTasks'
+import { useBookingsStore } from './bookings'
 
 export const useStaffTasksStore = defineStore('staff-tasks', {
   state: () => ({
@@ -45,6 +46,11 @@ export const useStaffTasksStore = defineStore('staff-tasks', {
       const index = this.tasks.findIndex((item) => item.id === taskId)
       if (index !== -1) {
         this.tasks[index] = updated
+
+        if (status === 'in-progress' && updated.bookingId) {
+          const bookingsStore = useBookingsStore()
+          await bookingsStore.updateBooking(updated.bookingId, { status: 'in-progress' })
+        }
       }
       return updated
     },

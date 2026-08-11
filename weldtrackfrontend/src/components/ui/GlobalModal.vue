@@ -41,17 +41,29 @@ const toneMap = {
 .global-modal__message {
   margin: 0;
   color: var(--modal-text, #334155);
+  font-size: 0.9375rem;
   line-height: 1.6;
 }
 
 .global-modal__button {
   border: 0;
-  border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
+  border-radius: 0.625rem;
+  min-height: 2.5rem;
+  padding: 0.625rem 1rem;
   background: var(--accent-primary, var(--chart-ongoing, #2563eb));
   color: var(--button-text, #fff);
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: filter 150ms ease, transform 150ms ease;
+}
+
+.global-modal__button:hover {
+  filter: brightness(0.95);
+}
+
+.global-modal__button:active {
+  transform: scale(0.98);
 }
 
 .global-modal__button--secondary {

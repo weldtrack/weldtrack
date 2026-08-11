@@ -76,7 +76,7 @@ const newCustomersThisMonth = computed(() => {
   return count
 })
 
-const ongoingProjects = computed(() => bookings.value.filter((booking) => booking.status === 'confirmed').length)
+const ongoingProjects = computed(() => bookings.value.filter((booking) => booking.status === 'confirmed' || booking.status === 'in-progress').length)
 
 const completedProjects = computed(() => bookings.value.filter((booking) => booking.status === 'completed').length)
 
@@ -128,7 +128,7 @@ const monthlyExpenses = computed(() => {
 
 const projectStatusBreakdown = computed(() => {
   const completed = bookings.value.filter((booking) => booking.status === 'completed').length
-  const ongoing = bookings.value.filter((booking) => booking.status === 'confirmed').length
+  const ongoing = bookings.value.filter((booking) => booking.status === 'confirmed' || booking.status === 'in-progress').length
   const pending = bookings.value.filter((booking) => booking.status === 'pending').length
   const total = completed + ongoing + pending
 
@@ -238,9 +238,9 @@ const pieStyle = computed(() => {
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
       <div class="rounded-lg border border-gray-200 bg-transparent p-6">
         <h3 class="mb-4 text-lg font-semibold text-gray-900">Monthly Project Cost Trend</h3>
-        <svg class="h-75 w-full" viewBox="0 0 640 300" role="img" aria-label="Monthly project cost trend chart">
+        <svg class="h-72 w-full" viewBox="0 0 640 300" role="img" aria-label="Monthly project cost trend chart">
           <line v-for="grid in lineChart.gridValues" :key="grid" x1="40" :x2="600" :y1="32 + (236 * grid)"
-            :y2="32 + (236 * grid)" stroke="#e5e7eb" stroke-dasharray="4 4" />
+            :y2="32 + (236 * grid)" stroke="var(--db-border)" stroke-dasharray="4 4" />
 
           <polyline fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
             :points="lineChart.linePath" />
@@ -279,7 +279,7 @@ const pieStyle = computed(() => {
     <div class="rounded-lg border border-gray-200 bg-transparent p-6">
       <h3 class="mb-4 text-lg font-semibold text-gray-900">Recent Completed Projects</h3>
       <div class="overflow-x-auto">
-        <table class="w-full min-w-180">
+        <table class="w-full min-w-[700px]">
           <thead>
             <tr class="border-b border-gray-200 text-left">
               <th class="px-4 py-3 font-semibold text-gray-700">Completed On</th>

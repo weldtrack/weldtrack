@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Theme utilities must follow the app toggle, not the operating-system theme. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
@@ -38,8 +41,8 @@ textarea:disabled {
 }
 
 :focus-visible {
-  outline: 2px solid #0284c7;
-  outline-offset: 2px;
+  outline: 2px solid rgba(2, 132, 199, 0.6);
+  outline-offset: 1px;
 }
 
 ::selection {
@@ -49,9 +52,9 @@ textarea:disabled {
 :root {
   /* Shared overlay tokens. These live at document level because GlobalModal is
      mounted next to RouterView, outside the dashboard theme wrapper. */
-  --modal-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.98));
+  --modal-surface: #ffffff;
   --modal-border: rgba(15, 23, 42, 0.12);
-  --modal-shadow: 0 30px 90px rgba(15, 23, 42, 0.28);
+  --modal-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
   --modal-backdrop: rgba(15, 23, 42, 0.58);
   --modal-eyebrow: #64748b;
   --modal-title: #0f172a;
@@ -81,9 +84,9 @@ html[data-theme="dark"] {
   --public-text: #f8fafc;
   --public-panel: rgba(15, 23, 42, 0.72);
   --public-panel-solid: #1e293b;
-  --modal-surface: linear-gradient(180deg, rgba(15, 23, 42, 0.99), rgba(11, 18, 32, 0.99));
+  --modal-surface: #111827;
   --modal-border: rgba(148, 163, 184, 0.22);
-  --modal-shadow: 0 30px 90px rgba(0, 0, 0, 0.58);
+  --modal-shadow: 0 24px 64px rgba(0, 0, 0, 0.48);
   --modal-backdrop: rgba(2, 6, 23, 0.76);
   --modal-eyebrow: #94a3b8;
   --modal-title: #f8fafc;
@@ -471,8 +474,19 @@ html[data-theme="dark"] {
 }
 
 .dashboard-theme-page.dashboard-dark .bg-sky-50,
+.dashboard-theme-page.dashboard-dark .bg-sky-100,
+.dashboard-theme-page.dashboard-dark .bg-sky-200,
 .dashboard-theme-page.dashboard-dark .bg-blue-50,
+.dashboard-theme-page.dashboard-dark .bg-blue-100,
+.dashboard-theme-page.dashboard-dark .bg-blue-200,
 .dashboard-theme-page.dashboard-dark .bg-green-50,
+.dashboard-theme-page.dashboard-dark .bg-green-100,
+.dashboard-theme-page.dashboard-dark .bg-emerald-50,
+.dashboard-theme-page.dashboard-dark .bg-emerald-100,
+.dashboard-theme-page.dashboard-dark .bg-amber-50,
+.dashboard-theme-page.dashboard-dark .bg-amber-100,
+.dashboard-theme-page.dashboard-dark .bg-orange-50,
+.dashboard-theme-page.dashboard-dark .bg-purple-50,
 .dashboard-theme-page.dashboard-dark .bg-red-50,
 .dashboard-theme-page.dashboard-dark .bg-yellow-50 {
   background-color: rgb(30 41 59 / 0.82) !important;
@@ -483,7 +497,15 @@ html[data-theme="dark"] {
 .dashboard-theme-page.dashboard-dark .border-gray-300,
 .dashboard-theme-page.dashboard-dark .border-slate-100,
 .dashboard-theme-page.dashboard-dark .border-slate-200,
-.dashboard-theme-page.dashboard-dark .border-slate-300 {
+.dashboard-theme-page.dashboard-dark .border-slate-300,
+.dashboard-theme-page.dashboard-dark .border-sky-100,
+.dashboard-theme-page.dashboard-dark .border-blue-100,
+.dashboard-theme-page.dashboard-dark .border-blue-200,
+.dashboard-theme-page.dashboard-dark .border-sky-200,
+.dashboard-theme-page.dashboard-dark .border-sky-300,
+.dashboard-theme-page.dashboard-dark .border-emerald-100,
+.dashboard-theme-page.dashboard-dark .border-emerald-200,
+.dashboard-theme-page.dashboard-dark .border-red-100 {
   border-color: rgb(148 163 184 / 0.2) !important;
 }
 
@@ -538,6 +560,10 @@ html[data-theme="dark"] {
   background-color: rgb(241 245 249 / 0.9) !important;
 }
 
+.dashboard-theme-page table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
 .dashboard-theme-page .booking-reset-button:hover {
   background-color: rgb(241 245 249 / 0.9);
 }
@@ -565,13 +591,14 @@ html[data-theme="dark"] {
 .dashboard-theme-page input:not([type="checkbox"]):not([type="radio"]),
 .dashboard-theme-page select,
 .dashboard-theme-page textarea {
-  min-height: 2.625rem;
-  border-radius: 0.625rem;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
   transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 }
 
 .dashboard-theme-page textarea {
-  min-height: 6rem;
+  min-height: 5rem;
   resize: vertical;
 }
 
@@ -599,8 +626,8 @@ html[data-theme="dark"] {
 }
 
 .dashboard-theme-page table th {
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -698,6 +725,37 @@ html[data-theme="dark"] .modal-shell textarea::placeholder {
   color: #64748b !important;
 }
 
+/* Keep legacy modal contents aligned with the shared minimalist shell. */
+.modal-shell input:not([type="checkbox"]):not([type="radio"]),
+.modal-shell select,
+.modal-shell textarea {
+  min-height: 2.5rem;
+  border-radius: 0.625rem !important;
+  box-shadow: none !important;
+  font-size: 0.875rem;
+}
+
+.modal-shell textarea {
+  min-height: 5rem;
+}
+
+.modal-shell form .rounded-2xl {
+  border-radius: 0.75rem !important;
+}
+
+.modal-shell form .shadow-sm,
+.modal-shell form .shadow-md,
+.modal-shell form .shadow-lg {
+  box-shadow: none !important;
+}
+
+.modal-shell form button {
+  min-height: 2.5rem;
+  border-radius: 0.625rem !important;
+  font-size: 0.875rem;
+  box-shadow: none !important;
+}
+
 html[data-theme="dark"] .modal-shell .hover\:bg-white:hover,
 html[data-theme="dark"] .modal-shell .hover\:bg-gray-50:hover,
 html[data-theme="dark"] .modal-shell .hover\:bg-slate-50:hover,
@@ -718,7 +776,6 @@ html[data-theme="dark"] .modal-shell .hover\:bg-slate-200:hover {
 .lucide, svg.lucide {
   stroke: currentColor !important;
   fill: none !important;
-  filter: none !important;
 }
 
 /* Primary view icons use the same neutral foreground as inactive sidebar

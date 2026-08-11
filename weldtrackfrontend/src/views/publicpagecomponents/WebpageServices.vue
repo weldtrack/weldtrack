@@ -80,10 +80,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <section id="services" class="relative py-24 sm:py-32">
+    <section id="services" class="relative py-16 sm:py-24">
         <div class="mx-auto max-w-7xl px-6 sm:px-12 text-center">
             <div data-reveal class="reveal mb-4 text-sm font-bold tracking-[0.3em] text-cyan-500 uppercase">Popular Services</div>
-            <h2 data-reveal class="reveal text-4xl font-black tracking-[-0.035em] text-white sm:text-5xl">Built for the work you need.</h2>
+            <h2 data-reveal class="reveal text-4xl font-bold tracking-[-0.035em] text-white sm:text-5xl">Built for the work you need.</h2>
             <p data-reveal class="reveal mx-auto mb-14 mt-5 max-w-2xl text-lg leading-8 text-slate-400">Explore available services, then create an account to send your requirements and preferred schedule.</p>
 
             <div v-if="isLoading" class="mx-auto max-w-xl py-20" role="status">
@@ -105,8 +105,8 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-else data-reveal class="reveal relative mx-auto max-w-6xl" @mouseenter="stopAutoplay" @mouseleave="startAutoplay">
-                <div class="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-public-panel p-3 shadow-2xl backdrop-blur-sm sm:p-5">
-                    <div class="relative h-[430px] overflow-hidden rounded-[1.4rem] sm:h-[540px]">
+                <div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-public-panel p-3 shadow-2xl backdrop-blur-sm sm:p-5">
+                    <div class="relative h-[430px] overflow-hidden rounded-xl sm:h-[540px]">
                         <transition name="fade" mode="out-in">
                             <div :key="currentSlide" class="h-full w-full">
                                 <img :src="services[currentSlide]?.image_url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2164&auto=format&fit=crop'"
@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
                                     <div class="mb-3 inline-block rounded-full border border-cyan-300/20 bg-slate-950/45 px-4 py-1.5 text-xs font-bold tracking-widest text-cyan-300 uppercase backdrop-blur-md">
                                         Starting at {{ formatCurrency(services[currentSlide]?.price || 0) }}
                                     </div>
-                                    <h3 class="public-service-text mb-3 text-3xl font-black sm:text-5xl">{{ services[currentSlide]?.name }}</h3>
+                                    <h3 class="public-service-text mb-3 text-3xl font-extrabold sm:text-5xl">{{ services[currentSlide]?.name }}</h3>
                                     <p class="public-service-text max-w-2xl text-base leading-7 sm:text-lg">
                                         {{ services[currentSlide]?.description || 'A service option customers can book directly from the portal.' }}
                                     </p>
@@ -128,14 +128,14 @@ onBeforeUnmount(() => {
 
                     <div class="flex flex-col items-center justify-between gap-5 px-2 pb-2 pt-6 sm:flex-row">
                         <div class="flex gap-3">
-                            <button type="button" aria-label="Previous service" @click="prevSlide" class="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition-all hover:bg-white/10 active:scale-90"><ArrowLeft class="h-4 w-4" /></button>
-                            <button type="button" aria-label="Next service" @click="nextSlide" class="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition-all hover:bg-white/10 active:scale-90"><ArrowRight class="h-4 w-4" /></button>
+                            <button type="button" aria-label="Previous service" @click="prevSlide" class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white transition-all hover:bg-white/10 active:scale-90"><ArrowLeft class="h-4 w-4" /></button>
+                            <button type="button" aria-label="Next service" @click="nextSlide" class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white transition-all hover:bg-white/10 active:scale-90"><ArrowRight class="h-4 w-4" /></button>
                         </div>
                         <div class="flex items-center gap-2.5">
                             <button v-for="(s, i) in services" :key="s.id" type="button" :aria-label="`View ${s.name}`" @click="currentSlide = i"
-                                :class="['h-1.5 rounded-full transition-all duration-500', currentSlide === i ? 'w-10 bg-cyan-400' : 'w-4 bg-white/10 hover:bg-white/20']"></button>
+                                :class="['h-1.5 rounded-full transition-all duration-500', currentSlide === i ? 'w-8 bg-cyan-400' : 'w-4 bg-white/10 hover:bg-white/20']"></button>
                         </div>
-                        <RouterLink to="/signup" class="group inline-flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">Request this service <ArrowRight class="h-4 w-4 transition group-hover:translate-x-1" /></RouterLink>
+                        <RouterLink to="/signup" class="group inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">Request this service <ArrowRight class="h-4 w-4 transition group-hover:translate-x-1" /></RouterLink>
                     </div>
                 </div>
             </div>

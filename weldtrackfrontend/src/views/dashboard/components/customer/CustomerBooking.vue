@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
-import { Calendar } from 'lucide-vue-next'
+import { Calendar, Clock, Check } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useAdminSectionStore } from '../../../../stores/adminSection'
 import { useBookingsStore } from '../../../../stores/bookings'
@@ -57,7 +57,7 @@ const filteredBookings = computed(() => {
   return bookings.filter((b) => b.email === currentEmail.value || b.customerName === currentUser.value)
 })
 const activeBookings = computed(() =>
-  filteredBookings.value.filter((booking) => booking.status === 'pending' || booking.status === 'confirmed'),
+  filteredBookings.value.filter((booking) => ['pending', 'confirmed', 'in-progress'].includes(booking.status)),
 )
 
 const pendingCount = computed(() => filteredBookings.value.filter((b) => b.status === 'pending').length)
@@ -267,11 +267,18 @@ function formatActiveAddress() {
     activeAddress.value.barangay,
     activeAddress.value.municipality,
     activeAddress.value.province,
-    activeAddress.value.region,
-    activeAddress.value.country,
+  ].filter(Boolean).join(', ')
+}
+
+function getBookingTimeline(booking: BookingItem) {
+  const isConfirmed = booking.status === 'confirmed' || booking.status === 'in-progress' || booking.status === 'completed'
+  const isInProgress = booking.status === 'in-progress' || booking.status === 'completed'
+
+  return [
+    { label: 'Request received', time: formatCreatedDate(booking.createdDate), complete: true },
+    { label: 'Schedule confirmed', time: isConfirmed && booking.scheduleDate ? formatDate(booking.scheduleDate) : 'Pending approval', complete: isConfirmed },
+    { label: 'Service in progress', time: isInProgress ? 'Active' : 'Awaiting schedule', complete: isInProgress },
   ]
-    .filter(Boolean)
-    .join(', ')
 }
 </script>
 
@@ -388,6 +395,26 @@ function formatActiveAddress() {
             <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Total Cost</p>
             <p class="mt-1 text-lg font-bold text-sky-900">{{ formatCurrency(getTotalCost(booking)) }}</p>
           </div>
+        </div>
+
+        <div class="mt-6 rounded-xl border border-gray-100 bg-gray-50/50 p-5">
+            <div class="mb-5 flex items-center justify-between">
+                <span class="text-sm font-bold text-gray-900">Booking progress</span>
+                <span class="flex items-center gap-1.5 text-xs font-bold text-blue-600"><Clock class="h-3.5 w-3.5" /> Track Live</span>
+            </div>
+            <div class="space-y-1">
+                <div v-for="(item, index) in getBookingTimeline(booking)" :key="item.label" class="relative flex gap-3 pb-5 last:pb-0">
+                    <span v-if="index < 2" :class="['absolute left-[9px] top-5 h-[calc(100%-4px)] w-px', item.complete ? 'bg-blue-400' : 'bg-gray-200']"></span>
+                    <span :class="['relative z-10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full', item.complete ? 'bg-blue-500 text-white' : 'border border-blue-400 bg-blue-50 text-blue-400']">
+                        <Check v-if="item.complete" class="h-3 w-3" :stroke-width="3" />
+                        <span v-else class="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
+                    </span>
+                    <div class="flex min-w-0 flex-1 justify-between gap-3">
+                        <span :class="['text-sm font-bold', item.complete ? 'text-gray-900' : 'text-gray-500']">{{ item.label }}</span>
+                        <span class="shrink-0 text-xs text-gray-500">{{ item.time }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="mt-4 flex gap-2" v-if="booking.status === 'pending'">

@@ -396,8 +396,8 @@ onBeforeUnmount(() => {
       <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         <div class="border-b border-gray-200 px-5 py-4"><h3 class="font-semibold text-gray-900">Today's Attendance</h3><p class="mt-1 text-sm text-gray-500">Complete four-event status for every Staff member who attended today.</p></div>
         <div class="overflow-x-auto">
-          <table class="min-w-280 text-left text-sm">
-            <thead class="bg-gray-50 text-gray-600"><tr><th class="px-4 py-3">Staff</th><th class="px-4 py-3">Morning In</th><th class="px-4 py-3">Morning Out</th><th class="px-4 py-3">Afternoon In</th><th class="px-4 py-3">Afternoon Out</th><th class="px-4 py-3">Arrival</th><th class="px-4 py-3">Total</th><th class="px-4 py-3">Overtime</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"><span class="sr-only">Actions</span></th></tr></thead>
+          <table class="w-full min-w-[700px] text-left text-sm">
+            <thead class="border-b bg-gray-50 text-gray-500"><tr><th class="px-4 py-3">Staff</th><th class="px-4 py-3">Morning In</th><th class="px-4 py-3">Morning Out</th><th class="px-4 py-3">Afternoon In</th><th class="px-4 py-3">Afternoon Out</th><th class="px-4 py-3">Arrival</th><th class="px-4 py-3">Total</th><th class="px-4 py-3">Overtime</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"><span class="sr-only">Actions</span></th></tr></thead>
             <tbody class="divide-y divide-gray-100">
               <tr v-if="attendanceRecords.length === 0"><td colspan="10" class="px-4 py-10 text-center text-gray-500">No attendance records for today.</td></tr>
               <tr v-for="record in attendanceRecords" :key="record.id">

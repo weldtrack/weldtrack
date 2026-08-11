@@ -134,7 +134,7 @@ onMounted(async () => {
     <div class="rounded-lg border border-gray-200 bg-white p-4">
       <div class="flex items-start gap-3 pb-4">
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+          class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
           <User class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
         </div>
         <div>

@@ -215,11 +215,11 @@ function formatDate(value: string) {
 </script>
 
 <template>
-  <section class="space-y-6 rounded-lg border border-gray-200 bg-white p-6 relative">
+  <section class="relative space-y-6">
     <LocalLoader v-if="loading" />
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
           <Briefcase class="dashboard-view-icon h-5 w-5 text-sky-600 dark:text-sky-400" />
         </div>
         <div>
@@ -238,7 +238,7 @@ function formatDate(value: string) {
       </button>
     </div>
 
-    <div class="rounded-lg border border-gray-200 p-4">
+    <div class="rounded-lg border border-gray-200 bg-white p-4">
       <input
         v-model="searchTerm"
         type="text"
@@ -355,9 +355,9 @@ function formatDate(value: string) {
       <p class="text-gray-600">{{ searchTerm ? 'No matching services found.' : 'No services yet. Add one to get started!' }}</p>
     </div>
 
-    <div v-else class="overflow-hidden rounded-xl border border-gray-200">
-      <div class="h-screen overflow-x-auto">
-        <table class="w-full min-w-180 divide-y divide-gray-200">
+    <div v-else class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[800px] divide-y divide-gray-200">
           <thead class="bg-gray-50/70">
             <tr class="text-left">
               <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Image</th>

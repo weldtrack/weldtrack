@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, watch } from 'vue'
+import { X } from 'lucide-vue-next'
 
 const props = withDefaults(
   defineProps<{
@@ -73,12 +74,10 @@ onBeforeUnmount(() => {
       <div class="modal-shell__backdrop" @click="closeable && emit('close')"></div>
 
       <div class="modal-shell__panel" :class="[sizeClasses[size], toneClasses[tone]]">
-        <div class="modal-shell__glow" />
-
         <div v-if="title || subtitle || closeable" class="modal-shell__header">
-          <div>
-            <p v-if="subtitle" class="modal-shell__eyebrow">{{ subtitle }}</p>
+          <div class="modal-shell__heading">
             <h3 v-if="title" class="modal-shell__title">{{ title }}</h3>
+            <p v-if="subtitle" class="modal-shell__subtitle">{{ subtitle }}</p>
           </div>
 
           <button
@@ -88,7 +87,7 @@ onBeforeUnmount(() => {
             aria-label="Close modal"
             @click="emit('close')"
           >
-            &times;
+            <X class="modal-shell__close-icon" />
           </button>
         </div>
 
@@ -111,17 +110,14 @@ onBeforeUnmount(() => {
   z-index: 10000;
   display: grid;
   place-items: center;
-  padding: 1rem;
+  padding: 1.25rem;
 }
 
 .modal-shell__backdrop {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.24), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.16), transparent 28%),
-    var(--modal-backdrop, rgba(15, 23, 42, 0.58));
-  backdrop-filter: blur(10px);
+  background: var(--modal-backdrop, rgba(15, 23, 42, 0.58));
+  backdrop-filter: blur(6px);
 }
 
 .modal-shell__panel {
@@ -132,31 +128,24 @@ onBeforeUnmount(() => {
   max-height: min(92vh, 58rem);
   overflow: hidden;
   border: 1px solid var(--modal-border, rgba(15, 23, 42, 0.12));
-  border-radius: 1.5rem;
-  background: var(--modal-surface, linear-gradient(180deg, #ffffff, #f8fafc));
+  border-radius: 1rem;
+  background: var(--modal-surface, #ffffff);
   color: var(--modal-text, #334155);
-  box-shadow: var(--modal-shadow, 0 30px 90px rgba(15, 23, 42, 0.28));
+  box-shadow: var(--modal-shadow, 0 24px 64px rgba(15, 23, 42, 0.24));
 }
 
-.modal-shell__glow {
-  height: 0.375rem;
-  background: linear-gradient(90deg, rgba(59, 130, 246, 1), rgba(14, 165, 233, 0.7));
-}
+.modal-shell__accent--blue { --modal-accent: #0284c7; }
+.modal-shell__accent--green { --modal-accent: #059669; }
+.modal-shell__accent--amber { --modal-accent: #d97706; }
+.modal-shell__accent--red { --modal-accent: #dc2626; }
+.modal-shell__accent--slate { --modal-accent: #64748b; }
 
-.modal-shell__accent--green .modal-shell__glow {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 1), rgba(16, 185, 129, 0.75));
-}
-
-.modal-shell__accent--amber .modal-shell__glow {
-  background: linear-gradient(90deg, rgba(245, 158, 11, 1), rgba(251, 191, 36, 0.75));
-}
-
-.modal-shell__accent--red .modal-shell__glow {
-  background: linear-gradient(90deg, rgba(220, 38, 38, 1), rgba(248, 113, 113, 0.8));
-}
-
-.modal-shell__accent--slate .modal-shell__glow {
-  background: linear-gradient(90deg, rgba(71, 85, 105, 1), rgba(100, 116, 139, 0.8));
+.modal-shell__panel::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--modal-accent, #0284c7);
+  content: '';
 }
 
 .modal-shell__header {
@@ -164,34 +153,39 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.25rem 1.5rem 0;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--modal-border, rgba(15, 23, 42, 0.1));
 }
 
-.modal-shell__eyebrow {
-  margin: 0 0 0.25rem;
+.modal-shell__heading {
+  min-width: 0;
+}
+
+.modal-shell__subtitle {
+  margin: 0.3rem 0 0;
   color: var(--modal-eyebrow, #64748b);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  line-height: 1.35;
 }
 
 .modal-shell__title {
   margin: 0;
   color: var(--modal-title, #0f172a);
-  font-size: 1.15rem;
-  font-weight: 800;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .modal-shell__close {
   border: 0;
-  border-radius: 9999px;
-  background: var(--modal-close-bg, rgba(148, 163, 184, 0.15));
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.625rem;
+  background: transparent;
   color: var(--modal-close, #475569);
-  font-size: 1.5rem;
-  line-height: 1;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2rem;
+  height: 2rem;
   cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease;
 }
@@ -200,10 +194,15 @@ onBeforeUnmount(() => {
   background: var(--modal-close-bg-hover, rgba(148, 163, 184, 0.26));
 }
 
+.modal-shell__close-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
 .modal-shell__body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 1.25rem 1.5rem 1.5rem;
+  padding: 1.5rem;
   overflow-y: auto;
 }
 
@@ -211,17 +210,29 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  padding: 0 1.5rem 1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--modal-border, rgba(15, 23, 42, 0.1));
 }
 
 .modal-shell-fade-enter-active,
 .modal-shell-fade-leave-active {
-  transition: opacity 0.18s ease;
+  transition: opacity 0.16s ease;
+}
+
+.modal-shell-fade-enter-active .modal-shell__panel,
+.modal-shell-fade-leave-active .modal-shell__panel {
+  transition: transform 0.16s ease, opacity 0.16s ease;
 }
 
 .modal-shell-fade-enter-from,
 .modal-shell-fade-leave-to {
   opacity: 0;
+}
+
+.modal-shell-fade-enter-from .modal-shell__panel,
+.modal-shell-fade-leave-to .modal-shell__panel {
+  opacity: 0;
+  transform: translateY(0.5rem) scale(0.99);
 }
 
 @media (max-width: 479px) {
@@ -232,7 +243,7 @@ onBeforeUnmount(() => {
 
   .modal-shell__panel {
     max-height: 94vh;
-    border-radius: 1.25rem 1.25rem 0 0;
+    border-radius: 1rem 1rem 0 0;
   }
 
   .modal-shell__header,
@@ -243,7 +254,7 @@ onBeforeUnmount(() => {
 
   .modal-shell__footer {
     flex-direction: column-reverse;
-    padding: 0 1rem 1rem;
+    padding: 1rem;
   }
 
   .modal-shell__footer :deep(button) {
