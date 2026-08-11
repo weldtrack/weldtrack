@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
-import ModalShell from '../../../../components/ui/ModalShell.vue'
 import { useCustomerAddressesStore } from '../../../../stores/customerAddresses'
 import { type CustomerAddressItem } from '../../../../types/customerAddresses'
-import { Plus, MapPin, Check, Edit2, Trash2, Home, Building2, Map, Globe } from 'lucide-vue-next'
+import { Plus, MapPin, Edit2, Trash2 } from 'lucide-vue-next'
 
 const addressesStore = useCustomerAddressesStore()
 
@@ -107,224 +107,227 @@ async function removeAddress(id: string) {
 </script>
 
 <template>
-  <section class="space-y-8 relative">
+  <section class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-100 to-sky-50 ring-1 ring-sky-200 dark:from-sky-950 dark:to-slate-900 dark:ring-sky-800">
-          <MapPin class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
-        </div>
-        <div>
-          <h3 class="text-2xl font-bold text-gray-900 dark:text-slate-100">My Addresses</h3>
-          <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">Manage and set your delivery locations</p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        class="inline-flex items-center justify-center gap-2 rounded-lg bg-linear-to-r from-sky-600 to-sky-700 px-5 py-3 font-semibold text-white shadow-md shadow-sky-500/20 transition-all hover:shadow-lg hover:shadow-sky-500/30 active:scale-95"
-        @click="openCreateDialog"
-      >
-        <Plus class="h-5 w-5" />
-        Add Address
-      </button>
-    </div>
-
-    <div v-if="activeAddress" class="rounded-2xl border border-sky-200/50 bg-linear-to-br from-sky-50 to-sky-50/50 p-6 shadow-sm dark:border-sky-800/60 dark:from-sky-950/70 dark:to-slate-900">
-      <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 ring-1 ring-sky-200 dark:bg-sky-900/60 dark:ring-sky-800">
-          <Check class="dashboard-view-icon h-5 w-5 text-sky-600 dark:text-sky-400" />
-        </div>
-        <div class="flex-1">
-          <p class="text-xs font-bold uppercase tracking-widest text-sky-600">✓ Active Address</p>
-          <h4 class="mt-2 text-lg font-bold uppercase text-sky-950 dark:text-sky-100">{{ activeAddress.label }}</h4>
-          <div class="mt-3 space-y-2">
-            <div v-if="activeAddress.house" class="flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200">
-              <Home class="h-3.5 w-3.5 opacity-70" />
-              <span>{{ activeAddress.house }}</span>
-            </div>
-            <div v-if="activeAddress.barangay" class="flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200">
-              <Building2 class="h-3.5 w-3.5 opacity-70" />
-              <span>{{ activeAddress.barangay }}</span>
-            </div>
-            <div v-if="activeAddress.municipality" class="flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200">
-              <Map class="h-3.5 w-3.5 opacity-70" />
-              <span>{{ activeAddress.municipality }}</span>
-            </div>
-            <div v-if="activeAddress.province" class="flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200">
-              <Map class="h-3.5 w-3.5 opacity-70" />
-              <span>{{ activeAddress.province }}</span>
-            </div>
-            <div v-if="activeAddress.region" class="flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200">
-              <Globe class="h-3.5 w-3.5 opacity-70" />
-              <span>{{ activeAddress.region }}</span>
-            </div>
-            <div v-if="activeAddress.country" class="flex items-center gap-2 text-sm text-sky-800 dark:text-sky-200">
-              <Globe class="h-3.5 w-3.5 opacity-70" />
-              <span>{{ activeAddress.country }}</span>
-            </div>
+    
+    <!-- List View -->
+    <template v-if="!isDialogOpen">
+      <!-- Header -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-start gap-3">
+          <div class="flex h-12 w-12 items-center justify-center">
+            <MapPin class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
+          </div>
+          <div>
+            <h3 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">My Addresses</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Manage saved locations and active delivery addresses</p>
           </div>
         </div>
+
+        <button
+          type="button"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 shrink-0"
+          @click="openCreateDialog"
+        >
+          <Plus class="h-4 w-4" />
+          <span>Add Address</span>
+        </button>
       </div>
-    </div>
 
-    <div v-if="!addresses.length" class="rounded-2xl border-2 border-dashed border-slate-300 bg-linear-to-br from-sky-50 to-sky-50/50 p-12 text-center dark:border-slate-700 dark:from-slate-900 dark:to-sky-950/50">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-900/60">
-        <MapPin class="dashboard-view-icon h-8 w-8 text-sky-600 dark:text-sky-400" />
-      </div>
-      <p class="mt-4 text-base font-semibold text-slate-900 dark:text-slate-100">No saved addresses yet</p>
-      <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Add your first address so new bookings can use it automatically.</p>
-      <button
-        type="button"
-        class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-        @click="openCreateDialog"
-      >
-        <Plus class="h-4 w-4" />
-        Add Your First Address
-      </button>
-    </div>
-
-    <div v-else class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-      <article
-        v-for="address in addresses"
-        :key="address.id"
-        class="group relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md dark:bg-slate-900"
-        :class="address.isActive ? 'border-sky-300 ring-1 ring-sky-300 dark:border-sky-700 dark:ring-sky-800' : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'"
-      >
-        <div v-if="address.isActive" class="absolute left-0 top-0 h-full w-1.5 bg-sky-500"></div>
-
-        <div class="flex items-start gap-4">
-          <div class="shrink-0">
-            <div :class="['h-12 w-12 flex items-center justify-center rounded-xl transition-colors', address.isActive ? 'bg-sky-100 ring-1 ring-sky-200 dark:bg-sky-900/60 dark:ring-sky-800' : 'bg-slate-100 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700']">
-              <MapPin :class="['h-6 w-6', address.isActive ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-400']" />
-            </div>
+      <!-- Active Address Summary Banner -->
+      <div v-if="activeAddress" class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400"></span>
+            </span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Default Active Delivery Location</span>
           </div>
+          <span class="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300">
+            Selected for Bookings
+          </span>
+        </div>
 
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between gap-2">
-              <h4 class="truncate text-base font-bold uppercase text-slate-900 dark:text-slate-100">{{ address.label }}</h4>
+        <div class="mt-4 min-w-0">
+          <h4 class="text-lg font-extrabold text-slate-900 dark:text-slate-100 truncate" :title="activeAddress.label">{{ activeAddress.label }}</h4>
+          <p class="mt-1 text-sm font-medium text-slate-700 dark:text-slate-300 break-words leading-relaxed">
+            {{ [activeAddress.house, activeAddress.barangay, activeAddress.municipality, activeAddress.province, activeAddress.region, activeAddress.country].filter(Boolean).join(', ') }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="!addresses.length" class="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-slate-800 dark:bg-slate-900">
+        <MapPin class="mx-auto h-10 w-10 text-slate-400" />
+        <h4 class="mt-3 text-base font-bold text-slate-900 dark:text-slate-100">No saved addresses yet</h4>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Add an address to automatically pre-fill your project booking requests.</p>
+        <button
+          type="button"
+          class="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500"
+          @click="openCreateDialog"
+        >
+          <Plus class="h-4 w-4" />
+          <span>Add Address</span>
+        </button>
+      </div>
+
+      <!-- Full-width address list -->
+      <div v-else class="grid w-full grid-cols-1 gap-4">
+        <article
+          v-for="address in addresses"
+          :key="address.id"
+          class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+        >
+          <div class="p-4 sm:p-6">
+            <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between">
+              <div class="flex min-w-0 items-start gap-3 sm:gap-4">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
+                  <MapPin class="h-5 w-5" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-medium text-slate-400">Saved location</p>
+                  <h4 class="mt-0.5 break-words text-lg font-semibold text-slate-900 dark:text-slate-100">{{ address.label }}</h4>
+                  <p class="mt-1 break-words text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                    {{ [address.house, address.barangay, address.municipality, address.province].filter(Boolean).join(', ') }}
+                  </p>
+                </div>
+              </div>
               <span
                 v-if="address.isActive"
-                class="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-700 ring-1 ring-inset ring-sky-200 dark:bg-sky-900/60 dark:text-sky-300 dark:ring-sky-800"
+                class="w-fit shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800"
               >
-                <Check class="h-3 w-3" />
-                Active
+                Active address
+              </span>
+              <span v-else class="w-fit shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                Saved
               </span>
             </div>
-            <div class="mt-3 space-y-1.5">
-              <div v-if="address.house" class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Home class="h-3 w-3 opacity-60" />
-                <span class="truncate">{{ address.house }}</span>
-              </div>
-              <div v-if="address.barangay" class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Building2 class="h-3 w-3 opacity-60" />
-                <span class="truncate">{{ address.barangay }}</span>
-              </div>
-              <div v-if="address.municipality" class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Map class="h-3 w-3 opacity-60" />
-                <span class="truncate">{{ address.municipality }}</span>
-              </div>
-              <div v-if="address.province" class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Map class="h-3 w-3 opacity-60" />
-                <span class="truncate">{{ address.province }}</span>
-              </div>
-              <div v-if="address.region" class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Globe class="h-3 w-3 opacity-60" />
-                <span class="truncate">{{ address.region }}</span>
-              </div>
-              <div v-if="address.country" class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                <Globe class="h-3 w-3 opacity-60" />
-                <span class="truncate">{{ address.country }}</span>
-              </div>
+
+            <dl class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div v-if="address.barangay" class="min-w-0">
+                  <dt class="text-xs text-slate-400">Barangay</dt>
+                  <dd class="mt-1 break-words text-sm font-medium text-slate-700 dark:text-slate-300">{{ address.barangay }}</dd>
+                </div>
+                <div v-if="address.municipality" class="min-w-0">
+                  <dt class="text-xs text-slate-400">Municipality / City</dt>
+                  <dd class="mt-1 break-words text-sm font-medium text-slate-700 dark:text-slate-300">{{ address.municipality }}</dd>
+                </div>
+                <div v-if="address.province" class="min-w-0">
+                  <dt class="text-xs text-slate-400">Province</dt>
+                  <dd class="mt-1 break-words text-sm font-medium text-slate-700 dark:text-slate-300">{{ address.province }}</dd>
+                </div>
+                <div v-if="address.region" class="min-w-0">
+                  <dt class="text-xs text-slate-400">Region</dt>
+                  <dd class="mt-1 break-words text-sm font-medium text-slate-700 dark:text-slate-300">{{ address.region }}</dd>
+                </div>
+            </dl>
+          </div>
+
+          <!-- Actions Bar -->
+          <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <button
+              v-if="!address.isActive"
+              type="button"
+              class="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700 sm:w-auto"
+              @click="activateAddress(address.id)"
+            >
+              Set as Active
+            </button>
+            <span v-else class="text-xs font-medium text-slate-500 dark:text-slate-400">Used automatically for new bookings</span>
+
+            <div class="grid grid-cols-2 gap-2 sm:flex">
+              <button
+                type="button"
+                class="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                @click="openEditDialog(address)"
+                title="Edit address"
+              >
+                <Edit2 class="h-4 w-4" />
+                <span>Edit</span>
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-100 dark:text-rose-400 dark:hover:bg-rose-950/60"
+                @click="removeAddress(address.id)"
+                title="Delete address"
+              >
+                <Trash2 class="h-4 w-4" />
+                <span>Delete</span>
+              </button>
             </div>
           </div>
-        </div>
+        </article>
+      </div>
+    </template>
 
-        <div class="mt-6 flex items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
-          <button
-            v-if="!address.isActive"
-            type="button"
-            class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white transition-all hover:bg-sky-700 active:scale-95 shadow-sm shadow-sky-200"
-            @click="activateAddress(address.id)"
-            title="Set as active address"
+    <!-- Inline Form View -->
+    <template v-else>
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 max-w-3xl mx-auto">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between dark:border-slate-800">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100">
+              {{ editingAddressId ? 'Edit Address' : 'Add New Address' }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Enter your delivery location details.</p>
+          </div>
+          <button 
+            @click="closeDialog" 
+            class="text-sm font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
           >
-            <Check class="h-4 w-4" />
-            Set Active
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-            @click="openEditDialog(address)"
-            title="Edit this address"
-          >
-            <Edit2 class="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-lg border border-red-100 px-3 py-2 text-sm font-semibold text-red-600 transition-all hover:bg-red-50 active:scale-95 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50"
-            @click="removeAddress(address.id)"
-            title="Delete this address"
-          >
-            <Trash2 class="h-4 w-4" />
-          </button>
-        </div>
-      </article>
-    </div>
-
-    <ModalShell
-      :show="isDialogOpen"
-      :title="editingAddressId ? 'Edit Address' : 'Add Address'"
-      subtitle="Customer address book"
-      tone="green"
-      size="lg"
-      @close="closeDialog"
-    >
-      <form class="space-y-5" @submit.prevent="submitAddress">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300" for="address-label">Label *</label>
-            <input id="address-label" v-model="formData.label" type="text" required placeholder="e.g., Home, Shop, Office" class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-gray-900 dark:text-white shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300" for="address-house">House / Street *</label>
-            <input id="address-house" v-model="formData.house" type="text" required placeholder="e.g., 123 Main St" class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-gray-900 dark:text-white shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300" for="address-barangay">Barangay *</label>
-            <input id="address-barangay" v-model="formData.barangay" type="text" required class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-gray-900 dark:text-white shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300" for="address-municipality">Municipality *</label>
-            <input id="address-municipality" v-model="formData.municipality" type="text" required class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-gray-900 dark:text-white shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300" for="address-province">Province *</label>
-            <input id="address-province" v-model="formData.province" type="text" required class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-gray-900 dark:text-white shadow-sm transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300" for="address-country">Country *</label>
-            <input id="address-country" v-model="formData.country" type="text" required class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-600 dark:text-slate-400 shadow-sm" disabled />
-          </div>
-          <div class="sm:col-span-2">
-            <label class="block text-sm font-semibold text-gray-700 dark:text-slate-300" for="address-region">Region *</label>
-            <input id="address-region" v-model="formData.region" type="text" required class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-600 dark:text-slate-400 shadow-sm" disabled />
-          </div>
-        </div>
-
-        <label class="flex items-center gap-3 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-900 dark:text-blue-200 transition cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40">
-          <input v-model="formData.isActive" type="checkbox" class="h-4 w-4 rounded border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-500" />
-          <span class="font-medium">Set this as the active address for new bookings</span>
-        </label>
-
-        <div class="flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-5">
-          <button type="button" class="rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95" @click="closeDialog">
             Cancel
           </button>
-          <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-linear-to-r from-blue-600 to-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition-all hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-60">
-            {{ isSubmitting ? 'Saving...' : editingAddressId ? 'Save Changes' : 'Save Address' }}
-          </button>
         </div>
-      </form>
-    </ModalShell>
+
+        <div class="p-6">
+          <form class="space-y-5" @submit.prevent="submitAddress">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-label">Label <span class="text-rose-500">*</span><InfoTooltip text="Please provide the label (e.g. Home, Office)." /></label>
+                <input id="address-label" v-model="formData.label" type="text" required placeholder="e.g., Home, Office, Workshop" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-house">House / Street <span class="text-rose-500">*</span><InfoTooltip text="Please provide house or street number." /></label>
+                <input id="address-house" v-model="formData.house" type="text" required placeholder="e.g., 123 Main Street" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-barangay">Barangay <span class="text-rose-500">*</span><InfoTooltip text="Please provide the barangay." /></label>
+                <input id="address-barangay" v-model="formData.barangay" type="text" required placeholder="e.g., Barangay San Jose" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-municipality">Municipality / City <span class="text-rose-500">*</span><InfoTooltip text="Please provide municipality or city." /></label>
+                <input id="address-municipality" v-model="formData.municipality" type="text" required placeholder="e.g., Naga City" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-province">Province <span class="text-rose-500">*</span><InfoTooltip text="Please provide the province." /></label>
+                <input id="address-province" v-model="formData.province" type="text" required placeholder="e.g., Camarines Sur" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-country">Country<InfoTooltip text="Default country location." /></label>
+                <input id="address-country" v-model="formData.country" type="text" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 outline-none cursor-not-allowed dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400" disabled />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-region">Region<InfoTooltip text="Default region location." /></label>
+                <input id="address-region" v-model="formData.region" type="text" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 outline-none cursor-not-allowed dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400" disabled />
+              </div>
+            </div>
+
+            <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs font-semibold text-slate-800 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 cursor-pointer">
+              <input v-model="formData.isActive" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900" />
+              <span>Set as active delivery address for future project bookings</span>
+            </label>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" @click="closeDialog">
+                Cancel
+              </button>
+              <button type="submit" :disabled="isSubmitting" class="rounded-xl bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-sky-700 disabled:opacity-50 transition-all dark:bg-sky-600 dark:hover:bg-sky-500">
+                {{ isSubmitting ? 'Saving...' : editingAddressId ? 'Save Changes' : 'Save Address' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </template>
   </section>
 </template>

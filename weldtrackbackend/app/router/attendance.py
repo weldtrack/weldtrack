@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import (
     ATTENDANCE_AFTERNOON_IN_OPEN,
+    ATTENDANCE_AFTERNOON_IN_CLOSE,
     ATTENDANCE_LATE_AFTER,
+    ATTENDANCE_MORNING_CLOSE,
     ATTENDANCE_MORNING_OPEN,
     ATTENDANCE_MORNING_OUT_OPEN,
     ATTENDANCE_REGULAR_HOURS,
@@ -29,7 +31,7 @@ from app.schemas.attendance import (
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 
 ATTENDANCE_TZ = ZoneInfo(ATTENDANCE_TIMEZONE)
-MAX_ATTENDANCE_ACCURACY_M = 75
+MAX_ATTENDANCE_ACCURACY_M = 30
 
 
 def _schedule_time(value: str) -> time:
@@ -40,9 +42,16 @@ def _schedule_time(value: str) -> time:
 
 
 MORNING_OPEN = _schedule_time(ATTENDANCE_MORNING_OPEN)
+MORNING_CLOSE = _schedule_time(ATTENDANCE_MORNING_CLOSE)
 LATE_AFTER = _schedule_time(ATTENDANCE_LATE_AFTER)
 MORNING_OUT_OPEN = _schedule_time(ATTENDANCE_MORNING_OUT_OPEN)
 AFTERNOON_IN_OPEN = _schedule_time(ATTENDANCE_AFTERNOON_IN_OPEN)
+AFTERNOON_IN_CLOSE = _schedule_time(ATTENDANCE_AFTERNOON_IN_CLOSE)
+
+if MORNING_OPEN >= MORNING_CLOSE:
+    raise RuntimeError("Morning attendance opening time must be before its closing time")
+if AFTERNOON_IN_OPEN >= AFTERNOON_IN_CLOSE:
+    raise RuntimeError("Afternoon attendance opening time must be before its closing time")
 
 
 def _now_manila() -> datetime:
@@ -121,24 +130,50 @@ def _next_action(record: AttendanceRecord | None, now: datetime) -> tuple[str | 
     current_time = now.timetz().replace(tzinfo=None)
     if record and record.check_out_at and not record.morning_out_at and not record.afternoon_in_at:
         return None, False, "Attendance for this legacy record is already completed."
+    # A staff member who missed the morning window may still attend the
+    # afternoon session. After 8 AM, guide an unstarted day toward the next
+    # relevant Time In instead of leaving the UI stuck on Morning Time In.
     if record is None or record.check_in_at is None:
-        allowed = current_time >= MORNING_OPEN
-        message = "Morning attendance is open." if allowed else f"Attendance opens at {MORNING_OPEN.strftime('%-I:%M %p')}."
+        if record and record.afternoon_in_at:
+            if record.check_out_at is None:
+                return "afternoon-out", True, "Afternoon time-out is available."
+            return None, False, "Attendance for today is already completed."
+        if current_time >= MORNING_CLOSE:
+            allowed = AFTERNOON_IN_OPEN <= current_time < AFTERNOON_IN_CLOSE
+            if current_time < AFTERNOON_IN_OPEN:
+                message = f"Morning Time In has closed. Afternoon Time In opens at {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')}."
+            elif current_time >= AFTERNOON_IN_CLOSE:
+                message = f"Afternoon Time In closed at {AFTERNOON_IN_CLOSE.strftime('%-I:%M %p')}. Ask an admin to correct a missed attendance event."
+            else:
+                message = f"Afternoon Time In is available until {AFTERNOON_IN_CLOSE.strftime('%-I:%M %p')}."
+            return "afternoon-in", allowed, message
+        allowed = MORNING_OPEN <= current_time < MORNING_CLOSE
+        if current_time < MORNING_OPEN:
+            message = f"Morning Time In opens at {MORNING_OPEN.strftime('%-I:%M %p')} and closes at {MORNING_CLOSE.strftime('%-I:%M %p')}."
+        elif current_time >= MORNING_CLOSE:
+            message = f"Morning Time In closed at {MORNING_CLOSE.strftime('%-I:%M %p')}. Ask an admin to correct a missed attendance event."
+        else:
+            message = f"Morning Time In is available until {MORNING_CLOSE.strftime('%-I:%M %p')}."
         return "morning-in", allowed, message
     if record.morning_out_at is None:
         allowed = current_time >= MORNING_OUT_OPEN
         message = "Morning time-out is available." if allowed else f"Morning time-out is available at {MORNING_OUT_OPEN.strftime('%-I:%M %p')}."
         return "morning-out", allowed, message
     if record.afternoon_in_at is None:
-        allowed = current_time >= AFTERNOON_IN_OPEN
-        message = "Afternoon time-in is available." if allowed else f"Afternoon time-in is available at {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')}."
+        allowed = AFTERNOON_IN_OPEN <= current_time < AFTERNOON_IN_CLOSE
+        if current_time < AFTERNOON_IN_OPEN:
+            message = f"Afternoon Time In opens at {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')} and closes at {AFTERNOON_IN_CLOSE.strftime('%-I:%M %p')}."
+        elif current_time >= AFTERNOON_IN_CLOSE:
+            message = f"Afternoon Time In closed at {AFTERNOON_IN_CLOSE.strftime('%-I:%M %p')}. Ask an admin to correct a missed attendance event."
+        else:
+            message = f"Afternoon Time In is available until {AFTERNOON_IN_CLOSE.strftime('%-I:%M %p')}."
         return "afternoon-in", allowed, message
     if record.check_out_at is None:
         return "afternoon-out", True, "Afternoon time-out is available."
     return None, False, "Attendance for today is already completed."
 
 
-def _next_action_available_at(action: str | None, attendance_date: str) -> datetime | None:
+def _next_action_available_at(action: str | None, attendance_date: str, now: datetime | None = None) -> datetime | None:
     schedule = {
         "morning-in": MORNING_OPEN,
         "morning-out": MORNING_OUT_OPEN,
@@ -147,7 +182,8 @@ def _next_action_available_at(action: str | None, attendance_date: str) -> datet
     action_time = schedule.get(action)
     if action_time is None:
         return None
-    return datetime.combine(date.fromisoformat(attendance_date), action_time, ATTENDANCE_TZ)
+    available_at = datetime.combine(date.fromisoformat(attendance_date), action_time, ATTENDANCE_TZ)
+    return available_at if (now or _now_manila()) < available_at else None
 
 
 def _serialize(record: AttendanceRecord, now: datetime | None = None) -> dict:
@@ -173,7 +209,7 @@ def _serialize(record: AttendanceRecord, now: datetime | None = None) -> dict:
         "attendance_status": record.attendance_status,
         "next_action": next_action,
         "next_action_available": available,
-        "next_action_available_at": _next_action_available_at(next_action, record.date),
+        "next_action_available_at": _next_action_available_at(next_action, record.date, now),
         "next_action_message": message,
         "attendance_date": record.date,
         "timezone": ATTENDANCE_TIMEZONE,
@@ -191,8 +227,24 @@ def _validate_transition(record: AttendanceRecord | None, action: str, now: date
     if action == "morning-in":
         if record and record.check_in_at:
             raise HTTPException(status_code=400, detail="Morning time-in already recorded")
-        if current_time < MORNING_OPEN:
-            raise HTTPException(status_code=400, detail=f"Attendance has not opened yet. Morning time-in starts at {MORNING_OPEN.strftime('%-I:%M %p')}.")
+        if not MORNING_OPEN <= current_time < MORNING_CLOSE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Morning Time In is only available from {MORNING_OPEN.strftime('%-I:%M %p')} to {MORNING_CLOSE.strftime('%-I:%M %p')} Philippine time.",
+            )
+        return
+    if action == "afternoon-in" and (not record or not record.check_in_at):
+        if record and record.afternoon_in_at:
+            raise HTTPException(status_code=400, detail="Afternoon time-in already recorded")
+        if not AFTERNOON_IN_OPEN <= current_time < AFTERNOON_IN_CLOSE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Afternoon Time In is only available from {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')} to {AFTERNOON_IN_CLOSE.strftime('%-I:%M %p')} Philippine time.",
+            )
+        return
+    if action == "afternoon-out" and record and record.afternoon_in_at and not record.check_in_at:
+        if record.check_out_at:
+            raise HTTPException(status_code=400, detail="Attendance for today is already completed")
         return
     if not record or not record.check_in_at:
         raise HTTPException(status_code=400, detail="Morning Time In must be recorded first")
@@ -207,8 +259,11 @@ def _validate_transition(record: AttendanceRecord | None, action: str, now: date
     if action == "afternoon-in":
         if record.afternoon_in_at:
             raise HTTPException(status_code=400, detail="Afternoon time-in already recorded")
-        if current_time < AFTERNOON_IN_OPEN:
-            raise HTTPException(status_code=400, detail=f"Afternoon time-in is available at {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')}.")
+        if not AFTERNOON_IN_OPEN <= current_time < AFTERNOON_IN_CLOSE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Afternoon Time In is only available from {AFTERNOON_IN_OPEN.strftime('%-I:%M %p')} to {AFTERNOON_IN_CLOSE.strftime('%-I:%M %p')} Philippine time.",
+            )
         return
     if not record.afternoon_in_at:
         raise HTTPException(status_code=400, detail="Afternoon Time In must be recorded first")
@@ -229,7 +284,7 @@ def _record_action(action: str, payload: AttendanceLocation, current_user: User,
     )
     _validate_transition(record, action, now)
     if record is None:
-        record = AttendanceRecord(email=current_user.email, date=today, check_in_at=now)
+        record = AttendanceRecord(email=current_user.email, date=today)
         db.add(record)
     if action == "morning-in":
         record.check_in_at = now
@@ -300,7 +355,7 @@ def today_attendance_state(current_user: User = Depends(get_current_user), db: S
         "timezone": ATTENDANCE_TIMEZONE,
         "next_action": action,
         "next_action_available": available,
-        "next_action_available_at": _next_action_available_at(action, attendance_date),
+        "next_action_available_at": _next_action_available_at(action, attendance_date, now),
         "next_action_message": message,
         "record": _serialize(record, now) if record else None,
     }

@@ -86,47 +86,65 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="space-y-4 relative">
+  <section class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
+
+    <!-- Header -->
     <div class="flex items-start gap-3">
-      <div
-        class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
+      <div class="flex h-12 w-12 items-center justify-center">
         <CheckCircle class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>
-        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Contributions</h3>
-        <p class="text-sm text-gray-600">See recently completed tasks and their contributors.</p>
+        <h3 class="text-2xl font-semibold text-slate-900">Staff Contributions</h3>
+        <p class="text-sm text-slate-600">Overview of completed project tasks and team contributors</p>
       </div>
     </div>
 
-    <div v-if="completedContributions.length === 0" class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">
-      No completed tasks yet.
+    <!-- Empty State -->
+    <div v-if="completedContributions.length === 0" class="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+      No completed task contributions recorded yet.
     </div>
 
-    <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <div v-for="proj in completedContributions" :key="proj.projectName"
-        class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-        <div class="flex items-start justify-between">
-          <div class="min-w-0">
-            <h4 class="truncate font-semibold text-gray-900">{{ proj.projectName }}</h4>
-            <p class="text-sm text-gray-600">Completed: {{ proj.doneCount }} tasks</p>
+    <!-- Contributions Grid -->
+    <div v-else class="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <div
+        v-for="proj in completedContributions"
+        :key="proj.projectName"
+        class="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+      >
+        <div>
+          <!-- Header info -->
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <h4 class="truncate text-lg font-bold text-slate-900" :title="proj.projectName">{{ proj.projectName }}</h4>
+              <p class="mt-1 text-xs font-semibold text-sky-700">
+                {{ proj.doneCount }} {{ proj.doneCount === 1 ? 'task' : 'tasks' }} completed
+              </p>
+            </div>
+            <span class="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-slate-600">
+              {{ new Date(proj.lastDoneAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+            </span>
           </div>
-          <span class="text-xs text-gray-500 whitespace-nowrap">
-            Last: {{ new Date(proj.lastDoneAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' }) }}
-          </span>
-        </div>
-        
-        <div class="mt-4">
-          <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Contributors</p>
-          <div class="flex flex-wrap gap-2">
-            <div v-for="email in proj.contributors" :key="email"
-              :class="['flex items-center gap-2 rounded-full border px-2 py-1 text-xs', isCurrentUserContributor(email) ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50']">
-              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600">
-                {{ email.slice(0, 1).toUpperCase() }}
-              </span>
-              <span :class="isCurrentUserContributor(email) ? 'font-semibold text-blue-700' : 'text-gray-700'">
-                {{ email }}
-              </span>
+
+          <!-- Contributors section -->
+          <div class="mt-6 pt-4 border-t border-slate-100">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Contributors</p>
+            <div class="flex flex-wrap gap-2">
+              <div
+                v-for="email in proj.contributors"
+                :key="email"
+                :class="[
+                  'flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors',
+                  isCurrentUserContributor(email)
+                    ? 'border-sky-200 bg-sky-50 text-sky-900 font-semibold'
+                    : 'border-slate-200 bg-slate-50 text-slate-700'
+                ]"
+              >
+                <span :class="['flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold', isCurrentUserContributor(email) ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600']">
+                  {{ email.slice(0, 1).toUpperCase() }}
+                </span>
+                <span class="truncate max-w-44">{{ email }}</span>
+              </div>
             </div>
           </div>
         </div>

@@ -68,5 +68,6 @@ export async function addComment(feedbackId: string, comment: string) {
     userEmail: response.data.user_email,
     comment: response.data.comment,
     date: response.data.date,
+    profileImage: response.data.profile_image,
   }
 }

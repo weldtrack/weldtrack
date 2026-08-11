@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { AlertTriangle, Bell, Calendar, CheckCircle2, LoaderCircle } from 'lucide-vue-next'
+import { AlertTriangle, Bell, Calendar, CheckCircle2, ChevronRight, LoaderCircle } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { useAuthStore } from '../../../../stores/auth'
 import { useBookingsStore } from '../../../../stores/bookings'
@@ -16,6 +16,7 @@ type NotificationItem = {
   icon: Component
   iconColor: string
   bgColor: string
+  target: { name: string; query?: Record<string, string> }
 }
 
 const authStore = useAuthStore()
@@ -56,6 +57,10 @@ function bookingNotification(booking: (typeof bookingsStore.bookings)[number]): 
     cancelled: 'Booking cancelled',
   }
   const positive = booking.status === 'confirmed' || booking.status === 'completed'
+  const isHistorical = booking.status === 'completed' || booking.status === 'cancelled'
+  const routeName = authStore.role === 'admin'
+    ? (isHistorical ? 'admin-projects' : 'admin-approval')
+    : (isHistorical ? 'customer-history' : 'customer-booking')
   return {
     id: `booking:${booking.id}:${booking.status}`,
     title: statusLabels[booking.status],
@@ -64,6 +69,7 @@ function bookingNotification(booking: (typeof bookingsStore.bookings)[number]): 
     icon: positive ? CheckCircle2 : booking.status === 'cancelled' ? AlertTriangle : Calendar,
     iconColor: positive ? 'text-emerald-500' : booking.status === 'cancelled' ? 'text-red-500' : 'text-sky-500',
     bgColor: positive ? 'bg-emerald-100 dark:bg-emerald-500/20' : booking.status === 'cancelled' ? 'bg-red-100 dark:bg-red-500/20' : 'bg-sky-100 dark:bg-sky-500/20',
+    target: { name: routeName, query: { booking: String(booking.id) } },
   }
 }
 
@@ -74,7 +80,7 @@ async function loadNotifications() {
     if (authStore.role === 'customer') {
       await bookingsStore.fetchBookings({ limit: 50 })
       notifications.value = bookingsStore.bookings
-        .filter((booking) => !booking.email || booking.email.toLowerCase() === authStore.email.toLowerCase())
+        .filter((booking) => booking.email?.toLowerCase() === authStore.email.toLowerCase())
         .map(bookingNotification)
     } else if (authStore.role === 'staff') {
       await staffTasksStore.fetchTasks()
@@ -89,6 +95,7 @@ async function loadNotifications() {
           icon: task.status === 'done' ? CheckCircle2 : Calendar,
           iconColor: task.status === 'done' ? 'text-emerald-500' : 'text-sky-500',
           bgColor: task.status === 'done' ? 'bg-emerald-100 dark:bg-emerald-500/20' : 'bg-sky-100 dark:bg-sky-500/20',
+          target: { name: 'staff-tasks', query: { task: String(task.id) } },
         }))
     } else {
       await Promise.all([bookingsStore.fetchBookings({ limit: 50 }), inventoryStore.fetchInventory()])
@@ -103,6 +110,7 @@ async function loadNotifications() {
           icon: AlertTriangle,
           iconColor: 'text-amber-500',
           bgColor: 'bg-amber-100 dark:bg-amber-500/20',
+          target: { name: 'admin-inventory', query: { item: String(item.id) } },
         }))
       notifications.value = [...lowStockItems, ...bookingItems]
     }
@@ -148,6 +156,12 @@ function markAllAsRead() {
   saveReadState()
 }
 
+async function openNotification(notification: NotificationItem) {
+  markAsRead(notification.id)
+  isOpen.value = false
+  await router.push(notification.target).catch(() => {})
+}
+
 function viewAllActivity() {
   isOpen.value = false
   const routeName = authStore.role === 'customer' ? 'customer-history' : authStore.role === 'staff' ? 'staff-tasks' : 'admin-overview'
@@ -191,7 +205,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
         </div>
         <div v-else-if="notifications.length === 0" class="px-4 py-8 text-center text-sm" style="color: var(--db-muted)">No notifications yet.</div>
         <div v-else class="divide-y divide-slate-200/60 dark:divide-slate-800">
-          <button v-for="notification in notifications" :key="notification.id" type="button" class="flex w-full items-start gap-3 p-4 text-left transition hover:bg-slate-100/60 dark:hover:bg-slate-800/60" :class="{ 'bg-sky-50/40 dark:bg-sky-900/10': !readIds.has(notification.id) }" @click="markAsRead(notification.id)">
+          <button v-for="notification in notifications" :key="notification.id" type="button" class="group flex w-full items-start gap-3 p-4 text-left transition hover:bg-slate-100/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 dark:hover:bg-slate-800/60" :class="{ 'bg-sky-50/40 dark:bg-sky-900/10': !readIds.has(notification.id) }" @click="openNotification(notification)">
             <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full" :class="notification.bgColor">
               <component :is="notification.icon" class="h-4 w-4" :class="notification.iconColor" />
             </div>
@@ -201,6 +215,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               <p class="mt-1.5 text-xs font-medium opacity-70">{{ formatTime(notification.occurredAt) }}</p>
             </div>
             <div v-if="!readIds.has(notification.id)" class="mt-2 h-2 w-2 shrink-0 rounded-full bg-sky-500"></div>
+            <ChevronRight class="mt-2 h-4 w-4 shrink-0 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80" />
           </button>
         </div>
       </div>

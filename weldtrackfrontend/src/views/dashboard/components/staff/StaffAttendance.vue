@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Calendar, CheckCircle2, Clock3, MapPin, Pencil } from 'lucide-vue-next'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
-import ModalShell from '../../../../components/ui/ModalShell.vue'
 import { useAuthStore } from '../../../../stores/auth'
 import {
   correctAttendance,
@@ -98,7 +98,16 @@ const showActionModal = ref(false)
 const locationStatus = ref<'idle' | 'locating' | 'ready' | 'error'>('idle')
 const locationError = ref('')
 const userCoords = ref<{ lat: number; lng: number; accuracy: number } | null>(null)
-const MAX_GPS_ACCURACY = 75
+const MAX_GPS_ACCURACY = 30
+let staffLocationWatchId: number | null = null
+let staffLocationTimeout: number | undefined
+
+function stopStaffLocationWatch() {
+  if (staffLocationWatchId !== null) navigator.geolocation.clearWatch(staffLocationWatchId)
+  staffLocationWatchId = null
+  if (staffLocationTimeout) window.clearTimeout(staffLocationTimeout)
+  staffLocationTimeout = undefined
+}
 
 function requestLocation() {
   if (!navigator.geolocation) {
@@ -109,24 +118,40 @@ function requestLocation() {
   locationStatus.value = 'locating'
   locationError.value = ''
   userCoords.value = null
-  navigator.geolocation.getCurrentPosition(
-    ({ coords }) => {
-      userCoords.value = { lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy }
-      if (coords.accuracy > MAX_GPS_ACCURACY) {
-        locationStatus.value = 'error'
-        locationError.value = `GPS accuracy is insufficient (±${Math.round(coords.accuracy)}m). Move to an open area and try again.`
-        return
-      }
-      locationStatus.value = 'ready'
+  stopStaffLocationWatch()
+  let bestPosition: GeolocationPosition | null = null
+
+  const finish = () => {
+    stopStaffLocationWatch()
+    if (!bestPosition || bestPosition.coords.accuracy > MAX_GPS_ACCURACY) {
+      const accuracy = bestPosition ? ` Best reading: ±${Math.round(bestPosition.coords.accuracy)}m.` : ''
+      locationStatus.value = 'error'
+      locationError.value = `A precise GPS position is required (±${MAX_GPS_ACCURACY}m or better).${accuracy} Move outdoors, enable precise location, and try again.`
+      userCoords.value = null
+      return
+    }
+
+    const { latitude, longitude, accuracy } = bestPosition.coords
+    userCoords.value = { lat: latitude, lng: longitude, accuracy }
+    locationStatus.value = 'ready'
+  }
+
+  staffLocationWatchId = navigator.geolocation.watchPosition(
+    (position) => {
+      if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) bestPosition = position
+      if (position.coords.accuracy <= MAX_GPS_ACCURACY) finish()
     },
     (error) => {
+      stopStaffLocationWatch()
       locationStatus.value = 'error'
+      userCoords.value = null
       locationError.value = error.code === error.PERMISSION_DENIED
-        ? 'Location permission was denied. Enable it to record attendance.'
-        : 'Unable to determine your location. Check GPS and try again.'
+        ? 'Precise location permission was denied. Enable it to record attendance.'
+        : 'Unable to determine a precise location. Enable GPS and try again.'
     },
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
   )
+  staffLocationTimeout = window.setTimeout(finish, 12000)
 }
 
 function openAttendanceAction() {
@@ -138,6 +163,7 @@ function openAttendanceAction() {
 
 function closeActionModal() {
   if (isSubmitting.value) return
+  stopStaffLocationWatch()
   showActionModal.value = false
   locationStatus.value = 'idle'
   locationError.value = ''
@@ -158,6 +184,7 @@ async function confirmAttendanceAction() {
     nextActionMessage.value = raw.next_action_message
     scheduleAvailabilityRefresh()
     showActionModal.value = false
+    stopStaffLocationWatch()
     locationStatus.value = 'idle'
     userCoords.value = null
   } catch (error) {
@@ -175,10 +202,13 @@ const settingsForm = reactive({ lat: 0, lng: 0, radius_meters: 150 })
 const settingsMessage = ref('')
 const settingsError = ref('')
 const isSavingLocation = ref(false)
+const isLocatingAdmin = ref(false)
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let marker: L.Marker | null = null
 let circle: L.Circle | null = null
+let adminLocationWatchId: number | null = null
+let adminLocationTimeout: number | undefined
 
 function initializeMap() {
   if (!mapContainer.value || map) return
@@ -218,15 +248,57 @@ async function loadGeofence() {
 
 function useAdminLocation() {
   settingsError.value = ''
+  settingsMessage.value = ''
   if (!navigator.geolocation) {
     settingsError.value = 'This browser does not support location services.'
     return
   }
-  navigator.geolocation.getCurrentPosition(({ coords }) => {
-    settingsForm.lat = Number(coords.latitude.toFixed(6))
-    settingsForm.lng = Number(coords.longitude.toFixed(6))
-    settingsMessage.value = 'Current coordinates captured. Save to apply the geofence.'
-  }, (error) => { settingsError.value = error.message }, { enableHighAccuracy: true })
+
+  if (adminLocationWatchId !== null) navigator.geolocation.clearWatch(adminLocationWatchId)
+  if (adminLocationTimeout) window.clearTimeout(adminLocationTimeout)
+  isLocatingAdmin.value = true
+
+  let bestPosition: GeolocationPosition | null = null
+
+  const finish = () => {
+    if (adminLocationWatchId !== null) navigator.geolocation.clearWatch(adminLocationWatchId)
+    adminLocationWatchId = null
+    if (adminLocationTimeout) window.clearTimeout(adminLocationTimeout)
+    adminLocationTimeout = undefined
+    isLocatingAdmin.value = false
+
+    if (!bestPosition || bestPosition.coords.accuracy > MAX_GPS_ACCURACY) {
+      const accuracy = bestPosition ? ` (best reading ±${Math.round(bestPosition.coords.accuracy)}m)` : ''
+      settingsError.value = `Unable to get an accurate GPS position${accuracy}. Use a GPS-enabled phone, enable precise location, move outdoors, and try again.`
+      return
+    }
+
+    const { latitude, longitude, accuracy } = bestPosition.coords
+    settingsForm.lat = Number(latitude.toFixed(6))
+    settingsForm.lng = Number(longitude.toFixed(6))
+    settingsMessage.value = `Location captured with ±${Math.round(accuracy)}m accuracy. Verify the marker, then save the geofence.`
+    map?.setView([latitude, longitude], 18)
+  }
+
+  adminLocationWatchId = navigator.geolocation.watchPosition(
+    (position) => {
+      if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) bestPosition = position
+      if (position.coords.accuracy <= 25) finish()
+    },
+    (error) => {
+      if (adminLocationWatchId !== null) navigator.geolocation.clearWatch(adminLocationWatchId)
+      adminLocationWatchId = null
+      if (adminLocationTimeout) window.clearTimeout(adminLocationTimeout)
+      adminLocationTimeout = undefined
+      isLocatingAdmin.value = false
+      settingsError.value = error.code === error.PERMISSION_DENIED
+        ? 'Precise location permission was denied. Allow it in your browser settings and try again.'
+        : 'Unable to determine your location. Enable GPS and precise location, then try again.'
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+  )
+
+  adminLocationTimeout = window.setTimeout(finish, 12000)
 }
 
 async function saveGeofence() {
@@ -313,6 +385,9 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (availabilityTimer) window.clearTimeout(availabilityTimer)
+  stopStaffLocationWatch()
+  if (adminLocationWatchId !== null) navigator.geolocation.clearWatch(adminLocationWatchId)
+  if (adminLocationTimeout) window.clearTimeout(adminLocationTimeout)
   map?.remove()
   map = null
 })
@@ -323,7 +398,7 @@ onBeforeUnmount(() => {
     <LocalLoader v-if="isLoading" />
 
     <header class="flex items-start gap-3">
-      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-50 ring-1 ring-sky-100">
+      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ">
         <Calendar class="dashboard-view-icon h-6 w-6 text-sky-600" />
       </div>
       <div>
@@ -334,104 +409,200 @@ onBeforeUnmount(() => {
 
     <div v-if="actionError" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ actionError }}</div>
 
-    <template v-if="!isAdmin">
-      <div class="grid gap-4 lg:grid-cols-2">
-        <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
-          <div class="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-sky-600">Morning Session</p>
-              <h3 class="mt-1 text-lg font-semibold text-gray-900">Start of workday</h3>
+    <template v-if="!showActionModal && !showCorrectionModal">
+      <template v-if="!isAdmin">
+        <div class="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+          <p class="font-semibold">Attendance windows · Philippine time</p>
+          <p class="mt-1 text-sky-800">Morning Time In: 6:00–8:00 AM · Afternoon Time In: 12:00–2:00 PM · Work beyond 8 total hours is recorded as overtime.</p>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+          <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
+            <div class="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-sky-600">Morning Session · 6:00–8:00 AM Time In</p>
+                <h3 class="mt-1 text-lg font-semibold text-gray-900">Start of workday</h3>
+              </div>
+              <Clock3 class="h-5 w-5 text-sky-600" />
             </div>
-            <Clock3 class="h-5 w-5 text-sky-600" />
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time In</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.morningInAt) }}</p></div>
+              <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time Out</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.morningOutAt) }}</p></div>
+            </div>
+            <div class="mt-4 flex items-center justify-between text-sm"><span class="text-gray-600">Arrival</span><span class="font-semibold" :class="myAttendance?.arrivalStatus === 'Late' ? 'text-amber-700' : 'text-emerald-700'">{{ myAttendance?.arrivalStatus || 'Pending' }}</span></div>
+          </article>
+
+          <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
+            <div class="mb-5 flex items-center justify-between gap-3">
+              <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Afternoon Session · 12:00–2:00 PM Time In</p><h3 class="mt-1 text-lg font-semibold text-gray-900">After lunch break</h3></div>
+              <Clock3 class="h-5 w-5 text-indigo-600" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time In</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.afternoonInAt) }}</p></div>
+              <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time Out</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.afternoonOutAt) }}</p></div>
+            </div>
+            <div class="mt-4 flex items-center justify-between text-sm"><span class="text-gray-600">Session hours</span><span class="font-semibold text-gray-900">{{ formatHours(myAttendance?.afternoonHours || 0) }}</span></div>
+          </article>
+        </div>
+
+        <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div><p class="text-xs uppercase tracking-wide text-gray-500">Total Worked</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ formatHours(myAttendance?.totalHoursWorked || 0) }}</p></div>
+            <div><p class="text-xs uppercase tracking-wide text-gray-500">Regular</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ formatHours(myAttendance?.regularHours || 0) }}</p></div>
+            <div><p class="text-xs uppercase tracking-wide text-gray-500">Overtime</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ formatHours(myAttendance?.overtimeHours || 0) }}</p></div>
+            <div><p class="text-xs uppercase tracking-wide text-gray-500">Daily Status</p><p class="mt-1 text-lg font-bold" :class="myAttendance?.attendanceStatus === 'Completed' ? 'text-emerald-700' : 'text-amber-700'">{{ myAttendance?.attendanceStatus || 'Not Started' }}</p></div>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time In</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.morningInAt) }}</p></div>
-            <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time Out</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.morningOutAt) }}</p></div>
+        </article>
+
+        <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><p class="font-semibold text-sky-950">{{ nextActionLabel }}</p><p class="mt-1 text-sm text-sky-800">{{ nextActionMessage }}</p></div>
+            <button
+              v-if="nextAction"
+              type="button"
+              class="rounded-xl px-5 py-3 font-semibold transition-colors"
+              :class="nextActionAvailable
+                ? 'bg-sky-600 text-white hover:bg-sky-700'
+                : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400'"
+              :disabled="!nextActionAvailable || isSubmitting"
+              :aria-disabled="!nextActionAvailable || isSubmitting"
+              :title="nextActionAvailable ? nextActionLabel : nextActionMessage"
+              @click="openAttendanceAction"
+            >
+              {{ nextActionAvailable ? nextActionLabel : `${nextActionLabel} · Unavailable Now` }}
+            </button>
+            <span v-else-if="!nextAction" class="inline-flex items-center gap-2 font-semibold text-emerald-700"><CheckCircle2 class="h-5 w-5" /> Completed</span>
           </div>
-          <div class="mt-4 flex items-center justify-between text-sm"><span class="text-gray-600">Arrival</span><span class="font-semibold" :class="myAttendance?.arrivalStatus === 'Late' ? 'text-amber-700' : 'text-emerald-700'">{{ myAttendance?.arrivalStatus || 'Pending' }}</span></div>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div v-for="metric in [
+            ['Attended Today', attendedToday], ['Currently On Site', currentlyOnSite], ['Completed', completedToday], ['Late Today', lateToday], ['Incomplete', incompleteToday],
+          ]" :key="String(metric[0])" class="rounded-xl border border-gray-200 bg-white p-5">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ metric[0] }}</p><p class="mt-2 text-2xl font-bold text-gray-900">{{ metric[1] }}</p>
+          </div>
+        </div>
+
+        <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <div class="border-b border-gray-200 px-5 py-4"><h3 class="font-semibold text-gray-900">Today's Attendance</h3><p class="mt-1 text-sm text-gray-500">Complete four-event status for every Staff member who attended today.</p></div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[700px] text-left text-sm">
+              <thead class="border-b bg-gray-50 text-gray-500"><tr><th class="px-4 py-3">Staff</th><th class="px-4 py-3">Morning In</th><th class="px-4 py-3">Morning Out</th><th class="px-4 py-3">Afternoon In</th><th class="px-4 py-3">Afternoon Out</th><th class="px-4 py-3">Arrival</th><th class="px-4 py-3">Total</th><th class="px-4 py-3">Overtime</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"><span class="sr-only">Actions</span></th></tr></thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr v-if="attendanceRecords.length === 0"><td colspan="10" class="px-4 py-10 text-center text-gray-500">No attendance records for today.</td></tr>
+                <tr v-for="record in attendanceRecords" :key="record.id">
+                  <td class="px-4 py-3 font-medium text-gray-900"><span class="block max-w-50 truncate" :title="record.staffName">{{ record.staffName }}</span><span v-if="record.manuallyModified" class="text-xs text-amber-700">Manually corrected</span></td>
+                  <td class="px-4 py-3">{{ formatTime(record.morningInAt) }}</td><td class="px-4 py-3">{{ formatTime(record.morningOutAt) }}</td><td class="px-4 py-3">{{ formatTime(record.afternoonInAt) }}</td><td class="px-4 py-3">{{ formatTime(record.afternoonOutAt) }}</td>
+                  <td class="px-4 py-3"><span :class="record.arrivalStatus === 'Late' ? 'text-amber-700' : 'text-emerald-700'" class="font-medium">{{ record.arrivalStatus || '—' }}</span></td>
+                  <td class="px-4 py-3 font-medium">{{ formatHours(record.totalHoursWorked) }}</td><td class="px-4 py-3">{{ formatHours(record.overtimeHours) }}</td>
+                  <td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-semibold" :class="record.attendanceStatus === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ record.attendanceStatus }}</span></td>
+                  <td class="px-4 py-3"><button type="button" class="rounded-lg p-2 text-sky-700 hover:bg-sky-50" aria-label="Correct attendance" @click="openCorrection(record)"><Pencil class="h-4 w-4" /></button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </article>
 
         <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
-          <div class="mb-5 flex items-center justify-between gap-3">
-            <div><p class="text-xs font-semibold uppercase tracking-wider text-indigo-600">Afternoon Session</p><h3 class="mt-1 text-lg font-semibold text-gray-900">After lunch break</h3></div>
-            <Clock3 class="h-5 w-5 text-indigo-600" />
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time In</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.afternoonInAt) }}</p></div>
-            <div class="rounded-xl bg-gray-50 p-4"><p class="text-xs text-gray-500">Time Out</p><p class="mt-1 font-semibold text-gray-900">{{ formatTime(myAttendance?.afternoonOutAt) }}</p></div>
-          </div>
-          <div class="mt-4 flex items-center justify-between text-sm"><span class="text-gray-600">Session hours</span><span class="font-semibold text-gray-900">{{ formatHours(myAttendance?.afternoonHours || 0) }}</span></div>
+          <div class="mb-5 flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">Attendance Geofence</h3><p class="mt-1 text-sm text-gray-500">Required for every morning and afternoon attendance event.</p></div><span class="rounded-full px-3 py-1 text-xs font-semibold" :class="attendanceLocation ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">{{ attendanceLocation ? 'Configured' : 'Required' }}</span></div>
+          <form class="space-y-4" @submit.prevent="saveGeofence">
+            <div class="grid gap-4 sm:grid-cols-3"><label class="text-sm font-medium text-gray-700 flex items-center">Latitude<input v-model.number="settingsForm.lat" required type="number" step="any" class="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg" /><InfoTooltip text="Please provide the latitude." /></label><label class="text-sm font-medium text-gray-700 flex items-center">Longitude<input v-model.number="settingsForm.lng" required type="number" step="any" class="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg" /><InfoTooltip text="Please provide the longitude." /></label><label class="text-sm font-medium text-gray-700 flex items-center">Radius (meters)<input v-model.number="settingsForm.radius_meters" required type="number" min="20" max="5000" class="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg" /><InfoTooltip text="Please provide the radius meters." /></label></div>
+            <div class="overflow-hidden rounded-xl border border-gray-200"><div ref="mapContainer" class="h-64 w-full"></div></div>
+            <p v-if="settingsMessage" class="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{{ settingsMessage }}</p><p v-if="settingsError" class="rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ settingsError }}</p>
+            <div class="flex flex-col gap-2 sm:flex-row sm:justify-between"><button type="button" :disabled="isLocatingAdmin" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60" @click="useAdminLocation"><MapPin class="h-4 w-4" /> {{ isLocatingAdmin ? 'Improving GPS accuracy…' : 'Use My Location' }}</button><button type="submit" :disabled="isSavingLocation || isLocatingAdmin" class="rounded-lg bg-sky-600 px-5 py-2 font-semibold text-white hover:bg-sky-700 disabled:bg-gray-400">{{ isSavingLocation ? 'Saving…' : 'Save Geofence' }}</button></div>
+          </form>
         </article>
-      </div>
+      </template>
+    </template>
 
-      <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div><p class="text-xs uppercase tracking-wide text-gray-500">Total Worked</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ formatHours(myAttendance?.totalHoursWorked || 0) }}</p></div>
-          <div><p class="text-xs uppercase tracking-wide text-gray-500">Regular</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ formatHours(myAttendance?.regularHours || 0) }}</p></div>
-          <div><p class="text-xs uppercase tracking-wide text-gray-500">Overtime</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ formatHours(myAttendance?.overtimeHours || 0) }}</p></div>
-          <div><p class="text-xs uppercase tracking-wide text-gray-500">Daily Status</p><p class="mt-1 text-lg font-bold" :class="myAttendance?.attendanceStatus === 'Completed' ? 'text-emerald-700' : 'text-amber-700'">{{ myAttendance?.attendanceStatus || 'Not Started' }}</p></div>
-        </div>
-      </article>
-
-      <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><p class="font-semibold text-sky-950">{{ nextActionLabel }}</p><p class="mt-1 text-sm text-sky-800">{{ nextActionMessage }}</p></div>
-          <button v-if="nextAction && nextActionAvailable" type="button" class="rounded-xl bg-sky-600 px-5 py-3 font-semibold text-white hover:bg-sky-700 disabled:bg-gray-400" :disabled="isSubmitting" @click="openAttendanceAction">
-            {{ nextActionLabel }}
+    <!-- Action View (GPS verified attendance) -->
+    <template v-else-if="showActionModal">
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 max-w-xl mx-auto">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">{{ nextActionLabel }}</h3>
+            <p class="text-sm text-slate-500 mt-1">GPS-verified attendance</p>
+          </div>
+          <button 
+            @click="closeActionModal" 
+            class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            Cancel
           </button>
-          <span v-else-if="!nextAction" class="inline-flex items-center gap-2 font-semibold text-emerald-700"><CheckCircle2 class="h-5 w-5" /> Completed</span>
+        </div>
+        <div class="p-6 space-y-6">
+          <div class="rounded-xl border border-sky-100 bg-sky-50 px-5 py-4">
+            <p class="text-sm text-gray-600 font-medium">Authoritative timezone</p>
+            <p class="font-bold text-sky-900 mt-1">Asia/Manila (Philippine time)</p>
+          </div>
+          
+          <div class="rounded-xl border p-5" :class="locationStatus === 'ready' ? 'border-emerald-200 bg-emerald-50' : locationStatus === 'error' ? 'border-red-200 bg-red-50' : 'border-sky-200 bg-sky-50'">
+            <div class="flex items-center justify-between">
+              <p class="font-bold text-slate-900">Location verification</p>
+              <button v-if="locationStatus === 'error'" type="button" class="text-sm font-semibold text-sky-700 hover:text-sky-800" @click="requestLocation">Try again</button>
+            </div>
+            <p v-if="locationStatus === 'locating'" class="mt-2 text-sm font-medium text-sky-700">Getting a fresh GPS location…</p>
+            <p v-else-if="locationStatus === 'ready'" class="mt-2 text-sm font-medium text-emerald-700">GPS confirmed (±{{ Math.round(userCoords?.accuracy || 0) }}m)</p>
+            <p v-else-if="locationError" class="mt-2 text-sm font-medium text-red-700">{{ locationError }}</p>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+            <button type="button" class="rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors" :disabled="isSubmitting" @click="closeActionModal">Cancel</button>
+            <button type="button" class="rounded-xl bg-linear-to-r from-sky-600 to-blue-600 px-8 py-2.5 font-semibold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all" :disabled="locationStatus !== 'ready' || isSubmitting" @click="confirmAttendanceAction">
+              {{ isSubmitting ? 'Recording…' : `Confirm ${nextActionLabel}` }}
+            </button>
+          </div>
         </div>
       </div>
     </template>
 
-    <template v-else>
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div v-for="metric in [
-          ['Attended Today', attendedToday], ['Currently On Site', currentlyOnSite], ['Completed', completedToday], ['Late Today', lateToday], ['Incomplete', incompleteToday],
-        ]" :key="String(metric[0])" class="rounded-xl border border-gray-200 bg-white p-5">
-          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ metric[0] }}</p><p class="mt-2 text-2xl font-bold text-gray-900">{{ metric[1] }}</p>
+    <!-- Admin Correction View -->
+    <template v-else-if="showCorrectionModal">
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 max-w-2xl mx-auto">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Correct Attendance</h3>
+            <p class="text-sm text-slate-500 mt-1">Admin-only audited correction</p>
+          </div>
+          <button 
+            @click="showCorrectionModal = false" 
+            class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+        
+        <div class="p-6">
+          <form id="attendance-correction-form" class="space-y-6" @submit.prevent="saveCorrection">
+            <p class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
+              Changes are marked as manual and stored with your email, timestamp, and required reason.
+            </p>
+            
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div v-for="field in [{ key: 'morningIn', label: 'Morning In' }, { key: 'morningOut', label: 'Morning Out' }, { key: 'afternoonIn', label: 'Afternoon In' }, { key: 'afternoonOut', label: 'Afternoon Out' }]" :key="field.key">
+                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">{{ field.label }}<InfoTooltip text="Please provide the fieldlabel." /></label>
+                <input v-model="correctionForm[field.key as keyof typeof correctionForm]" type="datetime-local" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition" />
+              </div>
+            </div>
+            
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Correction reason <span class="text-red-500">*</span><InfoTooltip text="Please provide the correction reason." /></label>
+              <textarea v-model="correctionForm.reason" required minlength="3" rows="4" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition" placeholder="Explain why this correction is required"></textarea>
+            </div>
+            
+            <p v-if="correctionError" class="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800 border border-red-200">{{ correctionError }}</p>
+            
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+              <button type="button" class="rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors" :disabled="isSubmitting" @click="showCorrectionModal = false">Cancel</button>
+              <button type="submit" class="rounded-xl bg-linear-to-r from-amber-600 to-orange-600 px-8 py-2.5 font-semibold text-white shadow-md shadow-amber-600/20 disabled:opacity-50 disabled:cursor-not-allowed hover:from-amber-700 hover:to-orange-700 transition-all" :disabled="isSubmitting || correctionForm.reason.trim().length < 3">
+                {{ isSubmitting ? 'Saving…' : 'Save Correction' }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-
-      <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-        <div class="border-b border-gray-200 px-5 py-4"><h3 class="font-semibold text-gray-900">Today's Attendance</h3><p class="mt-1 text-sm text-gray-500">Complete four-event status for every Staff member who attended today.</p></div>
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[700px] text-left text-sm">
-            <thead class="border-b bg-gray-50 text-gray-500"><tr><th class="px-4 py-3">Staff</th><th class="px-4 py-3">Morning In</th><th class="px-4 py-3">Morning Out</th><th class="px-4 py-3">Afternoon In</th><th class="px-4 py-3">Afternoon Out</th><th class="px-4 py-3">Arrival</th><th class="px-4 py-3">Total</th><th class="px-4 py-3">Overtime</th><th class="px-4 py-3">Status</th><th class="px-4 py-3"><span class="sr-only">Actions</span></th></tr></thead>
-            <tbody class="divide-y divide-gray-100">
-              <tr v-if="attendanceRecords.length === 0"><td colspan="10" class="px-4 py-10 text-center text-gray-500">No attendance records for today.</td></tr>
-              <tr v-for="record in attendanceRecords" :key="record.id">
-                <td class="px-4 py-3 font-medium text-gray-900"><span class="block max-w-50 truncate" :title="record.staffName">{{ record.staffName }}</span><span v-if="record.manuallyModified" class="text-xs text-amber-700">Manually corrected</span></td>
-                <td class="px-4 py-3">{{ formatTime(record.morningInAt) }}</td><td class="px-4 py-3">{{ formatTime(record.morningOutAt) }}</td><td class="px-4 py-3">{{ formatTime(record.afternoonInAt) }}</td><td class="px-4 py-3">{{ formatTime(record.afternoonOutAt) }}</td>
-                <td class="px-4 py-3"><span :class="record.arrivalStatus === 'Late' ? 'text-amber-700' : 'text-emerald-700'" class="font-medium">{{ record.arrivalStatus || '—' }}</span></td>
-                <td class="px-4 py-3 font-medium">{{ formatHours(record.totalHoursWorked) }}</td><td class="px-4 py-3">{{ formatHours(record.overtimeHours) }}</td>
-                <td class="px-4 py-3"><span class="rounded-full px-2.5 py-1 text-xs font-semibold" :class="record.attendanceStatus === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ record.attendanceStatus }}</span></td>
-                <td class="px-4 py-3"><button type="button" class="rounded-lg p-2 text-sky-700 hover:bg-sky-50" aria-label="Correct attendance" @click="openCorrection(record)"><Pencil class="h-4 w-4" /></button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </article>
-
-      <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
-        <div class="mb-5 flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">Attendance Geofence</h3><p class="mt-1 text-sm text-gray-500">Required for every morning and afternoon attendance event.</p></div><span class="rounded-full px-3 py-1 text-xs font-semibold" :class="attendanceLocation ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">{{ attendanceLocation ? 'Configured' : 'Required' }}</span></div>
-        <form class="space-y-4" @submit.prevent="saveGeofence">
-          <div class="grid gap-4 sm:grid-cols-3"><label class="text-sm font-medium text-gray-700">Latitude<input v-model.number="settingsForm.lat" required type="number" step="any" class="mt-1 w-full border border-gray-300 px-3 py-2" /></label><label class="text-sm font-medium text-gray-700">Longitude<input v-model.number="settingsForm.lng" required type="number" step="any" class="mt-1 w-full border border-gray-300 px-3 py-2" /></label><label class="text-sm font-medium text-gray-700">Radius (meters)<input v-model.number="settingsForm.radius_meters" required type="number" min="20" max="5000" class="mt-1 w-full border border-gray-300 px-3 py-2" /></label></div>
-          <div class="overflow-hidden rounded-xl border border-gray-200"><div ref="mapContainer" class="h-64 w-full"></div></div>
-          <p v-if="settingsMessage" class="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{{ settingsMessage }}</p><p v-if="settingsError" class="rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ settingsError }}</p>
-          <div class="flex flex-col gap-2 sm:flex-row sm:justify-between"><button type="button" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50" @click="useAdminLocation"><MapPin class="h-4 w-4" /> Use My Location</button><button type="submit" :disabled="isSavingLocation" class="rounded-lg bg-sky-600 px-5 py-2 font-semibold text-white hover:bg-sky-700 disabled:bg-gray-400">{{ isSavingLocation ? 'Saving…' : 'Save Geofence' }}</button></div>
-        </form>
-      </article>
     </template>
-
-    <ModalShell :show="showActionModal" :title="nextActionLabel" subtitle="GPS-verified attendance" tone="blue" size="sm" @close="closeActionModal">
-      <div class="space-y-4"><div class="rounded-xl bg-sky-50 p-4"><p class="text-sm text-gray-600">Authoritative timezone</p><p class="font-semibold text-gray-900">Asia/Manila (Philippine time)</p></div><div class="rounded-xl border p-4" :class="locationStatus === 'ready' ? 'border-emerald-200 bg-emerald-50' : locationStatus === 'error' ? 'border-red-200 bg-red-50' : 'border-sky-200 bg-sky-50'"><div class="flex items-center justify-between"><p class="font-medium">Location verification</p><button v-if="locationStatus === 'error'" type="button" class="text-sm font-semibold text-sky-700" @click="requestLocation">Try again</button></div><p v-if="locationStatus === 'locating'" class="mt-2 text-sm text-sky-700">Getting a fresh GPS location…</p><p v-else-if="locationStatus === 'ready'" class="mt-2 text-sm text-emerald-700">GPS confirmed (±{{ Math.round(userCoords?.accuracy || 0) }}m)</p><p v-else-if="locationError" class="mt-2 text-sm text-red-700">{{ locationError }}</p></div></div>
-      <template #footer><button type="button" class="rounded-xl border border-gray-300 px-4 py-3 font-semibold" :disabled="isSubmitting" @click="closeActionModal">Cancel</button><button type="button" class="rounded-xl bg-sky-600 px-4 py-3 font-semibold text-white disabled:bg-gray-400" :disabled="locationStatus !== 'ready' || isSubmitting" @click="confirmAttendanceAction">{{ isSubmitting ? 'Recording…' : `Confirm ${nextActionLabel}` }}</button></template>
-    </ModalShell>
-
-    <ModalShell :show="showCorrectionModal" title="Correct Attendance" subtitle="Admin-only audited correction" tone="amber" size="lg" @close="showCorrectionModal = false">
-      <form id="attendance-correction-form" class="space-y-4" @submit.prevent="saveCorrection"><p class="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">Changes are marked as manual and stored with your email, timestamp, and required reason.</p><div class="grid gap-4 sm:grid-cols-2"><label v-for="field in [{ key: 'morningIn', label: 'Morning In' }, { key: 'morningOut', label: 'Morning Out' }, { key: 'afternoonIn', label: 'Afternoon In' }, { key: 'afternoonOut', label: 'Afternoon Out' }]" :key="field.key" class="text-sm font-medium text-gray-700">{{ field.label }}<input v-model="correctionForm[field.key as keyof typeof correctionForm]" type="datetime-local" class="mt-1 w-full border border-gray-300 px-3 py-2" /></label></div><label class="block text-sm font-medium text-gray-700">Correction reason<textarea v-model="correctionForm.reason" required minlength="3" class="mt-1 w-full border border-gray-300 px-3 py-2" placeholder="Explain why this correction is required"></textarea></label><p v-if="correctionError" class="rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ correctionError }}</p></form>
-      <template #footer><button type="button" class="rounded-xl border border-gray-300 px-4 py-3 font-semibold" :disabled="isSubmitting" @click="showCorrectionModal = false">Cancel</button><button form="attendance-correction-form" type="submit" class="rounded-xl bg-amber-600 px-4 py-3 font-semibold text-white disabled:bg-gray-400" :disabled="isSubmitting || correctionForm.reason.trim().length < 3">{{ isSubmitting ? 'Saving…' : 'Save Correction' }}</button></template>
-    </ModalShell>
   </section>
 </template>

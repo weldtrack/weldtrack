@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { onMounted, reactive, ref } from 'vue'
 import api from '../../../../api/api'
@@ -129,106 +130,183 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="space-y-4 relative">
+  <section class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
-    <div class="rounded-lg border border-gray-200 bg-white p-4">
-      <div class="flex items-start gap-3 pb-4">
-        <div
-          class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
-          <User class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
-        </div>
-        <div>
-          <h3 class="mb-1 text-2xl font-semibold text-gray-900">Create Staff Account</h3>
-          <p class="text-sm text-gray-600">Create a staff account directly (no verification required).</p>
-        </div>
+    
+    <!-- Header -->
+    <div class="flex items-start gap-3">
+      <div class="flex h-12 w-12 items-center justify-center">
+        <User class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
-      <div v-if="createStaffError"
-        class="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{{ createStaffError }}
-      </div>
-      <div v-if="createStaffSuccess"
-        class="mb-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">{{
-          createStaffSuccess }}</div>
-
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <input v-model="createStaffForm.email" type="email" placeholder="staff@example.com"
-          class="rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 sm:col-span-2" />
-        <div class="space-y-2 min-w-0">
-          <label class="text-xs font-bold uppercase tracking-widest text-gray-500" for="create-staff-password">Create
-            Password</label>
-          <div class="group relative">
-            <input v-model="createStaffForm.password" id="create-staff-password" type="password"
-              placeholder="••••••••"
-              class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 pr-11" />
-            <div class="absolute inset-y-0 right-3 flex items-center">
-              <div
-                class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-gray-300 bg-white text-[11px] font-black text-gray-500 shadow-sm transition group-hover:border-green-500 group-hover:text-green-700 group-focus-within:border-green-500 group-focus-within:text-green-700">
-                !
-                <div
-                  class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-gray-200 bg-white px-3 py-2 text-left text-[11px] leading-snug text-gray-700 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
-                  Password must be 8+ characters and include 1 uppercase letter and 1 number.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="space-y-2 min-w-0">
-          <label class="text-xs font-bold uppercase tracking-widest text-gray-500"
-            for="create-staff-confirm-password">Confirm Password</label>
-          <input v-model="createStaffForm.confirmPassword" id="create-staff-confirm-password" type="password"
-            placeholder="••••••••" class="min-w-0 w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2" />
-        </div>
-        <label
-          class="flex min-w-0 items-start gap-3 rounded-xl border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700 sm:col-span-2">
-          <input v-model="createStaffForm.confirm" type="checkbox"
-            class="mt-0.5 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500" />
-          <span>I confirm this account creation.</span>
-        </label>
-        <button :disabled="creatingStaff" @click="submitCreateStaff"
-          class="mt-1 h-10 rounded-xl bg-green-600 px-4 font-semibold text-white hover:bg-green-700 disabled:opacity-60 sm:col-span-2">{{
-            creatingStaff ? 'Creating...' : 'Create Staff' }}</button>
+      <div>
+        <h3 class="text-2xl font-semibold text-gray-900">Create Staff Account</h3>
+        <p class="text-sm text-gray-600">Create a staff account directly (no verification required).</p>
       </div>
     </div>
 
-    <div class="rounded-lg border border-gray-200 bg-white p-4">
-      <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">Staff Members</h3>
-        <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
-          {{ staffList.length }} Staff
+    <!-- Form Section -->
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Account Details</h3>
+          <p class="text-sm text-slate-500 mt-1">Set up new staff login credentials</p>
+        </div>
+      </div>
+
+      <div class="p-6">
+        <div v-if="createStaffError" class="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {{ createStaffError }}
+        </div>
+        <div v-if="createStaffSuccess" class="mb-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+          {{ createStaffSuccess }}
+        </div>
+
+        <form @submit.prevent="submitCreateStaff" class="space-y-5 max-w-4xl">
+          <div>
+            <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="create-staff-email">
+              Email Address <span class="text-red-500 ml-1">*</span>
+              <InfoTooltip text="Enter the official work email address for the staff member." />
+            </label>
+            <input
+              id="create-staff-email"
+              v-model="createStaffForm.email"
+              type="email"
+              required
+              placeholder="staff@example.com"
+              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="create-staff-password">
+                Password <span class="text-red-500 ml-1">*</span>
+                <InfoTooltip text="Must be at least 8 characters long." />
+              </label>
+              <input
+                id="create-staff-password"
+                v-model="createStaffForm.password"
+                type="password"
+                required
+                placeholder="••••••••"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              />
+            </div>
+
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="create-staff-confirm-password">
+                Confirm Password <span class="text-red-500 ml-1">*</span>
+                <InfoTooltip text="Re-enter the password to verify." />
+              </label>
+              <input
+                id="create-staff-confirm-password"
+                v-model="createStaffForm.confirmPassword"
+                type="password"
+                required
+                placeholder="••••••••"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              />
+            </div>
+          </div>
+
+          <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 cursor-pointer hover:bg-slate-100/80 transition-colors">
+            <input
+              v-model="createStaffForm.confirm"
+              type="checkbox"
+              class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+            />
+            <span class="font-medium">I confirm that this staff account creation is authorized.</span>
+            <InfoTooltip text="Confirmation check required before creating account." />
+          </label>
+
+          <div class="flex justify-end pt-2 border-t border-slate-100 mt-6">
+            <button
+              type="submit"
+              :disabled="creatingStaff"
+              class="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-6 py-2.5 font-semibold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {{ creatingStaff ? 'Creating Account...' : 'Create Staff Account' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Staff Profile Cards List -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Staff Members</h3>
+          <p class="text-sm text-slate-500">Currently active staff accounts in the system</p>
+        </div>
+        <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 ring-1 ring-inset ring-sky-600/20">
+          {{ staffList.length }} Staff {{ staffList.length === 1 ? 'Member' : 'Members' }}
         </span>
       </div>
 
-      <div v-if="staffList.length === 0" class="rounded-lg bg-gray-50 p-4 text-center text-sm text-gray-500">
-        No staff members yet.
+      <div v-if="staffList.length === 0" class="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+        No staff members found. Create one above to get started.
       </div>
 
-      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div v-for="staff in staffList" :key="staff.id"
-          class="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 overflow-hidden border border-slate-300">
-            <img v-if="staff.profile_image" :src="getImageUrl(staff.profile_image)" :alt="staff.email" class="h-full w-full object-cover" />
-            <span v-else class="text-lg font-semibold text-slate-600">{{ staff.email.slice(0, 1).toUpperCase() }}</span>
+      <div v-else class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          v-for="staff in staffList"
+          :key="staff.id"
+          class="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+        >
+          <!-- Top Badge & Avatar -->
+          <div>
+            <div class="flex items-start justify-between mb-4">
+              <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-linear-to-br from-slate-50 to-slate-100 shadow-xs overflow-hidden">
+                <img v-if="staff.profile_image" :src="getImageUrl(staff.profile_image)" :alt="staff.email" class="h-full w-full object-cover" />
+                <span v-else class="text-xl font-bold text-sky-700">{{ staff.email.slice(0, 1).toUpperCase() }}</span>
+              </div>
+              <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 tracking-wider uppercase">
+                Staff
+              </span>
+            </div>
+
+            <!-- Profile Info -->
+            <div class="space-y-1">
+              <h4 class="truncate text-base font-bold text-slate-900" :title="staff.email">{{ staff.email }}</h4>
+              <p class="truncate text-xs font-medium text-slate-500">
+                {{ staff.mobile_phone || 'No phone recorded' }}
+              </p>
+            </div>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="truncate font-semibold text-gray-900">{{ staff.email }}</p>
-            <p class="truncate text-sm text-gray-600">{{ staff.mobile_phone || 'No phone' }}</p>
-            <p class="text-xs text-gray-500">
-              Joined: {{ new Date(staff.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) }}
-            </p>
+
+          <!-- Footer Metadata & Action -->
+          <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div>
+              <span class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400">Joined</span>
+              <span class="font-medium text-slate-700">
+                {{ new Date(staff.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) }}
+              </span>
+            </div>
+            <button
+              type="button"
+              @click="openDeleteModal(staff)"
+              class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 hover:border-red-300"
+            >
+              Delete
+            </button>
           </div>
-          <button type="button" @click="openDeleteModal(staff)"
-            class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 hover:border-red-300">
-            Delete
-          </button>
         </div>
       </div>
     </div>
 
-    <ModalShell :show="showDeleteModal" title="Delete Staff Member" subtitle="Confirm deletion" tone="red" size="lg"
-      @close="closeDeleteModal">
+    <!-- Delete Confirmation Modal -->
+    <ModalShell
+      :show="showDeleteModal"
+      title="Delete Staff Member"
+      subtitle="Confirm account removal"
+      tone="red"
+      size="lg"
+      @close="closeDeleteModal"
+    >
       <div class="space-y-4">
-        <p class="text-gray-700">
-          Are you sure you want to delete <strong>{{ selectedStaffToDelete?.email }}</strong>? This action cannot be
-          undone.
+        <p class="text-slate-700">
+          Are you sure you want to delete <strong>{{ selectedStaffToDelete?.email }}</strong>? This action cannot be undone.
         </p>
         <div v-if="deleteError" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {{ deleteError }}
@@ -236,15 +314,20 @@ onMounted(async () => {
       </div>
 
       <template #footer>
-        <button type="button"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-          @click="closeDeleteModal">
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+          @click="closeDeleteModal"
+        >
           Cancel
         </button>
-        <button type="button" :disabled="isDeleting"
+        <button
+          type="button"
+          :disabled="isDeleting"
           class="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-          @click="confirmDeleteStaff">
-          {{ isDeleting ? 'Deleting...' : 'Delete' }}
+          @click="confirmDeleteStaff"
+        >
+          {{ isDeleting ? 'Deleting...' : 'Delete Staff' }}
         </button>
       </template>
     </ModalShell>

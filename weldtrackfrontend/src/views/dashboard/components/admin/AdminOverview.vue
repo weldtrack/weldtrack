@@ -1,18 +1,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
-import { LayoutDashboard } from 'lucide-vue-next'
+import { LayoutDashboard, CheckCircle2, Clock, DollarSign, Users, UserPlus } from 'lucide-vue-next'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { getServicePriceDisplay } from '../../../../services/servicePricing'
+import api from '../../../../api/api'
+import type { UserRead } from '../../../../types/auth'
 
 const bookingsStore = useBookingsStore()
 
 const isLoading = ref(true)
+const users = ref<UserRead[]>([])
 
 onMounted(async () => {
   isLoading.value = true
   try {
-    await bookingsStore.fetchBookings()
+    const [, usersResponse] = await Promise.all([
+      bookingsStore.fetchBookings(),
+      api.get<UserRead[]>('/auth/admin/users'),
+    ])
+    users.value = Array.isArray(usersResponse.data) ? usersResponse.data : []
   } finally {
     isLoading.value = false
   }
@@ -35,45 +42,22 @@ function formatDate(value?: string) {
   })
 }
 
-function getBookingCost(booking: { projectType?: string; estimatedCost?: number; materialCost?: number }) {
-  return getServicePriceDisplay(booking.projectType || '', booking.estimatedCost) + Number(booking.materialCost ?? 0)
+function getBookingCost(booking: { projectType?: string; estimatedCost?: number; materialCost?: number; totalPrice?: number }) {
+  return Number(booking.totalPrice ?? (getServicePriceDisplay(booking.projectType || '', booking.estimatedCost) + Number(booking.materialCost ?? 0)))
 }
 
-const customers = computed(() => {
-  const seen = new Set<string>()
-  return bookings.value.filter((booking) => {
-    const key = (booking.email || booking.customerName || '').trim().toLowerCase()
-    if (!key || seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-})
+const customers = computed(() => users.value.filter((user) => user.role === 'customer'))
 
 const totalCustomers = computed(() => customers.value.length)
 
 const newCustomersThisMonth = computed(() => {
   const now = new Date()
-  const firstSeen = new Map<string, number>()
-
-  bookings.value.forEach((booking) => {
-    const key = (booking.email || booking.customerName || '').trim().toLowerCase()
-    if (!key || !booking.createdDate) return
-    const ts = new Date(booking.createdDate).getTime()
-    if (Number.isNaN(ts)) return
-    const prev = firstSeen.get(key)
-    if (prev === undefined || ts < prev) {
-      firstSeen.set(key, ts)
-    }
-  })
-
-  let count = 0
-  firstSeen.forEach((ts) => {
-    const d = new Date(ts)
-    if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-      count += 1
-    }
-  })
-  return count
+  return customers.value.filter((customer) => {
+    const created = new Date(customer.created_at)
+    return !Number.isNaN(created.getTime())
+      && created.getMonth() === now.getMonth()
+      && created.getFullYear() === now.getFullYear()
+  }).length
 })
 
 const ongoingProjects = computed(() => bookings.value.filter((booking) => booking.status === 'confirmed' || booking.status === 'in-progress').length)
@@ -101,7 +85,7 @@ const recentCompletedProjects = computed(() =>
     .sort((a, b) => new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime()),
 )
 
-const monthlyExpenses = computed(() => {
+const monthlyRevenue = computed(() => {
   const now = new Date()
   const months = Array.from({ length: 6 }).map((_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
@@ -132,44 +116,45 @@ const projectStatusBreakdown = computed(() => {
   const pending = bookings.value.filter((booking) => booking.status === 'pending').length
   const total = completed + ongoing + pending
 
-  // Use one decimal place so very small percentages don't round to 0
   const toPercent = (value: number) => (total > 0 ? parseFloat(((value / total) * 100).toFixed(1)) : 0)
 
   return [
-    { name: 'Completed', value: toPercent(completed), color: "var(--chart-completed, #16a34a)" },
-    { name: 'Ongoing', value: toPercent(ongoing), color: "var(--chart-ongoing, #2563eb)" },
-    { name: 'Pending', value: toPercent(pending), color: "var(--chart-pending, #f59e0b)" },
+    { name: 'Completed', value: toPercent(completed), count: completed, color: "#10b981" },
+    { name: 'Ongoing', value: toPercent(ongoing), count: ongoing, color: "#0284c7" },
+    { name: 'Pending', value: toPercent(pending), count: pending, color: "#f59e0b" },
   ]
 })
 
-
-
 const lineChart = computed(() => {
   const width = 640
-  const height = 300
-  const paddingX = 40
-  const paddingY = 32
-  const values = monthlyExpenses.value.map((entry) => entry.amount)
+  const height = 260
+  const paddingX = 45
+  const paddingY = 30
+  const values = monthlyRevenue.value.map((entry) => entry.amount)
   const minValue = 0
-  const maxValue = Math.max(...values, 1)
+  const maxValue = Math.max(...values, 1000)
   const chartWidth = width - paddingX * 2
   const chartHeight = height - paddingY * 2
 
-  const points = monthlyExpenses.value.map((entry, index) => {
-    const x = paddingX + (chartWidth / Math.max(monthlyExpenses.value.length - 1, 1)) * index
+  const points = monthlyRevenue.value.map((entry, index) => {
+    const x = paddingX + (chartWidth / Math.max(monthlyRevenue.value.length - 1, 1)) * index
     const ratio = (entry.amount - minValue) / (maxValue - minValue || 1)
     const y = height - paddingY - ratio * chartHeight
     return { x, y, month: entry.month, amount: entry.amount }
   })
 
   const linePath = points.map((point) => `${point.x},${point.y}`).join(' ')
-  const gridValues = [0, 0.25, 0.5, 0.75, 1]
+  const areaPath = points.length > 0
+    ? `${points[0].x},${height - paddingY} ${linePath} ${points[points.length - 1].x},${height - paddingY}`
+    : ''
+  const gridValues = [0, 0.33, 0.66, 1]
 
   return {
     width,
     height,
     points,
     linePath,
+    areaPath,
     gridValues,
     maxValue,
   }
@@ -179,7 +164,6 @@ const pieStyle = computed(() => {
   const items = projectStatusBreakdown.value
   const total = items.reduce((sum, item) => sum + item.value, 0)
 
-  // when there's no data, return 'none' so the base bg-gray-200 shows
   if (!total) return 'none'
 
   let start = 0
@@ -192,113 +176,212 @@ const pieStyle = computed(() => {
 
   return `conic-gradient(${segments.join(', ')})`
 })
-
 </script>
 
 <template>
   <div class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
+
+    <!-- Header -->
     <div class="flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-sky-50 to-sky-25 ring-1 ring-sky-100 text-sky-600 dark:text-sky-400">
-        <LayoutDashboard class="dashboard-view-icon h-6 w-6 text-current" />
+      <div class="flex h-12 w-12 items-center justify-center">
+        <LayoutDashboard class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>
-        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Admin Dashboard</h3>
-        <p class="text-sm text-gray-600">Overview of system activity and metrics</p>
+        <h3 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Admin Dashboard</h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Executive overview of system activity, metrics, and financials</p>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="rounded-lg bg-sky-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Completed Projects</p>
-        <p class="mt-2 text-2xl font-bold text-gray-900">{{ completedProjects }}</p>
+    <!-- Top KPI Cards Grid -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <!-- Completed Projects -->
+      <div class="group rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-xs transition-all hover:border-emerald-300 dark:border-emerald-900/50 dark:bg-emerald-950/40">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Completed</span>
+          <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
+            <CheckCircle2 class="h-4 w-4" />
+          </div>
+        </div>
+        <p class="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">{{ completedProjects }}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">Finished projects</p>
       </div>
 
-      <div class="rounded-lg bg-sky-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Ongoing Projects</p>
-        <p class="mt-2 text-2xl font-bold text-gray-900">{{ ongoingProjects }}</p>
+      <!-- Ongoing Projects -->
+      <div class="group rounded-2xl border border-sky-200 bg-sky-50/60 p-5 shadow-xs transition-all hover:border-sky-300 dark:border-sky-900/50 dark:bg-sky-950/40">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Ongoing</span>
+          <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-300">
+            <Clock class="h-4 w-4" />
+          </div>
+        </div>
+        <p class="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">{{ ongoingProjects }}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">In progress or confirmed</p>
       </div>
 
-      <div class="rounded-lg bg-sky-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Total Project Value</p>
-        <p class="mt-2 text-2xl font-bold text-gray-900">{{ formatCurrency(totalProjectValue) }}</p>
+      <!-- Total Revenue -->
+      <div class="group rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5 shadow-xs transition-all hover:border-indigo-300 dark:border-indigo-900/50 dark:bg-indigo-950/40">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Total Value</span>
+          <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
+            <DollarSign class="h-4 w-4" />
+          </div>
+        </div>
+        <p class="mt-3 text-2xl font-black text-slate-900 dark:text-slate-100 truncate" :title="formatCurrency(totalProjectValue)">
+          {{ formatCurrency(totalProjectValue) }}
+        </p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">Completed projects revenue</p>
       </div>
 
-      <div class="rounded-lg bg-sky-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">Total Customers</p>
-        <p class="mt-2 text-2xl font-bold text-gray-900">{{ totalCustomers }}</p>
+      <!-- Total Customers -->
+      <div class="group rounded-2xl border border-purple-200 bg-purple-50/60 p-5 shadow-xs transition-all hover:border-purple-300 dark:border-purple-900/50 dark:bg-purple-950/40">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">Customers</span>
+          <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300">
+            <Users class="h-4 w-4" />
+          </div>
+        </div>
+        <p class="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">{{ totalCustomers }}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">Total registered clients</p>
       </div>
 
-      <div class="rounded-lg bg-sky-50 p-6">
-        <p class="text-xs uppercase tracking-wide text-sky-600 font-semibold">New Customers This Month</p>
-        <p class="mt-2 text-2xl font-bold text-gray-900">{{ newCustomersThisMonth }}</p>
+      <!-- New Customers -->
+      <div class="group rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-xs transition-all hover:border-amber-300 dark:border-amber-900/50 dark:bg-amber-950/40">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">New Clients</span>
+          <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+            <UserPlus class="h-4 w-4" />
+          </div>
+        </div>
+        <p class="mt-3 text-3xl font-black text-slate-900 dark:text-slate-100">{{ newCustomersThisMonth }}</p>
+        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 font-medium">Added this month</p>
       </div>
     </div>
 
+    <!-- Charts Section -->
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      <div class="rounded-lg border border-gray-200 bg-transparent p-6">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900">Monthly Project Cost Trend</h3>
-        <svg class="h-72 w-full" viewBox="0 0 640 300" role="img" aria-label="Monthly project cost trend chart">
-          <line v-for="grid in lineChart.gridValues" :key="grid" x1="40" :x2="600" :y1="32 + (236 * grid)"
-            :y2="32 + (236 * grid)" stroke="var(--db-border)" stroke-dasharray="4 4" />
+      <!-- Line Chart Card -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h4 class="text-base font-bold text-slate-900 dark:text-slate-100">Completed Project Value</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Recorded completed-booking totals grouped by scheduled month</p>
+          </div>
+        </div>
 
-          <polyline fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
-            :points="lineChart.linePath" />
+        <div class="relative w-full">
+          <svg class="h-64 w-full" viewBox="0 0 640 260" role="img" aria-label="Monthly revenue trend chart">
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0284c7" stop-opacity="0.3" />
+                <stop offset="100%" stop-color="#0284c7" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
 
-          <circle v-for="point in lineChart.points" :key="point.month" :cx="point.x" :cy="point.y" r="5"
-            fill="#10b981" />
+            <!-- Grid Lines -->
+            <line 
+              v-for="(grid, i) in lineChart.gridValues" 
+              :key="i" 
+              x1="45" 
+              x2="595" 
+              :y1="30 + (200 * grid)" 
+              :y2="30 + (200 * grid)" 
+              stroke="rgba(148, 163, 184, 0.2)" 
+              stroke-dasharray="4 4" 
+            />
 
-          <text v-for="point in lineChart.points" :key="`${point.month}-label`" :x="point.x" y="286"
-            text-anchor="middle" class="fill-gray-500 text-xs">
-            {{ point.month }}
-          </text>
-        </svg>
+            <!-- Area Fill -->
+            <polygon :points="lineChart.areaPath" fill="url(#chartGradient)" />
+
+            <!-- Smooth Line Path -->
+            <polyline 
+              fill="none" 
+              stroke="#0284c7" 
+              stroke-width="3" 
+              stroke-linecap="round" 
+              stroke-linejoin="round" 
+              :points="lineChart.linePath" 
+            />
+
+            <!-- Data Point Circles & Tooltip Labels -->
+            <g v-for="point in lineChart.points" :key="point.month">
+              <circle :cx="point.x" :cy="point.y" r="5" class="fill-sky-600 stroke-white stroke-2 dark:stroke-slate-900" />
+              <text :x="point.x" y="250" text-anchor="middle" class="fill-slate-400 text-xs font-semibold">
+                {{ point.month }}
+              </text>
+            </g>
+          </svg>
+        </div>
       </div>
 
-      <div class="rounded-lg border border-gray-200 bg-transparent p-6">
-        <h3 class="mb-4 text-lg font-semibold text-gray-900">Project Status Breakdown</h3>
-        <div class="flex flex-col items-center gap-6 md:flex-row md:items-center md:justify-between">
-          <div class="relative flex h-48 w-48 items-center justify-center">
-            <div class="h-40 w-40 rounded-full" :style="{ backgroundImage: pieStyle }"></div>
+      <!-- Pie / Status Breakdown Card -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h4 class="text-base font-bold text-slate-900 dark:text-slate-100">Project Status Distribution</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Share of completed, ongoing, and pending projects</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-center gap-6 md:flex-row md:items-center md:justify-around py-4">
+          <div class="relative flex h-48 w-48 items-center justify-center shrink-0">
+            <div class="h-40 w-40 rounded-full shadow-inner transition-all duration-300" :style="{ backgroundImage: pieStyle }"></div>
+            <div class="absolute h-24 w-24 rounded-full bg-white dark:bg-slate-900 flex flex-col items-center justify-center shadow-xs">
+              <span class="text-xs font-bold text-slate-400">Total</span>
+              <span class="text-lg font-black text-slate-900 dark:text-slate-100">{{ bookings.length }}</span>
+            </div>
           </div>
 
           <div class="w-full space-y-3 md:max-w-xs">
-            <div v-for="item in projectStatusBreakdown" :key="item.name"
-              class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 min-w-0">
-              <div class="flex items-center gap-3 min-w-0">
+            <div 
+              v-for="item in projectStatusBreakdown" 
+              :key="item.name"
+              class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60"
+            >
+              <div class="flex items-center gap-3">
                 <span class="h-3 w-3 rounded-full" :style="{ backgroundColor: item.color }"></span>
-                <span class="text-sm font-medium text-gray-700 truncate">{{ item.name }}</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ item.name }}</span>
               </div>
-              <span class="text-sm text-gray-500 whitespace-nowrap">{{ item.value }}%</span>
+              <div class="text-right">
+                <span class="text-xs font-bold text-slate-900 dark:text-slate-100">{{ item.count }}</span>
+                <span class="text-xs text-slate-400 ml-1.5 font-medium">({{ item.value }}%)</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="rounded-lg border border-gray-200 bg-transparent p-6">
-      <h3 class="mb-4 text-lg font-semibold text-gray-900">Recent Completed Projects</h3>
+    <!-- Recent Completed Projects Table Card -->
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+      <div class="border-b border-slate-100 px-6 py-4 dark:border-slate-800 flex items-center justify-between">
+        <h4 class="text-base font-bold text-slate-900 dark:text-slate-100">Recent Completed Projects</h4>
+        <span class="text-xs font-semibold text-slate-400">Latest 5 Entries</span>
+      </div>
+
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[700px]">
-          <thead>
-            <tr class="border-b border-gray-200 text-left">
-              <th class="px-4 py-3 font-semibold text-gray-700">Completed On</th>
-              <th class="px-4 py-3 font-semibold text-gray-700">Project</th>
-              <th class="px-4 py-3 font-semibold text-gray-700">Client</th>
-              <th class="px-4 py-3 font-semibold text-gray-700">Materials</th>
-              <th class="px-4 py-3 font-semibold text-gray-700">Labor</th>
-              <th class="px-4 py-3 font-semibold text-gray-700">Total Cost</th>
+        <table class="w-full min-w-[700px] divide-y divide-slate-100 dark:divide-slate-800">
+          <thead class="bg-slate-50 dark:bg-slate-800/80">
+            <tr class="text-left">
+              <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Schedule / Record Date</th>
+              <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Project Type</th>
+              <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Client Email</th>
+              <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Materials</th>
+              <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Labor</th>
+              <th class="px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Total Revenue</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="project in recentCompletedProjects.slice(0, 5)" :key="project.id"
-              class="border-b border-gray-100 hover:bg-gray-50">
-              <td class="px-4 py-3 text-gray-700">{{ formatDate(project.endDate) }}</td>
-              <td class="px-4 py-3 font-medium text-gray-900">{{ project.name }}</td>
-              <td class="px-4 py-3 text-gray-700">{{ project.client }}</td>
-              <td class="px-4 py-3 text-gray-900">{{ formatCurrency(project.materialsCost) }}</td>
-              <td class="px-4 py-3 text-gray-900">{{ formatCurrency(project.laborCost) }}</td>
-              <td class="px-4 py-3 text-gray-900">{{ formatCurrency(project.totalCost) }}</td>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
+            <tr v-for="project in recentCompletedProjects.slice(0, 5)" :key="project.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+              <td class="px-6 py-4 text-xs font-medium text-slate-500 dark:text-slate-400">{{ formatDate(project.endDate) }}</td>
+              <td class="px-6 py-4 text-sm font-bold text-slate-900 dark:text-slate-100">{{ project.name }}</td>
+              <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-300 truncate max-w-[180px]">{{ project.client }}</td>
+              <td class="px-6 py-4 text-xs font-medium text-slate-700 dark:text-slate-300">{{ formatCurrency(project.materialsCost) }}</td>
+              <td class="px-6 py-4 text-xs font-medium text-slate-700 dark:text-slate-300">{{ formatCurrency(project.laborCost) }}</td>
+              <td class="px-6 py-4 text-sm font-extrabold text-slate-900 dark:text-slate-100 text-right">{{ formatCurrency(project.totalCost) }}</td>
+            </tr>
+            <tr v-if="recentCompletedProjects.length === 0">
+              <td colspan="6" class="px-6 py-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">No completed projects recorded yet.</td>
             </tr>
           </tbody>
         </table>

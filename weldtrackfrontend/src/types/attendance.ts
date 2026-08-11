@@ -6,9 +6,9 @@ export interface BackendAttendanceRecord {
   id: string
   email: string
   date: string
-  check_in_at: string
+  check_in_at: string | null
   check_out_at: string | null
-  morning_in_at: string
+  morning_in_at: string | null
   morning_out_at: string | null
   afternoon_in_at: string | null
   afternoon_out_at: string | null

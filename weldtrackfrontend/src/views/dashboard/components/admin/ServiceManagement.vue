@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Briefcase, ImagePlus, Info, LoaderCircle } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useModalStore } from '../../../../stores/modal'
-import ModalShell from '../../../../components/ui/ModalShell.vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 
 interface Service {
@@ -217,200 +217,225 @@ function formatDate(value: string) {
 <template>
   <section class="relative space-y-6">
     <LocalLoader v-if="loading" />
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
-          <Briefcase class="dashboard-view-icon h-5 w-5 text-sky-600 dark:text-sky-400" />
+    
+    <!-- List View -->
+    <template v-if="!isDialogOpen">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex items-start gap-3">
+          <div class="flex h-12 w-12 items-center justify-center">
+            <Briefcase class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
+          </div>
+          <div>
+            <h3 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Services Management</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Manage all services offered by your business</p>
+          </div>
         </div>
-        <div>
-          <h2 class="text-2xl font-semibold text-gray-900">Services Management</h2>
-          <p class="mt-1 text-gray-600">Manage all services offered by your business</p>
-        </div>
+        <button
+          @click="openAddDialog"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 shrink-0"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Add Service</span>
+        </button>
       </div>
-      <button
-        @click="openAddDialog"
-        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
-      >
-        <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Add Service
-      </button>
-    </div>
 
-    <div class="rounded-lg border border-gray-200 bg-white p-4">
-      <input
-        v-model="searchTerm"
-        type="text"
-        placeholder="Search services..."
-        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 lg:max-w-md"
-      />
-    </div>
-
-    <!-- Add/Edit Form Modal -->
-    <ModalShell
-      :show="isDialogOpen"
-      :title="editingId ? 'Edit Service' : 'Add New Service'"
-      subtitle="Service offering"
-      tone="blue"
-      size="lg"
-      @close="closeDialog"
-    >
-      <form id="service-form" class="space-y-5" @submit.prevent="saveService">
-        <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
-          <Info class="mt-0.5 h-4 w-4 shrink-0" />
-          <p>This information appears in the customer service catalogue. Use a clear name, useful description, and accurate starting labor price.</p>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-gray-700">Service Name <span class="text-red-500">*</span></label>
+      <!-- Search Box Card -->
+      <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div class="relative">
+          <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+          </svg>
           <input
-            v-model="formData.name"
+            v-model="searchTerm"
             type="text"
-            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            required
-            autocomplete="off"
-            placeholder="e.g. Steel gate fabrication"
+            placeholder="Search services..."
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 lg:max-w-md"
           />
         </div>
+      </div>
 
-        <div>
-          <div class="flex items-center justify-between gap-4"><label class="block text-sm font-semibold text-gray-700">Description</label><span class="text-xs text-gray-500">{{ formData.description.length }}/500</span></div>
-          <textarea
-            v-model="formData.description"
-            rows="3"
-            maxlength="500"
-            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            placeholder="Describe what is included and what customers should expect."
-          ></textarea>
+      <!-- Services Table Container -->
+      <div v-if="loading" class="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+        <p class="text-slate-600 dark:text-slate-400">Loading services...</p>
+      </div>
+
+      <div v-else-if="filteredServices.length === 0" class="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+        <p class="text-slate-600 dark:text-slate-400">{{ searchTerm ? 'No matching services found.' : 'No services yet. Add one to get started!' }}</p>
+      </div>
+
+      <div v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[800px] divide-y divide-slate-100 dark:divide-slate-800">
+            <thead class="bg-slate-50 dark:bg-slate-800/80">
+              <tr class="text-left">
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Image</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Service Name</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Description</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Labor Price /hour</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Created</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
+              <tr v-for="service in filteredServices" :key="service.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-xs">
+                    <img
+                      v-if="service.image_url"
+                      :src="service.image_url"
+                      :alt="service.name"
+                      class="h-full w-full object-cover"
+                    />
+                    <span v-else class="text-xs font-medium text-gray-500">No image</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ service.name }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">
+                  {{ service.description ? service.description.substring(0, 50) + (service.description.length > 50 ? '...' : '') : '-' }}
+                </td>
+                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(service.price) }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(service.created_at) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex gap-3 justify-end">
+                    <button
+                      @click="openEditDialog(service)"
+                      class="text-sky-600 transition-colors hover:text-sky-800"
+                    >
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      @click="deleteService(service.id, service.name)"
+                      class="text-red-600 transition-colors hover:text-red-800"
+                    >
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
+    </template>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <!-- Form View -->
+    <template v-else>
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
           <div>
-            <label class="block text-sm font-semibold text-gray-700">Labor Price per Hour <span class="text-red-500">*</span></label>
-            <input
-              v-model="formData.price"
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-              placeholder="0"
-            />
+            <h3 class="text-xl font-bold text-slate-900">
+              {{ editingId ? 'Edit Service' : 'Add New Service' }}
+            </h3>
+            <p class="text-sm text-slate-500 mt-1">Service offering</p>
           </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700">Service Image</label>
-            <button
-              type="button"
-              @click="triggerFileInput"
-              class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-700 shadow-sm outline-none transition hover:bg-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            >
-              <ImagePlus class="mr-2 inline h-4 w-4" />
-              {{ imagePreview ? 'Replace Image' : 'Choose Image' }}
-            </button>
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="handleFileInput"
-            />
-          </div>
-        </div>
-
-        <div v-if="imagePreview" class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <img :src="imagePreview" :alt="formData.name || 'Service image preview'" class="h-52 w-full rounded-lg object-cover" />
-          <p class="mt-2 text-xs text-gray-500">Preview · JPG, PNG, GIF or WebP · maximum 5 MB</p>
-        </div>
-        <p v-else class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-gray-500">Add a landscape image to make this service easier to recognize.</p>
-        <div v-if="formError" role="alert" class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ formError }}</div>
-      </form>
-      <template #footer>
-          <button
-            type="button"
-            class="rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="isSubmitting"
-            @click="closeDialog"
+          <button 
+            @click="closeDialog" 
+            class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
           >
             Cancel
           </button>
-          <button
-            form="service-form"
-            type="submit"
-            class="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="isSubmitting"
-          >
-            <LoaderCircle v-if="isSubmitting" class="h-4 w-4 animate-spin" />
-            <span>{{ isSubmitting ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update' : 'Add') }} Service</span>
-          </button>
-      </template>
-    </ModalShell>
+        </div>
 
-    <!-- Services Table -->
-    <div v-if="loading" class="rounded-lg border border-gray-200 bg-white p-8 text-center">
-      <p class="text-gray-600">Loading services...</p>
-    </div>
+        <div class="p-6">
+          <form id="service-form" class="space-y-6 max-w-4xl" @submit.prevent="saveService">
+            <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+              <Info class="mt-0.5 h-4 w-4 shrink-0" />
+              <p>This information appears in the customer service catalogue. Use a clear name, useful description, and accurate starting labor price.</p>
+            </div>
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Service Name <span class="text-red-500">*</span><InfoTooltip text="Please provide the service name." /></label>
+              <input
+                v-model="formData.name"
+                type="text"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                required
+                autocomplete="off"
+                placeholder="e.g. Steel gate fabrication"
+              />
+            </div>
 
-    <div v-else-if="filteredServices.length === 0" class="rounded-lg border border-gray-200 bg-white p-8 text-center">
-      <p class="text-gray-600">{{ searchTerm ? 'No matching services found.' : 'No services yet. Add one to get started!' }}</p>
-    </div>
+            <div>
+              <div class="flex items-center justify-between gap-4 mb-1.5">
+                <label class="flex items-center text-sm font-semibold text-gray-700">Description<InfoTooltip text="Please provide the description." /></label>
+                <span class="text-xs text-gray-500">{{ formData.description.length }}/500</span>
+              </div>
+              <textarea
+                v-model="formData.description"
+                rows="3"
+                maxlength="500"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                placeholder="Describe what is included and what customers should expect."
+              ></textarea>
+            </div>
 
-    <div v-else class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[800px] divide-y divide-gray-200">
-          <thead class="bg-gray-50/70">
-            <tr class="text-left">
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Image</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Service Name</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Description</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Labor Price /hour</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">Created</th>
-              <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 bg-white">
-            <tr v-for="service in filteredServices" :key="service.id" class="transition-colors hover:bg-slate-50/80">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-xs">
-                  <img
-                    v-if="service.image_url"
-                    :src="service.image_url"
-                    :alt="service.name"
-                    class="h-full w-full object-cover"
-                  />
-                  <span v-else class="text-xs font-medium text-gray-500">No image</span>
-                </div>
-              </td>
-              <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ service.name }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ service.description ? service.description.substring(0, 50) + (service.description.length > 50 ? '...' : '') : '-' }}
-              </td>
-              <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(service.price) }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(service.created_at) }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex gap-3 justify-end">
-                  <button
-                    @click="openEditDialog(service)"
-                    class="text-sky-600 transition-colors hover:text-sky-800"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    @click="deleteService(service.id, service.name)"
-                    class="text-red-600 transition-colors hover:text-red-800"
-                  >
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Labor Price per Hour <span class="text-red-500">*</span><InfoTooltip text="Please provide the labor price per hour." /></label>
+                <input
+                  v-model="formData.price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Service Image<InfoTooltip text="Please provide the service image." /></label>
+                <button
+                  type="button"
+                  @click="triggerFileInput"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-700 shadow-sm outline-none transition hover:bg-slate-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                >
+                  <ImagePlus class="mr-2 inline h-4 w-4" />
+                  {{ imagePreview ? 'Replace Image' : 'Choose Image' }}
+                </button>
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleFileInput"
+                />
+              </div>
+            </div>
+
+            <div v-if="imagePreview" class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <img :src="imagePreview" :alt="formData.name || 'Service image preview'" class="h-52 w-full rounded-lg object-cover" />
+              <p class="mt-2 text-xs text-gray-500">Preview · JPG, PNG, GIF or WebP · maximum 5 MB</p>
+            </div>
+            <p v-else class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-gray-500">Add a landscape image to make this service easier to recognize.</p>
+            <div v-if="formError" role="alert" class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{{ formError }}</div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-8">
+              <button
+                type="button"
+                class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                :disabled="isSubmitting"
+                @click="closeDialog"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-blue-600 to-blue-700 px-6 py-2.5 font-semibold text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                :disabled="isSubmitting"
+              >
+                <LoaderCircle v-if="isSubmitting" class="h-4 w-4 animate-spin" />
+                <span>{{ isSubmitting ? (editingId ? 'Updating...' : 'Adding...') : (editingId ? 'Update' : 'Add') }} Service</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </template>
   </section>
 </template>

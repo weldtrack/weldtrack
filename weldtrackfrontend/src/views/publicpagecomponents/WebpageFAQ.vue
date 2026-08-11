@@ -31,28 +31,28 @@ const toggleFaq = (index: number) => {
 </script>
 
 <template>
-    <section class="relative bg-public-bg py-16 sm:py-24">
-        <div class="mx-auto max-w-3xl px-6 sm:px-12">
-            <div data-reveal class="reveal mx-auto text-center mb-12">
+    <section class="relative bg-public-bg py-16 sm:py-24 border-t border-slate-800/60">
+        <div class="mx-auto max-w-3xl px-6 sm:px-10">
+            <div data-reveal class="reveal mx-auto text-center mb-10">
                 <h2 class="text-3xl font-bold tracking-tight text-[color:var(--public-text)] sm:text-4xl">Frequently asked questions</h2>
-                <p class="mt-4 text-lg text-slate-500">Everything you need to know about booking with WeldTrack.</p>
+                <p class="mt-3 text-base text-slate-400">Everything you need to know about booking with WeldTrack.</p>
             </div>
 
-            <div class="space-y-4">
-                <div v-for="(faq, index) in faqs" :key="index" data-reveal class="reveal rounded-2xl border border-slate-200/20 dark:border-white/10 bg-public-panel overflow-hidden backdrop-blur-xl transition-all">
+            <div class="space-y-3">
+                <div v-for="(faq, index) in faqs" :key="index" data-reveal class="reveal rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden transition-all">
                     <button 
                         @click="toggleFaq(index)" 
-                        class="flex w-full items-center justify-between px-6 py-5 text-left font-semibold text-[color:var(--public-text)] hover:bg-slate-500/5 transition-colors"
+                        class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-semibold text-[color:var(--public-text)] hover:bg-slate-800/50 transition-colors"
                     >
                         {{ faq.question }}
                         <ChevronDown 
-                            class="h-5 w-5 text-slate-400 transition-transform duration-300" 
+                            class="h-4 w-4 text-slate-400 transition-transform duration-200" 
                             :class="{ 'rotate-180': faq.open }" 
                         />
                     </button>
                     <div 
                         v-show="faq.open" 
-                        class="px-6 pb-6 text-slate-500 dark:text-slate-400 leading-7"
+                        class="px-5 pb-5 text-sm text-slate-300 leading-6 border-t border-slate-800/40 pt-3"
                     >
                         {{ faq.answer }}
                     </div>

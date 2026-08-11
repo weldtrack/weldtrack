@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from app.db import get_db
 from app.models.booking import Booking, BookingStatus, RecordMaterial
 from app.models.service import Service
@@ -79,6 +79,20 @@ def create_booking(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Selected service is not available",
+        )
+
+    # Duplicate Booking Guard: Check if customer already has an active booking for this service
+    existing_active = db.scalar(
+        select(Booking.id).where(
+            Booking.email == current_user.email,
+            func.lower(Booking.project_type) == project_type.lower(),
+            Booking.status.in_([BookingStatus.pending, BookingStatus.confirmed]),
+        )
+    )
+    if existing_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You already have an active booking for '{project_type}'. Please wait for your existing booking to be completed or cancelled before booking again.",
         )
 
     booking_data = payload.model_dump(exclude={"materials"}, exclude_none=True)

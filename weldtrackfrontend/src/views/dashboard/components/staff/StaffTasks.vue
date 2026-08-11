@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Clipboard } from 'lucide-vue-next'
@@ -9,7 +10,6 @@ import { useInventoryStore } from '../../../../stores/inventory'
 import api from '../../../../api/api'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { useModalStore } from '../../../../stores/modal'
-import ModalShell from '../../../../components/ui/ModalShell.vue'
 import { loadServicePriceMap } from '../../../../services/servicePricing'
 
 interface StaffMember {
@@ -469,295 +469,401 @@ async function confirmRemoveTask() {
 <template>
   <section class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
-    <div class="flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky-100 ring-1 ring-sky-100">
-        <Clipboard class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
-      </div>
-      <div>
-        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Staff Tasks</h3>
-        <p class="text-sm text-gray-600">Assigned project tasks and progress tracking</p>
-      </div>
-    </div>
 
-    <div v-if="isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
-      <h4 class="mb-4 text-lg font-semibold text-gray-900">Staff Management: Assign Tasks</h4>
+    <template v-if="!isRecordModalOpen && !isRemoveTaskModalOpen">
+      <!-- Header -->
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 items-center justify-center">
+          <Clipboard class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
+        </div>
+        <div>
+          <h3 class="text-2xl font-semibold text-slate-900">Staff Tasks</h3>
+          <p class="text-sm text-slate-600">Assigned project tasks and work progress tracking</p>
+        </div>
+      </div>
 
-      <div class="mb-5 rounded-xl border border-sky-200 bg-sky-50 p-4">
-        <div class="flex items-center justify-between gap-3">
+      <!-- Admin Assign Task Form -->
+      <div v-if="isAdmin" class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 mt-6">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
           <div>
-            <p class="text-sm font-semibold text-sky-900">Confirmed Bookings</p>
-            <p class="text-xs text-sky-700">Click a confirmed booking to auto-fill the task details.</p>
-          </div>
-          <p class="text-xs font-medium text-sky-700">Selected: {{ selectedBookingLabel }}</p>
-        </div>
-
-        <div v-if="confirmedBookings.length === 0" class="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-gray-500">
-          No confirmed bookings yet.
-        </div>
-
-        <div v-else class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <button
-            v-for="booking in confirmedBookings"
-            :key="booking.id"
-            type="button"
-            class="rounded-xl border px-4 py-3 text-left transition-colors"
-            :class="selectedBookingId === booking.id ? 'border-sky-500 bg-sky-100' : 'border-sky-200 bg-white hover:bg-sky-50'"
-            @click="selectConfirmedBooking(booking.id)"
-          >
-            <p class="text-sm font-semibold text-gray-900">{{ booking.projectType }}</p>
-            <p class="text-xs text-gray-600">{{ booking.email || booking.customerName || `Booking #${booking.id}` }}</p>
-            <p class="mt-1 text-xs text-gray-500">{{ booking.phone || 'No contact number' }}</p>
-          </button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <div class="md:col-span-2">
-          <label class="mb-2 block text-sm font-semibold text-gray-700" for="requiredStaffCount">Staff Needed</label>
-          <select
-            id="requiredStaffCount"
-            :value="newTaskForm.requiredStaffCount"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2"
-            @change="updateRequiredStaffCount(Number(($event.target as HTMLSelectElement).value))"
-          >
-            <option v-for="count in staffCountOptions" :key="count" :value="count">{{ count }} Staff Needed</option>
-          </select>
-        </div>
-
-        <div class="md:col-span-2">
-          <p class="mb-2 text-sm font-semibold text-gray-700">Assign Staff Members</p>
-          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <select
-              v-for="(_, index) in newTaskForm.assignedStaffIds"
-              :key="`assign-staff-${index}`"
-              v-model="newTaskForm.assignedStaffIds[index]"
-              class="rounded-lg border border-gray-300 px-3 py-2"
-            >
-              <option value="">Select staff member</option>
-              <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
-                {{ staff.email }}
-              </option>
-            </select>
+            <h3 class="text-xl font-bold text-slate-900">Task Assignment</h3>
+            <p class="text-sm text-slate-500 mt-1">Assign confirmed customer bookings to staff teams</p>
           </div>
         </div>
 
-        <div class="md:col-span-2 mt-2">
-          <p class="text-sm font-semibold text-gray-700">Project Information (Auto-filled from booking)</p>
-        </div>
-
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">Project Name</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.projectName || '-' }}</p>
-        </div>
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">Task Title</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.title || '-' }}</p>
-        </div>
-
-        <input v-model="newTaskForm.dueDate" type="date" class="rounded-lg border border-gray-300 px-3 py-2" />
-
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">Country</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.country || '-' }}</p>
-        </div>
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">Region</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.region || '-' }}</p>
-        </div>
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">Province</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.province || '-' }}</p>
-        </div>
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">Municipality</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.municipality || '-' }}</p>
-        </div>
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">Barangay</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.barangay || '-' }}</p>
-        </div>
-        <div class="rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600">
-          <p class="text-xs text-gray-500">House / Street</p>
-          <p class="text-sm font-medium text-gray-900">{{ newTaskForm.location.house || '-' }}</p>
-        </div>
-
-        <p v-if="hasDuplicateAssignees" class="md:col-span-2 text-sm text-red-600">Please select different staff for each slot.</p>
-
-        <div class="md:col-span-2 rounded-lg border border-gray-300 bg-gray-100 px-3 py-2">
-          <p class="text-xs text-gray-500">Description</p>
-          <p class="text-sm text-gray-900">{{ newTaskForm.description || '-' }}</p>
-        </div>
-      </div>
-
-      <div class="mt-3">
-        <button type="button" class="rounded-lg bg-sky-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-gray-400" :disabled="!selectedBookingId || hasDuplicateAssignees" @click="assignTask">Assign Task</button>
-        <p v-if="!selectedBookingId" class="mt-2 text-sm text-amber-600">⚠ Select a confirmed booking first to assign a task</p>
-      </div>
-
-      <div class="mt-6">
-        <h5 class="mb-3 font-semibold text-gray-900">All Assigned Tasks</h5>
-        <div v-if="staffTasksStore.tasks.length === 0" class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">No assigned tasks yet.</div>
-        <div v-else class="space-y-3">
-          <div v-for="task in staffTasksStore.tasks" :key="task.id" class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="p-6 space-y-6">
+          <!-- Confirmed Bookings Selector -->
+          <div class="rounded-xl border border-sky-200 bg-sky-50 p-5 space-y-3">
+            <div class="flex items-center justify-between gap-3">
               <div>
-                <p class="font-semibold text-gray-900">{{ task.title }}</p>
-                <p class="text-sm text-gray-600">{{ task.projectName }} · Team: {{ getTeamLabel(task) }}</p>
+                <p class="text-sm font-bold text-sky-950 dark:text-sky-300">Confirmed Bookings</p>
+                <p class="text-xs text-sky-800 dark:text-sky-300">Select a confirmed booking to auto-fill project and location details.</p>
               </div>
-              <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="getStatusClass(task.status)">{{ task.status }}</span>
+              <span class="text-xs font-semibold text-sky-800 dark:text-sky-300 bg-sky-100/80 px-3 py-1 rounded-full border border-sky-200">
+                Selected: {{ selectedBookingLabel }}
+              </span>
             </div>
 
-            <p class="mt-2 text-sm text-gray-700">{{ task.description || 'No description' }}</p>
-            <p class="mt-2 text-xs text-gray-500">Due: {{ formatDate(task.dueDate) }}</p>
-            <p class="mt-1 text-xs text-gray-500">Location: {{ formatTaskLocation(task) }}</p>
-            <p v-if="isTaskBookingCompleted(task.id)" class="mt-2 text-xs font-semibold text-green-700">Task completed</p>
+            <div v-if="confirmedBookings.length === 0" class="rounded-xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">
+              No confirmed bookings waiting for assignment.
+            </div>
 
-            <div class="mt-3 flex flex-wrap gap-2">
-              <button v-if="!isTaskBookingCompleted(task.id)" type="button" class="rounded-lg bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 hover:bg-amber-200" @click="openRecordModal(task.id)">{{ hasRecordedMaterialsForTask(task.id) ? 'Update Materials' : 'Record Materials' }}</button>
-              <button type="button" class="rounded-lg bg-red-100 px-3 py-1 text-sm font-semibold text-red-700 hover:bg-red-200" @click="openRemoveTaskModal(task)">Remove</button>
+            <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <button
+                v-for="booking in confirmedBookings"
+                :key="booking.id"
+                type="button"
+                class="rounded-xl border p-4 text-left transition-all duration-200"
+                :class="selectedBookingId === booking.id ? 'border-sky-500 bg-white shadow-md ring-2 ring-sky-500/20' : 'border-sky-200 bg-white hover:border-sky-300 hover:shadow-xs'"
+                @click="selectConfirmedBooking(booking.id)"
+              >
+                <p class="text-sm font-bold text-slate-900">{{ booking.projectType }}</p>
+                <p class="text-xs text-slate-600 mt-0.5">{{ booking.email || booking.customerName || `Booking #${booking.id}` }}</p>
+                <p class="mt-1.5 text-[11px] font-medium text-slate-500">{{ booking.phone || 'No contact number' }}</p>
+              </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
 
-      <ModalShell
-        :show="isRecordModalOpen"
-        title="Record Materials Used"
-        subtitle="Staff submission"
-        tone="green"
-        size="lg"
-        @close="closeRecordModal"
-      >
-        <div class="space-y-4">
-          <div class="space-y-3">
-            <div v-for="(line, index) in recordForm.lines" :key="`material-line-${index}`" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div class="flex items-center justify-between">
-                <p class="text-sm font-medium text-slate-700">Material {{ index + 1 }}</p>
-                <button
-                  type="button"
-                  class="rounded-lg bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="recordForm.lines.length === 1"
-                  @click="removeMaterialLine(index)"
+          <!-- Assignment Configuration Form -->
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div class="md:col-span-2">
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="requiredStaffCount">
+                Staff Needed <InfoTooltip text="Specify how many staff members are required for this project." />
+              </label>
+              <select
+                id="requiredStaffCount"
+                :value="newTaskForm.requiredStaffCount"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                @change="updateRequiredStaffCount(Number(($event.target as HTMLSelectElement).value))"
+              >
+                <option v-for="count in staffCountOptions" :key="count" :value="count">{{ count }} Staff Members Required</option>
+              </select>
+            </div>
+
+            <div class="md:col-span-2">
+              <p class="text-sm font-semibold text-gray-700 mb-2">Assign Team Members</p>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <select
+                  v-for="(_, index) in newTaskForm.assignedStaffIds"
+                  :key="`assign-staff-${index}`"
+                  v-model="newTaskForm.assignedStaffIds[index]"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200 text-sm"
                 >
-                  Remove
-                </button>
-              </div>
-
-              <div class="mt-2">
-                <label class="block text-sm font-medium text-gray-700">Item</label>
-                <select v-model="line.itemId" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <option v-for="it in inventoryStore.items" :key="it.id" :value="it.id">{{ it.name }} — {{ formatCurrency(it.unitPrice) }} — {{ getItemQuantity(it.id) }} left</option>
+                  <option value="">Select staff member {{ index + 1 }}</option>
+                  <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
+                    {{ staff.email }}
+                  </option>
                 </select>
               </div>
+            </div>
 
-              <div class="mt-2">
-                <label class="block text-sm font-medium text-gray-700">Quantity Used</label>
-                <input v-model.number="line.quantity" type="number" min="1" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm" />
+            <div class="md:col-span-2 pt-2 border-t border-slate-100">
+              <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Project Information (Auto-filled)</p>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+              <p class="text-xs text-slate-500 font-medium">Project Name</p>
+              <p class="text-sm font-bold text-slate-900 mt-0.5">{{ newTaskForm.projectName || '-' }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+              <p class="text-xs text-slate-500 font-medium">Task Title</p>
+              <p class="text-sm font-bold text-slate-900 mt-0.5">{{ newTaskForm.title || '-' }}</p>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="due-date">Due Date</label>
+              <input id="due-date" v-model="newTaskForm.dueDate" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 md:col-span-2">
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-[11px] text-slate-500 font-medium">Province</p>
+                <p class="text-sm font-medium text-slate-900">{{ newTaskForm.location.province || '-' }}</p>
               </div>
-
-              <div class="mt-3 grid grid-cols-1 gap-2 rounded-xl bg-white px-4 py-3 text-sm text-gray-600 sm:grid-cols-2">
-                <p>Unit Price: <span class="font-semibold text-gray-900">{{ formatCurrency(getItemPrice(line.itemId)) }}</span></p>
-                <p>Line Total: <span class="font-semibold text-gray-900">{{ formatCurrency(getLineTotal(line.itemId, line.quantity)) }}</span></p>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-[11px] text-slate-500 font-medium">Municipality</p>
+                <p class="text-sm font-medium text-slate-900">{{ newTaskForm.location.municipality || '-' }}</p>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-[11px] text-slate-500 font-medium">Barangay</p>
+                <p class="text-sm font-medium text-slate-900">{{ newTaskForm.location.barangay || '-' }}</p>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p class="text-[11px] text-slate-500 font-medium">House / Street</p>
+                <p class="text-sm font-medium text-slate-900">{{ newTaskForm.location.house || '-' }}</p>
               </div>
             </div>
 
-            <button type="button" class="w-full rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-100" @click="addMaterialLine">
-              + Add Another Material
+            <p v-if="hasDuplicateAssignees" class="md:col-span-2 text-xs font-semibold text-red-600 bg-red-50 p-3 rounded-xl border border-red-200">
+              Please select different staff members for each team slot.
+            </p>
+
+            <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-xs text-slate-500 font-medium">Description</p>
+              <p class="text-sm text-slate-800 mt-1 leading-relaxed">{{ newTaskForm.description || '-' }}</p>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p v-if="!selectedBookingId" class="text-xs font-medium text-amber-700">⚠ Select a confirmed booking first to assign a task</p>
+            <span v-else class="text-xs font-semibold text-emerald-700">Ready to assign task</span>
+
+            <button
+              type="button"
+              class="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-6 py-2.5 font-semibold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              :disabled="!selectedBookingId || hasDuplicateAssignees"
+              @click="assignTask"
+            >
+              Assign Task
             </button>
           </div>
-
-          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-            <p class="text-sm text-emerald-700">Estimated total material cost</p>
-            <p class="mt-1 text-2xl font-semibold text-emerald-900">{{ formatCurrency(materialsTotalPrice) }}</p>
-          </div>
-
-          <div class="space-y-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
-            <p class="text-sm text-sky-700">Labor Hours (per member)</p>
-            <input v-model.number="recordForm.laborHours" type="number" min="0" step="0.5" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm" />
-            <p class="text-xs text-sky-700">Total: {{ recordForm.laborHours }} hours * {{ getAssignedStaffCount(recordingTask || '') }} members * PHP {{ getLaborRate(recordingTask || '') }}/hr</p>
-            <p class="text-lg font-semibold text-sky-900">Total Labor Cost: {{ formatCurrency(calculateTotalLaborCost(recordingTask || '')) }}</p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Linked Booking ID</label>
-            <div class="mt-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
-              {{ recordForm.bookingId || 'No linked booking' }}
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Before Image (required)</label>
-            <input type="file" accept="image/*" class="mt-1 w-full text-sm" @change="handleBeforeImageChange" />
-            <div v-if="recordForm.beforeImagePreview" class="mt-2">
-              <p class="text-xs text-gray-600">Preview:</p>
-              <img :src="recordForm.beforeImagePreview" class="mt-1 max-h-40 rounded-xl border border-slate-200" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">After Image (required)</label>
-            <input type="file" accept="image/*" class="mt-1 w-full text-sm" @change="handleAfterImageChange" />
-            <div v-if="recordForm.afterImagePreview" class="mt-2">
-              <p class="text-xs text-gray-600">Preview:</p>
-              <img :src="recordForm.afterImagePreview" class="mt-1 max-h-40 rounded-xl border border-slate-200" />
-            </div>
-          </div>
         </div>
 
-        <template #footer>
-          <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeRecordModal">Cancel</button>
-          <button type="button" class="rounded-xl bg-linear-to-r from-green-600 to-emerald-600 px-4 py-3 font-semibold text-white shadow-lg shadow-green-600/20 hover:from-green-700 hover:to-emerald-700" @click="recordMaterialsUsage">{{ hasRecordedMaterialsForTask(recordingTask || '') ? 'Update Record' : 'Record' }}</button>
-        </template>
-      </ModalShell>
-
-      <ModalShell
-        :show="isRemoveTaskModalOpen"
-        title="Remove Task"
-        subtitle="Confirm task removal"
-        tone="red"
-        size="md"
-        @close="closeRemoveTaskModal"
-      >
-        <div class="space-y-4">
-          <p class="text-sm text-gray-700">
-            Remove <span class="font-semibold text-gray-900">{{ taskToRemove?.title || 'this task' }}</span>?
-          </p>
-          <p class="text-sm text-red-700">
-            This action cannot be undone.
-          </p>
-        </div>
-
-        <template #footer>
-          <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeRemoveTaskModal">Cancel</button>
-          <button type="button" class="rounded-xl bg-linear-to-r from-red-600 to-rose-600 px-4 py-3 font-semibold text-white shadow-lg shadow-red-600/20 hover:from-red-700 hover:to-rose-700" @click="confirmRemoveTask">Remove Task</button>
-        </template>
-      </ModalShell>
-
-    <div v-if="!isAdmin" class="rounded-lg border border-gray-200 bg-white p-6">
-      <h4 class="mb-4 text-lg font-semibold text-gray-900">My Assigned Tasks</h4>
-      <p class="mb-4 text-sm text-sky-700">Record and submit used materials here. Booking completion is handled by admin in Booking Approval.</p>
-      <div v-if="myAssignedTasks.length === 0" class="rounded-lg bg-gray-50 p-4 text-sm text-gray-500">No tasks assigned yet.</div>
-      <div v-else class="space-y-3">
-        <div v-for="task in myAssignedTasks" :key="task.id" class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p class="font-semibold text-gray-900">{{ task.title }}</p>
-              <p class="text-sm text-gray-600">{{ task.projectName }}</p>
-              <p class="text-xs text-gray-500">Team: {{ getTeamLabel(task) }}</p>
-            </div>
-            <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="getStatusClass(task.status)">{{ task.status }}</span>
+        <!-- All Assigned Tasks List (Admin View) -->
+        <div class="border-t border-slate-200 p-6 space-y-4 bg-slate-50">
+          <div class="flex items-center justify-between">
+            <h4 class="text-lg font-bold text-slate-900">All Assigned Tasks</h4>
+            <span class="text-xs font-bold text-slate-500 bg-slate-200/80 px-2.5 py-1 rounded-full">
+              {{ staffTasksStore.tasks.length }} Tasks
+            </span>
           </div>
 
-          <p class="mt-2 text-sm text-gray-700">{{ task.description || 'No description' }}</p>
-          <p class="mt-2 text-xs text-gray-500">Due: {{ formatDate(task.dueDate) }}</p>
-          <p class="mt-1 text-xs text-gray-500">Location: {{ formatTaskLocation(task) }}</p>
-          <p v-if="isTaskBookingCompleted(task.id)" class="mt-2 text-xs font-semibold text-green-700">Task completed</p>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <button v-if="!isTaskBookingCompleted(task.id)" type="button" class="rounded-lg bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700 hover:bg-amber-200" @click="openRecordModal(task.id)">{{ hasRecordedMaterialsForTask(task.id) ? 'Update Submitted Materials' : 'Record & Submit Materials' }}</button>
+          <div v-if="staffTasksStore.tasks.length === 0" class="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+            No tasks assigned yet.
+          </div>
+
+          <div v-else class="grid grid-cols-1 gap-4">
+            <div
+              v-for="task in staffTasksStore.tasks"
+              :key="task.id"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:border-slate-300"
+            >
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h5 class="text-base font-bold text-slate-900">{{ task.title }}</h5>
+                  <p class="text-xs font-medium text-slate-500 mt-0.5">{{ task.projectName }} · <span class="font-semibold text-slate-700">Team: {{ getTeamLabel(task) }}</span></p>
+                </div>
+                <span class="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider" :class="getStatusClass(task.status)">
+                  {{ task.status }}
+                </span>
+              </div>
+
+              <p class="mt-3 text-sm text-slate-700 leading-relaxed">{{ task.description || 'No description provided' }}</p>
+              
+              <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500 border-t border-slate-100 pt-3">
+                <span><strong>Due:</strong> {{ formatDate(task.dueDate) }}</span>
+                <span><strong>Location:</strong> {{ formatTaskLocation(task) }}</span>
+              </div>
+
+              <p v-if="isTaskBookingCompleted(task.id)" class="mt-2 text-xs font-bold text-emerald-700">✓ Task & Booking Completed</p>
+
+              <div class="mt-4 flex flex-wrap gap-2 justify-end">
+                <button
+                  v-if="!isTaskBookingCompleted(task.id)"
+                  type="button"
+                  class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition-colors"
+                  @click="openRecordModal(task.id)"
+                >
+                  {{ hasRecordedMaterialsForTask(task.id) ? 'Update Materials' : 'Record Materials' }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg bg-red-50 border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors"
+                  @click="openRemoveTaskModal(task)"
+                >
+                  Remove Task
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+
+      <!-- Staff My Tasks View -->
+      <div v-if="!isAdmin" class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 mt-6">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">My Assigned Tasks</h3>
+            <p class="text-sm text-slate-500 mt-1">Record used materials and submit task progress</p>
+          </div>
+        </div>
+
+        <div class="p-6">
+          <div v-if="myAssignedTasks.length === 0" class="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+            You have no tasks assigned at the moment.
+          </div>
+
+          <div v-else class="grid grid-cols-1 gap-4">
+            <div
+              v-for="task in myAssignedTasks"
+              :key="task.id"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition-all hover:border-slate-300"
+            >
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h5 class="text-base font-bold text-slate-900">{{ task.title }}</h5>
+                  <p class="text-xs font-medium text-slate-500 mt-0.5">{{ task.projectName }}</p>
+                  <p class="text-xs font-semibold text-slate-700 mt-1">Team: {{ getTeamLabel(task) }}</p>
+                </div>
+                <span class="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider" :class="getStatusClass(task.status)">
+                  {{ task.status }}
+                </span>
+              </div>
+
+              <p class="mt-3 text-sm text-slate-700 leading-relaxed">{{ task.description || 'No description' }}</p>
+
+              <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500 border-t border-slate-100 pt-3">
+                <span><strong>Due Date:</strong> {{ formatDate(task.dueDate) }}</span>
+                <span><strong>Location:</strong> {{ formatTaskLocation(task) }}</span>
+              </div>
+
+              <p v-if="isTaskBookingCompleted(task.id)" class="mt-2 text-xs font-bold text-emerald-700">✓ Task & Booking Completed</p>
+
+              <div class="mt-4 flex flex-wrap gap-2 justify-end">
+                <button
+                  v-if="!isTaskBookingCompleted(task.id)"
+                  type="button"
+                  class="rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:from-sky-700 hover:to-sky-800 transition-all"
+                  @click="openRecordModal(task.id)"
+                >
+                  {{ hasRecordedMaterialsForTask(task.id) ? 'Update Submitted Materials' : 'Record & Submit Materials' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else-if="isRecordModalOpen">
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900  max-w-3xl mx-auto">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Record Materials Used</h3>
+            <p class="text-sm text-slate-500 mt-1">Staff submission</p>
+          </div>
+          <button 
+            @click="closeRecordModal" 
+            class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+
+        <div class="p-6">
+          <div class="space-y-6">
+            <div class="space-y-4">
+              <div v-for="(line, index) in recordForm.lines" :key="`material-line-${index}`" class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <p class="text-sm font-bold text-slate-800">Material {{ index + 1 }}</p>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-red-50 border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                    :disabled="recordForm.lines.length === 1"
+                    @click="removeMaterialLine(index)"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Item<InfoTooltip text="Please provide the item." /></label>
+                    <select v-model="line.itemId" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition">
+                      <option v-for="it in inventoryStore.items" :key="it.id" :value="it.id">{{ it.name }} — {{ formatCurrency(it.unitPrice) }} — {{ getItemQuantity(it.id) }} left</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Quantity Used<InfoTooltip text="Please provide the quantity used." /></label>
+                    <input v-model.number="line.quantity" type="number" min="1" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+                  </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm text-gray-600 sm:grid-cols-2">
+                  <p>Unit Price: <span class="font-bold text-gray-900">{{ formatCurrency(getItemPrice(line.itemId)) }}</span></p>
+                  <p>Line Total: <span class="font-bold text-gray-900">{{ formatCurrency(getLineTotal(line.itemId, line.quantity)) }}</span></p>
+                </div>
+              </div>
+
+              <button type="button" class="w-full rounded-xl border border-dashed border-sky-300 bg-transparent px-4 py-3 text-sm font-semibold text-sky-700 hover:bg-sky-50 hover:border-sky-400 transition-colors" @click="addMaterialLine">
+                + Add Another Material
+              </button>
+            </div>
+
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-5">
+              <p class="text-sm font-medium text-emerald-800">Estimated total material cost</p>
+              <p class="mt-1 text-3xl font-bold text-emerald-900">{{ formatCurrency(materialsTotalPrice) }}</p>
+            </div>
+
+            <div class="space-y-4 rounded-2xl border border-sky-200 bg-sky-50 px-6 py-5">
+              <div>
+                <label class="flex items-center text-sm font-bold text-sky-900 dark:text-sky-300 mb-1.5">Labor Hours (per member)<InfoTooltip text="Please provide the labor hours per member." /></label>
+                <input v-model.number="recordForm.laborHours" type="number" min="0" step="0.5" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+              </div>
+              <p class="text-xs font-medium text-sky-700 dark:text-sky-300">Calculation: {{ recordForm.laborHours }} hours * {{ getAssignedStaffCount(recordingTask || '') }} members * PHP {{ getLaborRate(recordingTask || '') }}/hr</p>
+              <p class="text-xl font-bold text-sky-900 dark:text-sky-300">Total Labor Cost: {{ formatCurrency(calculateTotalLaborCost(recordingTask || '')) }}</p>
+            </div>
+
+            <div class="grid gap-6 sm:grid-cols-2">
+              <div>
+                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Before Image <span class="text-red-500">*</span><InfoTooltip text="Please provide the before image." /></label>
+                <input type="file" accept="image/*" class="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100" @change="handleBeforeImageChange" />
+                <div v-if="recordForm.beforeImagePreview" class="mt-3">
+                  <img :src="recordForm.beforeImagePreview" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
+                </div>
+              </div>
+
+              <div>
+                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">After Image <span class="text-red-500">*</span><InfoTooltip text="Please provide the after image." /></label>
+                <input type="file" accept="image/*" class="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100" @change="handleAfterImageChange" />
+                <div v-if="recordForm.afterImagePreview" class="mt-3">
+                  <img :src="recordForm.afterImagePreview" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Linked Booking ID<InfoTooltip text="Please provide the linked booking id." /></label>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
+                {{ recordForm.bookingId || 'No linked booking' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
+            <button type="button" class="rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors" @click="closeRecordModal">Cancel</button>
+            <button type="button" class="rounded-xl bg-linear-to-r from-emerald-600 to-green-600 px-8 py-2.5 font-semibold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-green-700 transition-all" @click="recordMaterialsUsage">{{ hasRecordedMaterialsForTask(recordingTask || '') ? 'Update Record' : 'Record Materials' }}</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else-if="isRemoveTaskModalOpen">
+      <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900  max-w-lg mx-auto">
+        <div class="border-b border-slate-100 px-6 py-5 bg-transparent">
+          <h3 class="text-xl font-bold text-rose-900">Remove Task</h3>
+          <p class="text-sm text-rose-600 mt-1">Confirm task removal</p>
+        </div>
+        
+        <div class="p-6">
+          <div class="space-y-4">
+            <p class="text-slate-700 text-lg">
+              Are you sure you want to remove <span class="font-bold text-slate-900">"{{ taskToRemove?.title || 'this task' }}"</span>?
+            </p>
+            <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
+              <p class="text-sm font-medium text-rose-800 flex items-center gap-2">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                This action cannot be undone.
+              </p>
+            </div>
+          </div>
+          
+          <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
+            <button type="button" class="rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors" @click="closeRemoveTaskModal">Cancel</button>
+            <button type="button" class="rounded-xl bg-linear-to-r from-rose-600 to-red-600 px-6 py-2.5 font-semibold text-white shadow-md shadow-rose-600/20 hover:from-rose-700 hover:to-red-700 transition-all" @click="confirmRemoveTask">Yes, Remove Task</button>
+          </div>
+        </div>
+      </div>
+    </template>  </section>
 </template>

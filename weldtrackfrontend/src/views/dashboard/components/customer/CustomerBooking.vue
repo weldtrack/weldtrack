@@ -1,20 +1,23 @@
 <script setup lang="ts">
+import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
-import { Calendar, Clock, Check } from 'lucide-vue-next'
+import { Calendar, Clock, Check, AlertTriangle } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useAdminSectionStore } from '../../../../stores/adminSection'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { type BookingItem } from '../../../../types/bookings'
 import { useCustomerAddressesStore } from '../../../../stores/customerAddresses'
-import ModalShell from '../../../../components/ui/ModalShell.vue'
 import api from '../../../../api/api'
 import { getServicePriceDisplay } from '../../../../services/servicePricing'
+
+import { useModalStore } from '../../../../stores/modal'
 
 const auth = useAuthStore()
 const adminSectionStore = useAdminSectionStore()
 const bookingsStore = useBookingsStore()
 const addressesStore = useCustomerAddressesStore()
+const modalStore = useModalStore()
 
 const userRole = computed(() => auth.role || 'customer')
 const currentUser = computed(() => auth.email || 'User')
@@ -57,8 +60,15 @@ const filteredBookings = computed(() => {
   return bookings.filter((b) => b.email === currentEmail.value || b.customerName === currentUser.value)
 })
 const activeBookings = computed(() =>
-  filteredBookings.value.filter((booking) => ['pending', 'confirmed', 'in-progress'].includes(booking.status)),
+  filteredBookings.value.filter((booking) => ['pending', 'confirmed', 'in-progress'].includes(booking.status.toLowerCase())),
 )
+
+const isDuplicateServiceActive = computed(() => {
+  if (!formData.projectType.trim()) return false
+  return activeBookings.value.some(
+    (b) => b.projectType.toLowerCase().trim() === formData.projectType.toLowerCase().trim(),
+  )
+})
 
 const pendingCount = computed(() => filteredBookings.value.filter((b) => b.status === 'pending').length)
 const confirmedCount = computed(() => filteredBookings.value.filter((b) => b.status === 'confirmed').length)
@@ -151,12 +161,27 @@ async function handleSubmit() {
     return
   }
 
+  if (userRole.value === 'customer' && isDuplicateServiceActive.value) {
+    modalStore.open({
+      title: 'Active Booking Exists',
+      message: `You already have an active booking for "${formData.projectType}". Please wait for your existing booking to be completed or cancelled before booking again.`,
+      variant: 'warning',
+      confirmLabel: 'Understood',
+    })
+    return
+  }
+
   // Enforce validation formatting on client side execution
   const cleanPhone = formData.phone.trim().replace(/\D/g, '')
   const phPhoneRegex = /^9\d{9}$/
   
   if (!phPhoneRegex.test(cleanPhone)) {
-    alert('Please enter a valid 10-digit Philippine phone number starting with 9 (e.g., 9123456789)')
+    modalStore.open({
+      title: 'Invalid Phone Number',
+      message: 'Please enter a valid 10-digit Philippine phone number starting with 9 (e.g., 9123456789).',
+      variant: 'error',
+      confirmLabel: 'OK',
+    })
     return
   }
 
@@ -173,8 +198,15 @@ async function handleSubmit() {
       preferredDate: formData.createdDate,
     })
     closeDialog()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Booking submission failed:', error)
+    const backendMessage = error?.response?.data?.detail || 'Booking submission failed. Please try again.'
+    modalStore.open({
+      title: 'Booking Error',
+      message: backendMessage,
+      variant: 'error',
+      confirmLabel: 'OK',
+    })
   } finally {
     isSubmitting.value = false
   }
@@ -285,271 +317,322 @@ function getBookingTimeline(booking: BookingItem) {
 <template>
   <section class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-white ring-1 ring-sky-100">
-          <Calendar class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
+    <!-- List View -->
+    <template v-if="!isDialogOpen && !isCancelModalOpen">
+      <!-- Header -->
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-start gap-3">
+          <div class="flex h-12 w-12 items-center justify-center">
+            <Calendar class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
+          </div>
+          <div>
+            <h3 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">My Bookings</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Book welding services and track your projects</p>
+          </div>
         </div>
-        <div>
-          <h3 class="mb-1 text-2xl font-semibold text-gray-900">My Bookings</h3>
-          <p class="text-sm text-gray-600">Book welding services and track your projects</p>
+
+        <button
+          type="button"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 shrink-0"
+          :disabled="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0"
+          :class="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 ? 'cursor-not-allowed opacity-50' : ''"
+          @click="openDialog"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>New Booking</span>
+        </button>
+      </div>
+
+      <!-- Metric Summary Cards -->
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-950/40">
+          <p class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Pending</p>
+          <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ pendingCount }}</p>
+        </div>
+        <div class="rounded-xl border border-sky-200 bg-sky-50 p-5 dark:border-sky-900/50 dark:bg-sky-950/40">
+          <p class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Approved</p>
+          <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ confirmedCount }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Active</p>
+          <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ filteredBookings.length }}</p>
         </div>
       </div>
 
-      <button
-        type="button"
-        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
-        :disabled="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0"
-        :class="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 ? 'cursor-not-allowed opacity-60' : ''"
-        @click="openDialog"
-      >
-        <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        New Booking
-      </button>
-    </div>
-
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-      <div class="rounded-lg border border-sky-200 bg-sky-50 p-4">
-        <p class="text-sm font-medium text-sky-700">Pending</p>
-        <p class="mt-1 text-2xl font-bold text-sky-900">{{ pendingCount }}</p>
-      </div>
-      <div class="rounded-lg border border-sky-200 bg-sky-50 p-4">
-        <p class="text-sm font-medium text-sky-700">Approved</p>
-        <p class="mt-1 text-2xl font-bold text-sky-900">{{ confirmedCount }}</p>
-      </div>
-      <div class="rounded-lg border border-sky-200 bg-sky-50 p-4">
-        <p class="text-sm font-medium text-sky-700">Total</p>
-        <p class="mt-1 text-2xl font-bold text-gray-900">{{ filteredBookings.length }}</p>
-      </div>
-    </div>
-
-    <div v-if="userRole === 'customer' && !activeAddress" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-      Add an address in the `Addresses` tab and set one as active before creating a booking.
-    </div>
-
-    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-2">
-      <div v-if="activeBookings.length === 0" class="col-span-full rounded-lg border border-gray-200 bg-gray-50 p-12 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p class="mt-4 text-gray-600">No active bookings yet</p>
+      <!-- Address Warning Banner -->
+      <div v-if="userRole === 'customer' && !activeAddress" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+        Please add an address in the <strong class="underline font-bold">Addresses</strong> tab and set it as active before creating a new booking.
       </div>
 
-      <div v-for="booking in activeBookings" :key="booking.id" class="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-        <div class="mb-4 flex items-start justify-between">
-          <div class="flex-1">
-            <div class="flex items-center gap-3">
-              <h3 class="text-lg font-semibold text-gray-900">{{ booking.projectType }}</h3>
-              <span :class="['rounded-full border px-3 py-1 text-xs font-medium capitalize', booking.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : booking.status === 'confirmed' ? 'bg-sky-50 text-sky-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-green-200']">
+      <!-- Full-width active bookings list -->
+      <div class="grid w-full grid-cols-1 gap-4">
+        <div v-if="activeBookings.length === 0" class="col-span-full rounded-2xl border border-slate-200 bg-slate-50 p-12 text-center dark:border-slate-800 dark:bg-slate-900">
+          <Calendar class="mx-auto h-10 w-10 text-slate-400" />
+          <h3 class="mt-3 text-lg font-bold text-slate-900 dark:text-slate-100">No active bookings yet</h3>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Your pending and ongoing project bookings will appear here.</p>
+        </div>
+
+        <article v-for="booking in activeBookings" :key="booking.id" class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+          <div class="p-4 sm:p-6">
+          <div>
+            <div class="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-5 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0 flex-1">
+                <p class="break-all text-xs font-medium text-slate-400">Booking #{{ booking.id }}</p>
+                <h4 class="mt-0.5 break-words text-lg font-semibold text-slate-900 dark:text-slate-100">{{ booking.projectType }}</h4>
+                <p class="mt-1 break-words text-sm leading-relaxed text-slate-500 dark:text-slate-400">{{ booking.description || 'No project description provided.' }}</p>
+              </div>
+              <span 
+                class="w-fit shrink-0 rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ring-inset"
+                :class="booking.status === 'pending'
+                  ? 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800'
+                  : booking.status === 'confirmed'
+                  ? 'bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-950/60 dark:text-sky-300 dark:ring-sky-800'
+                  : 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800'"
+              >
                 {{ booking.status }}
               </span>
             </div>
-            <p class="mt-2 text-sm text-gray-600">{{ booking.description }}</p>
-          </div>
-        </div>
 
-        <div class="grid gap-3 text-sm sm:grid-cols-2">
-          <div class="rounded-lg bg-sky-200 border border-sky-900 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-700 font-medium">Booking ID</p>
-            <p class="mt-1 text-gray-800 font-medium">#{{ booking.id }}</p>
-          </div>
-
-          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Email</p>
-            <p class="mt-1 text-gray-900 font-medium">{{ booking.email }}</p>
-          </div>
-
-          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Phone</p>
-            <p class="mt-1 text-gray-900 font-medium">{{ booking.phone }}</p>
-          </div>
-
-          <div v-if="booking.location && (booking.location.province || booking.location.municipality || booking.location.barangay || booking.location.house)" class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Address</p>
-            <p class="mt-1 text-gray-900 font-medium text-sm">{{ formatBookingAddress(booking) }}</p>
-          </div>
-
-          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Schedule</p>
-            <p class="mt-1 text-gray-900 font-medium">{{ getScheduleMessage(booking) }}</p>
-          </div>
-
-          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Booked On</p>
-            <p class="mt-1 text-gray-900 font-medium">{{ formatCreatedDate(booking.createdDate) }}</p>
-          </div>
-
-          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Labor Cost /hour</p>
-            <p class="mt-1 text-gray-900 font-medium">{{ formatCurrency(getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
-          </div>
-
-          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Material Cost</p>
-            <p class="mt-1 text-gray-900 font-medium text-xs">{{ getMaterialCostMessage(booking) }}</p>
-          </div>
-
-          <div class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2 sm:col-span-2">
-            <p class="text-xs uppercase tracking-wide text-sky-600 font-medium">Total Cost</p>
-            <p class="mt-1 text-lg font-bold text-sky-900">{{ formatCurrency(getTotalCost(booking)) }}</p>
-          </div>
-        </div>
-
-        <div class="mt-6 rounded-xl border border-gray-100 bg-gray-50/50 p-5">
-            <div class="mb-5 flex items-center justify-between">
-                <span class="text-sm font-bold text-gray-900">Booking progress</span>
-                <span class="flex items-center gap-1.5 text-xs font-bold text-blue-600"><Clock class="h-3.5 w-3.5" /> Track Live</span>
-            </div>
-            <div class="space-y-1">
-                <div v-for="(item, index) in getBookingTimeline(booking)" :key="item.label" class="relative flex gap-3 pb-5 last:pb-0">
-                    <span v-if="index < 2" :class="['absolute left-[9px] top-5 h-[calc(100%-4px)] w-px', item.complete ? 'bg-blue-400' : 'bg-gray-200']"></span>
-                    <span :class="['relative z-10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full', item.complete ? 'bg-blue-500 text-white' : 'border border-blue-400 bg-blue-50 text-blue-400']">
-                        <Check v-if="item.complete" class="h-3 w-3" :stroke-width="3" />
-                        <span v-else class="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
-                    </span>
-                    <div class="flex min-w-0 flex-1 justify-between gap-3">
-                        <span :class="['text-sm font-bold', item.complete ? 'text-gray-900' : 'text-gray-500']">{{ item.label }}</span>
-                        <span class="shrink-0 text-xs text-gray-500">{{ item.time }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-4 flex gap-2" v-if="booking.status === 'pending'">
-          <button
-            type="button"
-            class="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
-            @click="openCancelModal(booking)"
-          >
-            Cancel Booking
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <ModalShell
-      :show="isDialogOpen"
-      title="Create New Booking"
-      subtitle="Customer request"
-      tone="blue"
-      size="xl"
-      @close="closeDialog"
-    >
-      <form class="space-y-4" @submit.prevent="handleSubmit">
-          <div>
-            <label class="block text-sm font-medium text-gray-700" for="createdDate">Booked On</label>
-            <input id="createdDate" v-model="formData.createdDate" type="date" readonly class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700" for="email">Email</label>
-            <input id="email" v-model="formData.email" type="email" readonly required class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 shadow-sm" />
-          </div>
-
-          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-            <p class="text-sm font-semibold text-emerald-900">Active Address</p>
-            <p v-if="activeAddress" class="mt-1 text-sm text-emerald-800">{{ activeAddress.label }}: {{ formatActiveAddress() }}</p>
-            <p v-else class="mt-1 text-sm text-amber-800">No active address selected.</p>
-          </div>
-
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="block text-sm font-medium text-gray-700" for="phone">Phone Number</label>
-              <div class="mt-1 flex rounded-xl border border-slate-200 bg-slate-50 shadow-sm overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition">
-                <span class="inline-flex items-center px-4 bg-slate-200 text-gray-600 font-semibold text-sm border-r border-slate-300 select-none">
-                  +63
-                </span>
-                <input 
-                  id="phone" 
-                  v-model="formData.phone" 
-                  type="tel" 
-                  required 
-                  maxlength="10"
-                  placeholder="9123456789"
-                  pattern="9\d{9}"
-                  title="Must be a 10-digit number starting with 9 (e.g., 9123456789)"
-                  class="w-full bg-transparent px-4 py-3 outline-none text-gray-900" 
-                />
+            <!-- Details Grid with Overflow Fixes -->
+            <div class="grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-3">
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Booking ID</p>
+                <p class="mt-1 break-all font-semibold text-slate-900 dark:text-slate-100">#{{ booking.id }}</p>
               </div>
-              <p class="mt-1 text-xs text-gray-500">Format: +63 followed by 10 digits (e.g., 9171234567)</p>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Email</p>
+                <p class="mt-1 break-all font-semibold text-slate-900 dark:text-slate-100">{{ booking.email }}</p>
+              </div>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Phone</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-slate-100 truncate">{{ booking.phone }}</p>
+              </div>
+
+              <div v-if="booking.location && (booking.location.province || booking.location.municipality || booking.location.barangay || booking.location.house)" class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Address</p>
+                <p class="mt-1 break-words font-semibold leading-relaxed text-slate-900 dark:text-slate-100">{{ formatBookingAddress(booking) }}</p>
+              </div>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Schedule</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-slate-100 truncate">{{ getScheduleMessage(booking) }}</p>
+              </div>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Booked On</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-slate-100 truncate">{{ formatCreatedDate(booking.createdDate) }}</p>
+              </div>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Labor Cost /hr</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-slate-100 truncate">{{ formatCurrency(getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
+              </div>
+
+              <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Material Cost</p>
+                <p class="mt-1 break-words font-semibold leading-relaxed text-slate-900 dark:text-slate-100">{{ getMaterialCostMessage(booking) }}</p>
+              </div>
+
+              <!-- Total Cost Highlight -->
+              <div class="col-span-full flex flex-col gap-1 rounded-xl border border-transparent bg-slate-900 p-4 text-white dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:items-center sm:justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Total Project Cost</span>
+                <span class="text-lg font-semibold text-white">{{ formatCurrency(getTotalCost(booking)) }}</span>
+              </div>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700" for="projectType">Project Type</label>
-              <select id="projectType" v-model="formData.projectType" required :disabled="loadingServices || services.length === 0" class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                <option value="">{{ loadingServices ? 'Loading services...' : services.length === 0 ? 'No services available' : 'Select project type' }}</option>
-                <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }} — ₱{{ service.price.toLocaleString() }}</option>
-              </select>
+            <!-- Booking Timeline -->
+            <div class="mt-5 rounded-xl border border-slate-100 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40">
+              <div class="mb-4 flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 dark:text-slate-100">Booking Progress</span>
+                <span class="flex items-center gap-1.5 text-xs font-bold text-sky-600 dark:text-sky-400"><Clock class="h-3.5 w-3.5" /> Track Live</span>
+              </div>
+              <div class="space-y-1">
+                <div v-for="(item, index) in getBookingTimeline(booking)" :key="item.label" class="relative flex gap-3 pb-4 last:pb-0">
+                  <span v-if="index < 2" :class="['absolute left-[9px] top-4 h-[calc(100%-4px)] w-px', item.complete ? 'bg-sky-500' : 'bg-slate-200 dark:bg-slate-700']"></span>
+                  <span :class="['relative z-10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full', item.complete ? 'bg-sky-600 text-white' : 'border border-sky-400 bg-sky-50 text-sky-500 dark:bg-slate-800 dark:text-sky-400']">
+                    <Check v-if="item.complete" class="h-3 w-3" :stroke-width="3" />
+                    <span v-else class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>
+                  </span>
+                  <div class="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-3">
+                    <span :class="['text-xs font-bold', item.complete ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500']">{{ item.label }}</span>
+                    <span class="text-xs text-slate-400 dark:text-slate-500 sm:shrink-0">{{ item.time }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-            Material cost will be displayed after project completion.
           </div>
 
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
-              <p class="text-sm text-gray-600">Labor Cost /hour</p>
-              <p class="mt-1 text-lg font-semibold text-gray-900">{{ formatCurrency(selectedLaborPrice) }}</p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm">
-              <p class="text-sm text-gray-600">Total Cost</p>
-              <p class="mt-1 text-lg font-semibold text-gray-900">{{ formatCurrency(selectedTotalCost) }}</p>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700" for="description">Project Description</label>
-            <textarea id="description" v-model="formData.description" required rows="4" placeholder="Describe your welding project requirements..." class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" />
-          </div>
-
-          <div class="flex gap-3 pt-4">
-            <button type="button" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isSubmitting" @click="closeDialog">Cancel</button>
-            <button type="submit" class="flex-1 rounded-xl bg-linear-to-r from-blue-600 to-sky-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 hover:from-blue-700 hover:to-sky-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2" :disabled="isSubmitting || (userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 || !formData.projectType.trim()">
-              <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>{{ isSubmitting ? 'Booking...' : 'Submit Booking' }}</span>
+          <!-- Cancel Action Button -->
+          <div class="flex border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-800/60 sm:justify-end sm:px-6" v-if="booking.status === 'pending'">
+            <button
+              type="button"
+              class="w-full rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 sm:w-auto"
+              @click="openCancelModal(booking)"
+            >
+              Cancel Booking
             </button>
           </div>
-      </form>
-    </ModalShell>
+        </article>
+      </div>
+    </template>
 
-    <ModalShell
-      :show="isCancelModalOpen"
-      title="Cancel Booking"
-      subtitle="Tell us why you're cancelling"
-      tone="red"
-      size="lg"
-      @close="closeCancelModal"
-    >
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700" for="customerCancelReason">Cancel Reason</label>
-          <textarea
-            id="customerCancelReason"
-            v-model="cancelForm.reason"
-            rows="4"
-            placeholder="Tell us why you are cancelling this booking..."
-            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm"
-          />
+    <!-- Inline Create Booking View -->
+    <template v-else-if="isDialogOpen">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-xs max-w-4xl mx-auto dark:border-slate-800 dark:bg-slate-900">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between dark:border-slate-800">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100">Create New Booking</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Please fill out your project details.</p>
+          </div>
+          <button 
+            @click="closeDialog" 
+            class="text-sm font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+        <div class="p-6">
+          <form class="space-y-5" @submit.prevent="handleSubmit">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="createdDate">Booked On<InfoTooltip text="Please provide the booked on date." /></label>
+                <input id="createdDate" v-model="formData.createdDate" type="date" readonly class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 shadow-xs outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400" />
+              </div>
+
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="email">Email<InfoTooltip text="Please provide the email." /></label>
+                <input id="email" v-model="formData.email" type="email" readonly required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 shadow-xs outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400" />
+              </div>
+            </div>
+
+            <!-- Active Address Banner -->
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-5 py-4 dark:border-emerald-900/50 dark:bg-emerald-950/40">
+              <p class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-1">Active Customer Address</p>
+              <p v-if="activeAddress" class="text-sm text-emerald-900 dark:text-emerald-200 font-semibold">{{ activeAddress.label }}: {{ formatActiveAddress() }}</p>
+              <p v-else class="text-sm text-amber-800 dark:text-amber-300 font-medium">No active address selected. Please set one in the Addresses tab.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="phone">Phone Number <span class="text-rose-500">*</span><InfoTooltip text="Please provide your mobile phone number." /></label>
+                <div class="flex rounded-xl border border-slate-200 bg-white shadow-xs focus-within:border-sky-500 transition dark:border-slate-800 dark:bg-slate-950">
+                  <span class="inline-flex items-center px-4 bg-slate-100 text-slate-600 font-bold text-sm border-r border-slate-200 select-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                    +63
+                  </span>
+                  <input 
+                    id="phone" 
+                    v-model="formData.phone" 
+                    type="tel" 
+                    required 
+                    maxlength="10"
+                    placeholder="9123456789"
+                    pattern="9\d{9}"
+                    title="Must be a 10-digit number starting with 9 (e.g., 9123456789)"
+                    class="w-full bg-transparent px-4 py-3 outline-none text-slate-900 dark:text-slate-100 font-medium text-sm" 
+                  />
+                </div>
+                <p class="mt-1.5 text-xs text-slate-400">Format: +63 followed by 10 digits (e.g., 9171234567)</p>
+              </div>
+
+              <div>
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="projectType">Project Type <span class="text-rose-500">*</span><InfoTooltip text="Please select the project type." /></label>
+                <select id="projectType" v-model="formData.projectType" required :disabled="loadingServices || services.length === 0" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-xs disabled:opacity-50 disabled:cursor-not-allowed font-medium text-slate-800 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 focus:border-sky-500 outline-none transition">
+                  <option value="">{{ loadingServices ? 'Loading services...' : services.length === 0 ? 'No services available' : 'Select project type' }}</option>
+                  <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }} — ₱{{ service.price.toLocaleString() }}</option>
+                </select>
+                <p v-if="isDuplicateServiceActive" class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                  <AlertTriangle class="h-4 w-4 shrink-0" />
+                  <span>You already have an active booking for this service.</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-medium text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-300 flex items-center gap-2">
+              <svg class="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Material cost will be added after project completion by the team.</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div class="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3.5 shadow-xs flex justify-between items-center dark:border-slate-800 dark:bg-slate-800/60">
+                <p class="text-xs font-semibold text-slate-600 dark:text-slate-400">Labor Price /hour</p>
+                <p class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(selectedLaborPrice) }}</p>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900 px-5 py-3.5 shadow-xs flex justify-between items-center text-white dark:bg-slate-800 dark:border-slate-700">
+                <p class="text-xs font-semibold text-slate-300">Total Estimate</p>
+                <p class="text-lg font-black">{{ formatCurrency(selectedTotalCost) }}</p>
+              </div>
+            </div>
+
+            <div>
+              <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="description">Project Description <span class="text-rose-500">*</span><InfoTooltip text="Please provide the project description." /></label>
+              <textarea id="description" v-model="formData.description" required rows="4" placeholder="Describe your welding project requirements in detail..." class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-xs focus:border-sky-500 outline-none transition dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 justify-end">
+              <button type="button" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 disabled:opacity-50 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" :disabled="isSubmitting" @click="closeDialog">Cancel</button>
+              <button type="submit" class="rounded-xl bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-sky-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 transition-all dark:bg-sky-600 dark:hover:bg-sky-500" :disabled="isSubmitting || (userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 || !formData.projectType.trim() || isDuplicateServiceActive">
+                <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>{{ isSubmitting ? 'Booking...' : 'Submit Booking' }}</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
+    </template>
 
-      <template #footer>
-        <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50" @click="closeCancelModal">Back</button>
-        <button
-          type="button"
-          class="rounded-xl bg-linear-to-r from-red-600 to-rose-600 px-4 py-3 font-semibold text-white shadow-lg shadow-red-600/20 disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="!cancelForm.reason.trim()"
-          @click="cancelAsCustomer"
-        >
-          Confirm Cancel
-        </button>
-      </template>
-    </ModalShell>
+    <!-- Inline Cancel Booking View -->
+    <template v-else-if="isCancelModalOpen">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-xs max-w-2xl mx-auto dark:border-slate-800 dark:bg-slate-900">
+        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between dark:border-slate-800">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100">Cancel Booking</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Please tell us why you are cancelling this booking.</p>
+          </div>
+          <button 
+            @click="closeCancelModal" 
+            class="text-sm font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+        <div class="p-6">
+          <div class="space-y-5">
+            <div>
+              <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="customerCancelReason">Cancellation Reason <span class="text-rose-500">*</span><InfoTooltip text="Please provide the cancel reason." /></label>
+              <textarea
+                id="customerCancelReason"
+                v-model="cancelForm.reason"
+                rows="4"
+                placeholder="Tell us why you are cancelling this booking..."
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-xs focus:border-rose-500 outline-none transition dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+            <button type="button" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" @click="closeCancelModal">Back</button>
+            <button
+              type="button"
+              class="rounded-xl bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 transition-all dark:bg-rose-600 dark:hover:bg-rose-500"
+              :disabled="!cancelForm.reason.trim()"
+              @click="cancelAsCustomer"
+            >
+              Confirm Cancellation
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
   </section>
 </template>

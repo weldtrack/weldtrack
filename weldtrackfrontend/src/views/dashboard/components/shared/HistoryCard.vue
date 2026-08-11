@@ -61,9 +61,7 @@ function formatCurrency(value?: number) {
   return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
 }
 
-function getStatusClass(status: string) {
-  return status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-}
+
 
 const materialLines = computed(() => getMaterialLines(item.id, item.materials))
 const materialsTotal = computed(() => getMaterialsTotal(item.id, item.materials))
@@ -71,66 +69,90 @@ const grandTotal = computed(() => getGrandTotal(item))
 </script>
 
 <template>
-  <div class="rounded-lg border border-gray-200 bg-white p-4">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div class="flex items-start gap-3 sm:min-w-0 sm:flex-1">
-        <div class="h-10 w-10 flex items-center justify-center rounded-md bg-sky-100 ring-1 ring-sky-200 shrink-0">
-          <Clock class="dashboard-view-icon h-5 w-5 text-sky-500" />
+  <article class="group relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:border-slate-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
+    <div class="p-4 sm:p-6">
+      <!-- Project identity and status -->
+      <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 dark:border-slate-800 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex min-w-0 items-start gap-3 sm:gap-4">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
+            <Clock class="h-5 w-5" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="break-all text-xs font-medium text-slate-400">Booking #{{ item.id }}</p>
+            <h4 class="mt-0.5 break-words text-lg font-semibold leading-snug text-slate-900 dark:text-slate-100">
+              {{ item.projectType || item.name || 'Welding Project' }}
+            </h4>
+            <p class="mt-1 break-words text-sm text-slate-500 dark:text-slate-400">
+              {{ item.email || item.client || '-' }}
+            </p>
+          </div>
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm text-gray-500">Booking #{{ item.id }}</p>
-          <h4 class="mt-1 text-lg font-medium text-gray-900 wrap-break-word">{{ item.projectType || item.name || item.projectType }}</h4>
-          <p class="mt-1 text-sm text-gray-500 wrap-break-word">{{ item.email || item.client || '-' }} · Booked: {{ formatDate(item.createdDate) }}</p>
+
+        <div class="flex shrink-0 flex-row items-center justify-between gap-3 sm:flex-col sm:items-end">
+          <div class="relative inline-block">
+            <span 
+              class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ring-inset" 
+              :class="item.status === 'completed'
+                ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800'
+                : 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-800'"
+            >
+              {{ item.status }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">{{ formatDate(item.createdDate) }}</p>
         </div>
       </div>
-      <div class="text-left sm:text-right sm:shrink-0">
-        <p class="text-sm text-gray-500">Schedule</p>
-        <p class="mt-1 font-medium text-gray-900">{{ formatDate(item.scheduleDate || item.endDate) }}</p>
-        <p class="mt-3 text-sm text-gray-500">Status</p>
-        <div class="relative group inline-block">
-          <span 
-            class="mt-1 inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize transition-colors" 
-            :class="[getStatusClass(item.status), item.status === 'cancelled' ? 'cursor-help' : '']"
-          >
-            {{ item.status }}
-          </span>
-          <div 
-            v-if="item.status === 'cancelled'" 
-            class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-2 py-1 text-[11px] text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-10 text-center"
-          >
-            {{ item.cancelReason || 'No reason provided' }}
-            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+
+      <!-- Details and financial breakdown -->
+      <div class="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)] lg:gap-10">
+        <div class="min-w-0">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Project details</p>
+          <dl class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+              <dt class="text-xs text-slate-500 dark:text-slate-400">Booked on</dt>
+              <dd class="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">{{ formatDate(item.createdDate) }}</dd>
+            </div>
+            <div class="rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+              <dt class="text-xs text-slate-500 dark:text-slate-400">Scheduled date</dt>
+              <dd class="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">{{ formatDate(item.scheduleDate || item.endDate) }}</dd>
+            </div>
+          </dl>
+          <div v-if="item.status === 'cancelled'" class="mt-3 rounded-xl border border-rose-100 bg-rose-50/70 px-4 py-3 dark:border-rose-900/50 dark:bg-rose-950/30">
+            <p class="text-xs font-medium text-rose-600 dark:text-rose-400">Cancellation reason</p>
+            <p class="mt-1 break-words text-sm text-rose-800 dark:text-rose-200">{{ item.cancelReason || 'No reason provided' }}</p>
+          </div>
+        </div>
+
+        <div class="min-w-0">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Cost summary</p>
+          <div class="mt-3 space-y-3 text-sm">
+            <div class="flex items-start justify-between gap-4">
+              <span class="text-slate-500 dark:text-slate-400">Labor</span>
+              <span class="shrink-0 font-medium text-slate-800 dark:text-slate-200">{{ formatCurrency(getServicePriceDisplay(item.projectType, item.estimatedCost)) }}</span>
+            </div>
+            <ul v-if="materialLines.length > 0" class="space-y-2 border-y border-slate-100 py-3 dark:border-slate-800">
+              <li v-for="line in materialLines" :key="line.id" class="flex items-start justify-between gap-4 text-sm">
+              <span class="min-w-0 break-words text-slate-500 dark:text-slate-400">
+                {{ line.name }} <span class="whitespace-nowrap text-slate-400">× {{ line.qty }}</span>
+              </span>
+              <span class="shrink-0 font-medium text-slate-800 dark:text-slate-200">
+                {{ formatCurrency(line.subtotal) }}
+              </span>
+            </li>
+            </ul>
+            <p v-else class="border-y border-slate-100 py-3 text-xs italic text-slate-400 dark:border-slate-800">No materials recorded</p>
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-slate-500 dark:text-slate-400">Materials total</span>
+              <span class="shrink-0 font-medium text-slate-800 dark:text-slate-200">{{ formatCurrency(materialsTotal) }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="mt-3 space-y-2 text-sm">
-      <div class="flex items-center justify-between">
-        <span class="text-gray-600">Project Price (Labor)</span>
-        <span class="font-medium text-gray-900">{{ formatCurrency(getServicePriceDisplay(item.projectType, item.estimatedCost)) }}</span>
-      </div>
-
-      <div>
-        <p class="text-gray-600">Material Price Per Item</p>
-        <ul class="mt-1 space-y-1">
-          <li v-for="line in materialLines" :key="line.id" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-            <span class="text-gray-700 wrap-break-word">{{ line.name }} · x{{ line.qty }} @ {{ formatCurrency(line.unitPrice) }}</span>
-            <span class="font-medium text-gray-900">{{ formatCurrency(line.subtotal) }}</span>
-          </li>
-        </ul>
-        <p v-if="materialLines.length === 0" class="text-gray-500">No materials submitted yet</p>
-      </div>
-
-      <div class="flex items-center justify-between border-t border-gray-100 pt-2">
-        <span class="text-gray-600">Materials Total</span>
-        <span class="font-medium text-gray-900">{{ formatCurrency(materialsTotal) }}</span>
-      </div>
-
-      <div class="flex items-center justify-between border-t border-gray-200 pt-2">
-        <span class="font-semibold text-gray-800">Total Cost</span>
-        <span class="font-semibold text-gray-900">{{ formatCurrency(grandTotal) }}</span>
-      </div>
+    <div class="flex flex-col gap-1 border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total project cost</span>
+      <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">{{ formatCurrency(grandTotal) }}</span>
     </div>
-  </div>
+  </article>
 </template>

@@ -80,45 +80,45 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <section id="services" class="relative py-16 sm:py-24">
-        <div class="mx-auto max-w-7xl px-6 sm:px-12 text-center">
-            <div data-reveal class="reveal mb-4 text-sm font-bold tracking-[0.3em] text-cyan-500 uppercase">Popular Services</div>
-            <h2 data-reveal class="reveal text-4xl font-bold tracking-[-0.035em] text-white sm:text-5xl">Built for the work you need.</h2>
-            <p data-reveal class="reveal mx-auto mb-14 mt-5 max-w-2xl text-lg leading-8 text-slate-400">Explore available services, then create an account to send your requirements and preferred schedule.</p>
+    <section id="services" class="relative py-16 sm:py-24 border-t border-slate-800/60">
+        <div class="mx-auto max-w-7xl px-6 sm:px-10 text-center">
+            <div data-reveal class="reveal mb-3 text-xs font-semibold tracking-wider text-sky-400 uppercase">Popular Services</div>
+            <h2 data-reveal class="reveal text-3xl font-bold tracking-tight text-white sm:text-4xl">Built for the work you need.</h2>
+            <p data-reveal class="reveal mx-auto mb-12 mt-4 max-w-2xl text-base leading-7 text-slate-300">Explore available services, then log in to request quotes and schedule work.</p>
 
-            <div v-if="isLoading" class="mx-auto max-w-xl py-20" role="status">
+            <div v-if="isLoading" class="mx-auto max-w-xl py-16" role="status">
                 <div class="flex flex-col items-center gap-4">
-                    <div class="h-10 w-10 animate-spin rounded-full border-2 border-white/5 border-t-cyan-500"></div>
-                    <p class="text-slate-400">Loading available booking services...</p>
+                    <div class="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-sky-500"></div>
+                    <p class="text-xs text-slate-400">Loading services...</p>
                 </div>
             </div>
 
-            <div v-else-if="loadError" class="mx-auto max-w-lg rounded-2xl border border-red-400/15 bg-red-400/5 p-8">
-                <p class="font-semibold text-red-300">{{ loadError }}</p>
-                <button type="button" class="mt-5 rounded-full border border-white/10 px-5 py-2.5 font-semibold text-white hover:bg-white/5" @click="fetchServices">Try again</button>
+            <div v-else-if="loadError" class="mx-auto max-w-lg rounded-xl border border-red-500/20 bg-red-500/10 p-6">
+                <p class="text-sm font-semibold text-red-300">{{ loadError }}</p>
+                <button type="button" class="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800" @click="fetchServices">Try again</button>
             </div>
 
-            <div v-else-if="services.length === 0" class="mx-auto max-w-lg rounded-2xl border border-white/10 bg-white/[0.03] p-10">
-                <Wrench class="mx-auto h-8 w-8 text-cyan-400" />
-                <h3 class="mt-4 text-lg font-bold text-white">New services are coming soon</h3>
-                <p class="mt-2 text-slate-400">Contact us and we’ll help with your welding requirements.</p>
+            <div v-else-if="services.length === 0" class="mx-auto max-w-lg rounded-xl border border-slate-800 bg-slate-900/60 p-8">
+                <Wrench class="mx-auto h-7 w-7 text-sky-400" />
+                <h3 class="mt-3 text-base font-semibold text-white">New services coming soon</h3>
+                <p class="mt-1 text-xs text-slate-400">Contact us and we’ll assist with your specific welding requirements.</p>
             </div>
 
-            <div v-else data-reveal class="reveal relative mx-auto max-w-6xl" @mouseenter="stopAutoplay" @mouseleave="startAutoplay">
-                <div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-public-panel p-3 shadow-2xl backdrop-blur-sm sm:p-5">
-                    <div class="relative h-[430px] overflow-hidden rounded-xl sm:h-[540px]">
+            <div v-else data-reveal class="reveal relative mx-auto max-w-5xl" @mouseenter="stopAutoplay" @mouseleave="startAutoplay">
+                <div class="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80 p-3 shadow-xl backdrop-blur-sm sm:p-4">
+                    <div class="relative h-[380px] overflow-hidden rounded-lg sm:h-[460px]">
                         <transition name="fade" mode="out-in">
                             <div :key="currentSlide" class="h-full w-full">
                                 <img :src="services[currentSlide]?.image_url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2164&auto=format&fit=crop'"
                                     :alt="services[currentSlide]?.name"
-                                    class="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-110" />
-                                <div class="absolute inset-0 public-linear-top"></div>
-                                <div class="absolute inset-x-5 bottom-5 text-left sm:inset-x-10 sm:bottom-10">
-                                    <div class="mb-3 inline-block rounded-full border border-cyan-300/20 bg-slate-950/45 px-4 py-1.5 text-xs font-bold tracking-widest text-cyan-300 uppercase backdrop-blur-md">
+                                    class="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-105" />
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                                <div class="absolute inset-x-5 bottom-5 text-left sm:inset-x-8 sm:bottom-8">
+                                    <div class="mb-2.5 inline-block rounded-md border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold text-sky-400 backdrop-blur-md">
                                         Starting at {{ formatCurrency(services[currentSlide]?.price || 0) }}
                                     </div>
-                                    <h3 class="public-service-text mb-3 text-3xl font-extrabold sm:text-5xl">{{ services[currentSlide]?.name }}</h3>
-                                    <p class="public-service-text max-w-2xl text-base leading-7 sm:text-lg">
+                                    <h3 class="public-service-text mb-2 text-2xl font-bold text-white sm:text-4xl">{{ services[currentSlide]?.name }}</h3>
+                                    <p class="public-service-text max-w-xl text-sm leading-6 text-slate-300">
                                         {{ services[currentSlide]?.description || 'A service option customers can book directly from the portal.' }}
                                     </p>
                                 </div>
@@ -126,16 +126,16 @@ onBeforeUnmount(() => {
                         </transition>
                     </div>
 
-                    <div class="flex flex-col items-center justify-between gap-5 px-2 pb-2 pt-6 sm:flex-row">
-                        <div class="flex gap-3">
-                            <button type="button" aria-label="Previous service" @click="prevSlide" class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white transition-all hover:bg-white/10 active:scale-90"><ArrowLeft class="h-4 w-4" /></button>
-                            <button type="button" aria-label="Next service" @click="nextSlide" class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white transition-all hover:bg-white/10 active:scale-90"><ArrowRight class="h-4 w-4" /></button>
+                    <div class="flex flex-col items-center justify-between gap-4 px-2 pb-1 pt-4 sm:flex-row">
+                        <div class="flex gap-2">
+                            <button type="button" aria-label="Previous service" @click="prevSlide" class="flex h-9 w-9 items-center justify-center rounded-md border border-slate-800 bg-slate-800/60 text-slate-300 transition-all hover:bg-slate-800 hover:text-white active:scale-95"><ArrowLeft class="h-4 w-4" /></button>
+                            <button type="button" aria-label="Next service" @click="nextSlide" class="flex h-9 w-9 items-center justify-center rounded-md border border-slate-800 bg-slate-800/60 text-slate-300 transition-all hover:bg-slate-800 hover:text-white active:scale-95"><ArrowRight class="h-4 w-4" /></button>
                         </div>
-                        <div class="flex items-center gap-2.5">
+                        <div class="flex items-center gap-2">
                             <button v-for="(s, i) in services" :key="s.id" type="button" :aria-label="`View ${s.name}`" @click="currentSlide = i"
-                                :class="['h-1.5 rounded-full transition-all duration-500', currentSlide === i ? 'w-8 bg-cyan-400' : 'w-4 bg-white/10 hover:bg-white/20']"></button>
+                                :class="['h-1.5 rounded-full transition-all duration-300', currentSlide === i ? 'w-6 bg-sky-500' : 'w-3 bg-slate-700 hover:bg-slate-600']"></button>
                         </div>
-                        <RouterLink to="/signup" class="group inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-cyan-300">Request this service <ArrowRight class="h-4 w-4 transition group-hover:translate-x-1" /></RouterLink>
+                        <RouterLink to="/signup" class="group inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-sky-500">Request this service <ArrowRight class="h-3.5 w-3.5 transition group-hover:translate-x-0.5" /></RouterLink>
                     </div>
                 </div>
             </div>

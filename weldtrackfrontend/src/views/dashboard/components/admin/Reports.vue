@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, onMounted, ref } from 'vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { BarChart2 } from 'lucide-vue-next'
@@ -24,26 +25,26 @@ const inventoryStore = useInventoryStore()
 const modalStore = useModalStore()
 const attendanceRecords = ref<AttendanceRecord[]>([])
 const isExporting = ref(false)
-const SALES_MARKUP = 0.2
 const isLoading = ref(true)
 
 const fetchAttendanceData = async (startDate: string, endDate: string) => {
   try {
-    const { data } = await api.get<AttendanceRecord[]>('/attendance', {
-      params: {
-        limit: 200,
-      },
-    })
+    const allRecords: AttendanceRecord[] = []
+    const pageSize = 200
+    for (let skip = 0; ; skip += pageSize) {
+      const { data } = await api.get<AttendanceRecord[]>('/attendance', { params: { skip, limit: pageSize } })
+      const page = Array.isArray(data) ? data : []
+      allRecords.push(...page)
+      if (page.length < pageSize) break
+    }
     
     const start = new Date(`${startDate}T00:00:00`)
     const end = new Date(`${endDate}T23:59:59`)
     
-    attendanceRecords.value = Array.isArray(data)
-      ? data.filter((record) => {
+    attendanceRecords.value = allRecords.filter((record) => {
           const recordDate = new Date(`${record.date}T00:00:00`)
           return recordDate >= start && recordDate <= end
         })
-      : []
   } catch (err) {
     if (axios.isAxiosError(err) && err.response?.status === 404) {
       attendanceRecords.value = []
@@ -73,48 +74,32 @@ onMounted(async () => {
 })
 
 const today = new Date()
-const maxDate = today.toISOString().split('T')[0]
+const toDateValue = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+const maxDate = toDateValue(today)
 
 const dateRanges = computed(() => {
-  const ranges = []
-  const today = new Date()
-  
-  // Helper to format date strictly as YYYY-MM-DD
-  const formatDate = (y: number, m: number, d: number) => {
-    const date = new Date(y, m, d)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  }
+  const ranges = [{ label: 'All recorded data', start: '2000-01-01', end: maxDate }]
+  const now = new Date()
 
-  for (let i = 4; i >= 0; i--) {
-    const startStr = formatDate(today.getFullYear(), today.getMonth() - i, 15)
-    const endStr = formatDate(today.getFullYear(), today.getMonth() - i + 1, 15)
-    
-    // Ensure end date does not exceed today
-    const endDateStr = endStr > maxDate ? maxDate : endStr
-    
-    const startObj = new Date(startStr + 'T00:00:00')
-    const endObj = new Date(endDateStr + 'T00:00:00')
-
-    ranges.push({
-      label: `${startObj.toLocaleDateString('en-PH', { month: 'short' })} - ${endObj.toLocaleDateString('en-PH', { month: 'short' })}`,
-      start: startStr,
-      end: endDateStr,
-    })
+  for (let monthsAgo = 0; monthsAgo < 5; monthsAgo++) {
+    const start = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1)
+    const naturalEnd = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 0)
+    const end = naturalEnd > now ? now : naturalEnd
+    const labelStart = start.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+    const labelEnd = end.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+    ranges.push({ label: `${labelStart} – ${labelEnd}`, start: toDateValue(start), end: toDateValue(end) })
   }
   return ranges
 })
 
-const selectedRange = ref(dateRanges.value[4].start + '|' + dateRanges.value[4].end)
-const selectedStartDate = ref(dateRanges.value[4].start)
-const selectedEndDate = ref(dateRanges.value[4].end)
+const selectedRange = ref(`${dateRanges.value[0].start}|${dateRanges.value[0].end}`)
+const selectedStartDate = ref(dateRanges.value[0].start)
+const selectedEndDate = ref(dateRanges.value[0].end)
 
 async function refreshData(start: string, end: string) {
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-  const today = new Date()
-  
-  // Prevent future dates and invalid ranges
-  if (startDate > endDate || startDate > today || endDate > today) return;
+  // ISO date strings sort chronologically. Comparing date-only values avoids
+  // UTC/local-time shifts incorrectly marking today's date as future.
+  if (!start || !end || start > end || start > maxDate || end > maxDate) return
   
   await Promise.all([
     fetchAttendanceData(start, end),
@@ -141,8 +126,11 @@ const normalizedStart = computed(() => new Date(`${selectedStartDate.value}T00:0
 const normalizedEnd = computed(() => new Date(`${selectedEndDate.value}T23:59:59.999`))
 
 const hasInvalidDateRange = computed(() => {
-  const today = new Date().toISOString().split('T')[0]
-  return normalizedStart.value > normalizedEnd.value || selectedStartDate.value > today || selectedEndDate.value > today
+  return !selectedStartDate.value
+    || !selectedEndDate.value
+    || selectedStartDate.value > selectedEndDate.value
+    || selectedStartDate.value > maxDate
+    || selectedEndDate.value > maxDate
 })
 
 function isWithinSelectedRange(isoDate: string) {
@@ -163,16 +151,14 @@ const inventoryInPeriod = computed(() => {
   const movementsInRange = movements.value.filter((m) => {
     const t = m.rawTimestamp || m.timestamp
     const d = new Date(t)
-    return !isNaN(d.getTime()) && d >= start && d <= end
+    return m.type === 'stock-in' && !isNaN(d.getTime()) && d >= start && d <= end
   })
 
   const itemIds = new Set(movementsInRange.map((m) => m.itemId))
   return inventory.value.filter((item) => itemIds.has(item.id))
 })
 
-const totalInventoryValueInPeriod = computed(() =>
-  inventoryInPeriod.value.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
-)
+const totalInventoryValueInPeriod = computed(() => computeMovementValuesForRange().totalIn)
 
 const lowStockCountInPeriod = computed(() =>
   inventoryInPeriod.value.filter((item) => item.quantity <= item.lowStockThreshold).length,
@@ -199,43 +185,37 @@ const projects = computed(() =>
     .filter((b) => b.status !== 'cancelled' && b.createdDate && isWithinSelectedRange(b.createdDate))
     .map((b) => {
       const laborCost = getServicePriceDisplay(b.projectType, b.estimatedCost)
-      const baseCost = Number(b.totalPrice ?? laborCost + Number(b.materialCost ?? 0))
+      const recordedTotal = Number(b.totalPrice ?? laborCost + Number(b.materialCost ?? 0))
       return {
         id: String(b.id),
         status: b.status === 'completed' ? 'completed' : 'ongoing',
         materialsCost: Number(b.materialCost ?? 0),
         laborCost,
-        baseCost,
-        salesPrice: Number((baseCost * (1 + SALES_MARKUP)).toFixed(2)),
+        recordedTotal,
       }
     }),
-)
-
-const totalProjectCosts = computed(() =>
-  projects.value.reduce((sum, project) => sum + project.materialsCost + project.laborCost, 0),
 )
 
 const ongoingProjects = computed(() => projects.value.filter((p) => p.status === 'ongoing').length)
 const completedProjects = computed(() => projects.value.filter((p) => p.status === 'completed').length)
 
 const totalSalesRevenue = computed(() =>
-  projects.value.reduce((sum, project) => sum + Number(project.salesPrice || 0), 0),
+  projects.value
+    .filter((project) => project.status === 'completed')
+    .reduce((sum, project) => sum + Number(project.recordedTotal || 0), 0),
 )
 
-const netProfit = computed(() => totalSalesRevenue.value - totalProjectCosts.value)
-
 const totalMaterialsCost = computed(() =>
-  projects.value.reduce((sum, p) => sum + Number(p.materialsCost || 0), 0),
+  projects.value.filter((p) => p.status === 'completed').reduce((sum, p) => sum + Number(p.materialsCost || 0), 0),
 )
 
 const totalLaborCost = computed(() =>
-  projects.value.reduce((sum, p) => sum + Number(p.laborCost || 0), 0),
+  projects.value.filter((p) => p.status === 'completed').reduce((sum, p) => sum + Number(p.laborCost || 0), 0),
 )
 
-const averageProfitPerProject = computed(() => {
-  const count = projects.value.length
-  return count > 0 ? Math.round((netProfit.value / count) * 100) / 100 : 0
-})
+const averageCompletedProjectRevenue = computed(() => completedProjects.value > 0
+  ? Math.round((totalSalesRevenue.value / completedProjects.value) * 100) / 100
+  : 0)
 
 const totalStaffHours = computed(() =>
   filteredAttendanceRecords.value.reduce((sum, record) => sum + Number(record.hours_worked ?? 0), 0),
@@ -329,7 +309,7 @@ async function generateStockInReportPDF() {
             <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${filteredLowStockCount}</td>
           </tr>
           <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Value of Period Items</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Recorded Stock-In Value</strong></td>
             <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(filteredTotalValue)}</td>
           </tr>
         </table>
@@ -450,28 +430,20 @@ async function generateFinancialReportPDF() {
         <h3 style="margin-top: 25px; border-bottom: 1px solid #333; padding-bottom: 10px;">Financial Summary</h3>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <tr style="background-color: #f9f9f9;">
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Materials Cost</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Recorded Materials (completed projects)</strong></td>
             <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalMaterialsCost.value)}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Labor Cost</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Labor Charges (completed projects)</strong></td>
             <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalLaborCost.value)}</td>
           </tr>
-          <tr style="background-color: #f0f0f0;">
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Total Expenses</strong></td>
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right;">${formatCurrency(totalProjectCosts.value)}</td>
-          </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Sales Revenue</strong></td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd);"><strong>Recorded Completed-Project Revenue</strong></td>
             <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right; color: var(--status-success, green);"><strong>${formatCurrency(totalSalesRevenue.value)}</strong></td>
           </tr>
-          <tr style="background-color: #e8f5e9; font-size: 14px;">
-            <td style="padding: 12px; border: 2px solid #4caf50;"><strong>NET PROFIT</strong></td>
-            <td style="padding: 12px; border: 2px solid #4caf50; text-align: right; color: var(--status-success, green);"><strong>${formatCurrency(netProfit.value)}</strong></td>
-          </tr>
           <tr>
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); font-size:12px; color:#666;">Avg Profit / Project</td>
-            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right; font-size:12px; color:#666;">${formatCurrency(averageProfitPerProject.value)}</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); font-size:12px; color:#666;">Average Revenue / Completed Project</td>
+            <td style="padding: 8px; border: 1px solid var(--table-border, #ddd); text-align: right; font-size:12px; color:#666;">${formatCurrency(averageCompletedProjectRevenue.value)}</td>
           </tr>
         </table>
 
@@ -493,9 +465,13 @@ async function generateFinancialReportPDF() {
 
         <h3 style="margin-top:25px;border-bottom:1px solid #333;padding-bottom:10px;">Projects (Itemized)</h3>
         <table style="width:100%;border-collapse:collapse;margin-top:15px; font-size:12px;">
+          <thead>
+            <tr>
+              <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:left;">Booking ID</th>
+              <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:left;">Status</th>
               <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">Materials</th>
               <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">Labor</th>
-              <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">Total</th>
+              <th style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">Recorded Total</th>
             </tr>
           </thead>
           <tbody>
@@ -505,7 +481,7 @@ async function generateFinancialReportPDF() {
                 <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${p.status}</td>
                 <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${formatCurrency(p.materialsCost)}</td>
                 <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${formatCurrency(p.laborCost)}</td>
-                <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${formatCurrency(p.salesPrice)}</td>
+                <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${formatCurrency(p.recordedTotal)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -626,215 +602,217 @@ async function generateStaffAttendanceReportPDF() {
 <template>
   <section class="space-y-6 relative">
     <LocalLoader v-if="isLoading" />
+
+    <!-- Header -->
     <div class="flex items-start gap-3">
-      <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-linear-to-br from-sky-50 to-sky ring-1 ring-sky-100">
+      <div class="flex h-12 w-12 items-center justify-center">
         <BarChart2 class="dashboard-view-icon h-6 w-6 text-sky-600 dark:text-sky-400" />
       </div>
       <div>
-        <h3 class="mb-1 text-2xl font-semibold text-gray-900">Reports</h3>
-        <p class="text-sm text-gray-600">Generate and export business reports</p>
+        <h3 class="text-2xl font-semibold text-slate-900">Reports</h3>
+        <p class="text-sm text-slate-600">Generate, analyze, and export comprehensive business reports</p>
       </div>
     </div>
 
-    <div class="rounded-lg border border-gray-200 bg-white p-4">
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div class="flex items-center gap-4">
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Quick Range</label>
-            <select 
-              v-model="selectedRange" 
-              @change="onRangeChange"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2"
-            >
-              <option v-for="range in dateRanges" :key="range.start" :value="range.start + '|' + range.end">
-                {{ range.label }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3 lg:grid-cols-2">
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Start</label>
-            <input v-model="selectedStartDate" type="date" :max="maxDate" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
-          </div>
-          <div>
-            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">End</label>
-            <input v-model="selectedEndDate" type="date" :max="maxDate" class="w-full rounded-lg border border-gray-300 px-3 py-2" />
-          </div>
+    <!-- Date Range Controls -->
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div class="border-b border-slate-100 pb-4 mb-5 flex items-center justify-between">
+        <div>
+          <h4 class="text-base font-bold text-slate-900">Report Filter Period</h4>
+          <p class="text-xs text-slate-500 mt-0.5">Select a preset date window or enter custom start/end dates</p>
         </div>
       </div>
-      <p v-if="hasInvalidDateRange" class="mt-2 text-sm text-red-600">
-        Invalid date range: Ensure dates are not in the future, and start date is not after end date.
+
+      <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div>
+          <label class="flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            Preset Window <InfoTooltip text="Choose a standard 15-day or monthly accounting period." />
+          </label>
+          <select 
+            v-model="selectedRange" 
+            @change="onRangeChange"
+            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+          >
+            <option v-for="range in dateRanges" :key="range.start" :value="range.start + '|' + range.end">
+              {{ range.label }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            Start Date <InfoTooltip text="Filter data beginning from this date." />
+          </label>
+          <input
+            v-model="selectedStartDate"
+            type="date"
+            :max="maxDate"
+            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+          />
+        </div>
+
+        <div>
+          <label class="flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            End Date <InfoTooltip text="Filter data up to this end date." />
+          </label>
+          <input
+            v-model="selectedEndDate"
+            type="date"
+            :max="maxDate"
+            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+          />
+        </div>
+      </div>
+
+      <p v-if="hasInvalidDateRange" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
+        Invalid date range: Ensure dates are not in the future, and start date is before end date.
+      </p>
+      <p v-else class="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+        Financial figures use persisted completed-booking totals. Stock movement values use recorded quantities at the inventory item's current unit cost. Net profit is intentionally excluded because a complete operating-expense ledger is not available.
       </p>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-      <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
-        <div class="mb-4 flex items-center justify-between">
-          <h3 class="text-gray-900">Stock-In Report</h3>
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              />
-            </svg>
+    <!-- Report Cards Grid -->
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <!-- Stock-In Report Card -->
+      <div class="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+        <div>
+          <div class="flex items-center justify-between mb-5">
+            <h4 class="text-lg font-bold text-slate-900">Stock-In Report</h4>
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
           </div>
-        </div>
-        <div class="mb-6 flex-1 space-y-3">
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Total Stocked Items:</span>
-            <span class="text-gray-900">{{ inventoryInPeriod.length }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Low Stock Items:</span>
-            <span class="text-sky-600">{{ lowStockCountInPeriod }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Total Stock Value:</span>
-            <span class="text-gray-900">{{ formatCurrency(totalInventoryValueInPeriod) }}</span>
-          </div>
-        </div>
-        <button
-          type="button"
-          class="mt-auto w-full rounded-lg bg-sky-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
-          :disabled="isExporting"
-          @click="generateStockInReportPDF"
-        >
-          <svg class="mr-2 inline h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          {{ isExporting ? 'Generating...' : 'Export PDF' }}
-        </button>
-      </div>
 
-      <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
-        <div class="mb-4 flex items-center justify-between">
-          <h3 class="text-gray-900">Financial Summary</h3>
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
+          <div class="space-y-3 border-t border-slate-100 pt-4">
+            <div class="flex justify-between text-xs sm:text-sm">
+              <span class="text-slate-500 font-medium">Stocked Items (Period):</span>
+              <span class="font-bold text-slate-900">{{ inventoryInPeriod.length }}</span>
+            </div>
+            <div class="flex justify-between text-xs sm:text-sm">
+              <span class="text-slate-500 font-medium">Low Stock Flagged:</span>
+              <span class="font-bold text-amber-600">{{ lowStockCountInPeriod }}</span>
+            </div>
+            <div class="flex justify-between text-xs sm:text-sm">
+              <span class="text-slate-500 font-medium">Recorded Stock-In Value:</span>
+              <span class="font-bold text-slate-900">{{ formatCurrency(totalInventoryValueInPeriod) }}</span>
+            </div>
           </div>
         </div>
-          <div class="mb-6 flex-1 space-y-3">
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Total Projects:</span>
-            <span class="text-gray-900">{{ projects.length }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Active / Completed:</span>
-            <span class="text-gray-900">{{ ongoingProjects }} / {{ completedProjects }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Materials Cost:</span>
-            <span class="text-gray-900">{{ formatCurrency(totalMaterialsCost) }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Labor Cost:</span>
-            <span class="text-gray-900">{{ formatCurrency(totalLaborCost) }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Total Expenses:</span>
-            <span class="text-gray-900">{{ formatCurrency(totalProjectCosts) }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Sales Revenue:</span>
-            <span class="text-green-600">{{ formatCurrency(totalSalesRevenue) }}</span>
-          </div>
-          <div class="flex justify-between text-sm border-t border-gray-200 pt-3">
-            <span class="text-gray-600 font-semibold">Net Profit:</span>
-            <span class="text-gray-900 font-semibold">{{ formatCurrency(netProfit) }}</span>
-          </div>
-          <div class="flex justify-between text-xs text-gray-600">
-            <span>Avg Profit / Project:</span>
-            <span>{{ formatCurrency(averageProfitPerProject) }}</span>
-          </div>
-        </div>
-        <div class="flex gap-2 mt-auto">
+
+        <div class="mt-8 pt-4 border-t border-slate-100">
           <button
             type="button"
-            class="flex-1 rounded-lg bg-sky-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-2.5 font-semibold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 transition-all text-sm"
             :disabled="isExporting"
-            @click="generateFinancialReportPDF"
+            @click="generateStockInReportPDF"
           >
-          <svg class="mr-2 inline h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-            {{ isExporting ? 'Generating...' : 'Export PDF' }}
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {{ isExporting ? 'Exporting PDF...' : 'Export Stock-In PDF' }}
           </button>
         </div>
       </div>
 
-      <div class="flex min-h-90 flex-col rounded-lg border border-gray-200 bg-white p-7">
-        <div class="mb-4 flex items-center justify-between">
-          <h3 class="text-gray-900">Staff Attendance</h3>
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-sky-100">
-            <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4.354a4 4 0 110 5.292m0 0H8.646a4 4 0 010-5.292m3.354 0V3m0 16h-1a2 2 0 01-2-2V7a2 2 0 012-2h1m0 0h1a2 2 0 012 2v12a2 2 0 01-2 2h-1m0 0V3m6 0h-1a2 2 0 00-2 2v12a2 2 0 002 2h1"
-              />
+      <!-- Financial Summary Report Card -->
+      <div class="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+        <div>
+          <div class="flex items-center justify-between mb-5">
+            <h4 class="text-lg font-bold text-slate-900">Financial Summary</h4>
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="space-y-2.5 border-t border-slate-100 pt-4 text-xs sm:text-sm">
+            <div class="flex justify-between">
+              <span class="text-slate-500 font-medium">Projects in Period (Active / Done):</span>
+              <span class="font-bold text-slate-900">{{ ongoingProjects }} / {{ completedProjects }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500 font-medium">Completed Materials:</span>
+              <span class="font-semibold text-slate-800">{{ formatCurrency(totalMaterialsCost) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500 font-medium">Completed Labor Charges:</span>
+              <span class="font-semibold text-slate-800">{{ formatCurrency(totalLaborCost) }}</span>
+            </div>
+            <div class="flex justify-between border-t border-slate-100 pt-2">
+              <span class="text-slate-500 font-medium">Completed Revenue:</span>
+              <span class="font-bold text-emerald-700">{{ formatCurrency(totalSalesRevenue) }}</span>
+            </div>
+            <div class="rounded-xl border border-sky-100 bg-sky-50 p-2.5 text-xs leading-relaxed text-sky-900 mt-2">
+              Profit is not shown because payroll, overhead, taxes, and other operating expenses are not fully recorded in WeldTrack.
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-green-600 px-4 py-2.5 font-semibold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-green-700 disabled:opacity-50 transition-all text-sm"
+            :disabled="isExporting"
+            @click="generateFinancialReportPDF"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-          </div>
+            {{ isExporting ? 'Exporting PDF...' : 'Export Financial PDF' }}
+          </button>
         </div>
-        <div class="mb-6 flex-1 space-y-3">
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Total Staff:</span>
-            <span class="text-gray-900">{{ staffData.length }}</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Total Hours (Month):</span>
-            <span class="text-gray-900">{{ formatHours(totalStaffHours) }}</span>
-          </div>
-          <div class="border-t border-gray-200 pt-3">
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Total Overtime (Month):</span>
-              <span class="font-semibold text-red-600">{{ formatHours(totalOvertimeHours) }}</span>
-            </div>
-            <div class="mt-2 flex justify-between text-sm">
-              <span class="text-gray-600">Staff with OT:</span>
-              <span class="text-gray-900">{{ staffWithOvertimeCount }}</span>
+      </div>
+
+      <!-- Staff Attendance Report Card -->
+      <div class="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md">
+        <div>
+          <div class="flex items-center justify-between mb-5">
+            <h4 class="text-lg font-bold text-slate-900">Staff Attendance</h4>
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292m0 0H8.646a4 4 0 010-5.292m3.354 0V3m0 16h-1a2 2 0 01-2-2V7a2 2 0 012-2h1m0 0h1a2 2 0 012 2v12a2 2 0 01-2 2h-1m0 0V3m6 0h-1a2 2 0 00-2 2v12a2 2 0 002 2h1" />
+              </svg>
             </div>
           </div>
+
+          <div class="space-y-3 border-t border-slate-100 pt-4">
+            <div class="flex justify-between text-xs sm:text-sm">
+              <span class="text-slate-500 font-medium">Active Staff Recorded:</span>
+              <span class="font-bold text-slate-900">{{ staffData.length }}</span>
+            </div>
+            <div class="flex justify-between text-xs sm:text-sm">
+              <span class="text-slate-500 font-medium">Total Worked Hours:</span>
+              <span class="font-bold text-slate-900">{{ formatHours(totalStaffHours) }}</span>
+            </div>
+            <div class="flex justify-between text-xs sm:text-sm">
+              <span class="text-slate-500 font-medium">Total Overtime:</span>
+              <span class="font-bold text-amber-600">{{ formatHours(totalOvertimeHours) }}</span>
+            </div>
+            <div class="flex justify-between text-xs sm:text-sm">
+              <span class="text-slate-500 font-medium">Staff with OT:</span>
+              <span class="font-semibold text-slate-800">{{ staffWithOvertimeCount }}</span>
+            </div>
+          </div>
         </div>
-        <button
-          type="button"
-          class="mt-auto w-full rounded-lg bg-sky-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-sky-700 disabled:bg-gray-400"
-          :disabled="isExporting"
-          @click="generateStaffAttendanceReportPDF"
-        >
-          <svg class="mr-2 inline h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          {{ isExporting ? 'Generating...' : 'Export PDF' }}
-        </button>
+
+        <div class="mt-8 pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-2.5 font-semibold text-white shadow-md shadow-sky-600/20 hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 transition-all text-sm"
+            :disabled="isExporting"
+            @click="generateStaffAttendanceReportPDF"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {{ isExporting ? 'Exporting PDF...' : 'Export Attendance PDF' }}
+          </button>
+        </div>
       </div>
     </div>
-
   </section>
 </template>

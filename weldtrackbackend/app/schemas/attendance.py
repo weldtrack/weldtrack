@@ -20,9 +20,9 @@ class AttendanceResponse(BaseModel):
     id: str
     email: str
     date: str
-    check_in_at: datetime
+    check_in_at: datetime | None = None
     check_out_at: datetime | None = None
-    morning_in_at: datetime
+    morning_in_at: datetime | None = None
     morning_out_at: datetime | None = None
     afternoon_in_at: datetime | None = None
     afternoon_out_at: datetime | None = None

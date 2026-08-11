@@ -72,7 +72,9 @@ def add_comment(
     db.add(comment)
     db.commit()
     db.refresh(comment)
-    return comment
+    response = FeedbackCommentResponse.model_validate(comment)
+    response.profile_image = current_user.profile_image
+    return response
 
 
 @router.post("/{feedback_id}/likes", status_code=status.HTTP_201_CREATED)
