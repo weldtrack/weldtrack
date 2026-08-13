@@ -30,7 +30,7 @@ The development bootstrap creates the following verified accounts for local test
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Admin | `admin@weldtrack.com` | `Admin123!@#$` |
+| Admin | `admin@gmail.com` | `admin1234` |
 | Staff | `staff1@weldtrack.com` | `Staff123!@#` |
 | Staff | `staff2@weldtrack.com` | `Staff123!@#` |
 | Customer | `user1@weldtrack.com` | `User123!@#` |

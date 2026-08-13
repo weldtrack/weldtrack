@@ -332,41 +332,44 @@ function formatDate(value: string) {
 
     <!-- Form View -->
     <template v-else>
-      <div class="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
-          <div>
-            <h3 class="text-xl font-bold text-slate-900">
+      <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20">
+        <div class="flex items-center justify-between border-b border-slate-200 bg-linear-to-r from-sky-50 via-white to-cyan-50 px-6 py-6 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-sky-950/40 sm:px-8">
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-lg shadow-sky-600/20"><Briefcase class="h-5 w-5" /></div>
+            <div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
               {{ editingId ? 'Edit Service' : 'Add New Service' }}
             </h3>
-            <p class="text-sm text-slate-500 mt-1">Service offering</p>
+            <p class="text-sm text-slate-500 mt-1 dark:text-slate-400">Create a polished listing for your service catalogue</p>
+            </div>
           </div>
           <button 
             @click="closeDialog" 
-            class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+            class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
             Cancel
           </button>
         </div>
 
-        <div class="p-6">
-          <form id="service-form" class="space-y-6 max-w-4xl" @submit.prevent="saveService">
-            <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+        <div class="p-6 sm:p-8">
+          <form id="service-form" class="mx-auto max-w-5xl space-y-7" @submit.prevent="saveService">
+            <div class="flex gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-200">
               <Info class="mt-0.5 h-4 w-4 shrink-0" />
               <p>This information appears in the customer service catalogue. Use a clear name, useful description, and accurate labor price per hour.</p>
             </div>
-            <div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
               <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Service Name <span class="text-red-500">*</span><InfoTooltip text="Please provide the service name." /></label>
               <input
                 v-model="formData.name"
                 type="text"
-                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 required
                 autocomplete="off"
                 placeholder="e.g. Steel gate fabrication"
               />
             </div>
 
-            <div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
               <div class="flex items-center justify-between gap-4 mb-1.5">
                 <label class="flex items-center text-sm font-semibold text-gray-700">Description<InfoTooltip text="Please provide the description." /></label>
                 <span class="text-xs text-gray-500">{{ formData.description.length }}/500</span>
@@ -375,13 +378,13 @@ function formatDate(value: string) {
                 v-model="formData.description"
                 rows="3"
                 maxlength="500"
-                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 placeholder="Describe what is included and what customers should expect."
               ></textarea>
             </div>
 
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
                 <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Labor Price per Hour <span class="text-red-500">*</span><InfoTooltip text="Please provide the labor price per hour." /></label>
                 <input
                   v-model="formData.price_hour"
@@ -389,17 +392,17 @@ function formatDate(value: string) {
                   step="0.01"
                   min="0"
                   required
-                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                   placeholder="0"
                 />
               </div>
 
-              <div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
                 <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Service Image<InfoTooltip text="Please provide the service image." /></label>
                 <button
                   type="button"
                   @click="triggerFileInput"
-                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-medium text-slate-700 shadow-sm outline-none transition hover:bg-slate-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  class="w-full rounded-xl border border-dashed border-sky-300 bg-white px-4 py-3.5 font-semibold text-sky-700 shadow-sm outline-none transition hover:border-sky-500 hover:bg-sky-50 focus:ring-4 focus:ring-sky-500/10 dark:border-sky-800 dark:bg-slate-900 dark:text-sky-300"
                 >
                   <ImagePlus class="mr-2 inline h-4 w-4" />
                   {{ imagePreview ? 'Replace Image' : 'Choose Image' }}
@@ -414,8 +417,8 @@ function formatDate(value: string) {
               </div>
             </div>
 
-            <div v-if="imagePreview" class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <img :src="imagePreview" :alt="formData.name || 'Service image preview'" class="h-52 w-full rounded-lg object-cover" />
+            <div v-if="imagePreview" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-inner dark:border-slate-800 dark:bg-slate-950">
+              <img :src="imagePreview" :alt="formData.name || 'Service image preview'" class="h-64 w-full rounded-xl object-cover" />
               <p class="mt-2 text-xs text-gray-500">Preview · JPG, PNG, GIF or WebP · maximum 5 MB</p>
             </div>
             <p v-else class="rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-gray-500">Add a landscape image to make this service easier to recognize.</p>

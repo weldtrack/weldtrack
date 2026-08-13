@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { Search, Wrench } from 'lucide-vue-next'
+import { ArrowUpRight, Clock3, Search, ShieldCheck, Wrench, X } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 import api from '../api/api'
 import { useThemeMode } from '../composables/useThemeMode'
@@ -62,17 +62,32 @@ onMounted(fetchServices)
 <template>
   <div :class="['public-theme-page min-h-screen bg-public-dark', isDarkMode ? 'theme-dark' : 'theme-light']">
     <WebpageNavbar />
-    <main class="mx-auto max-w-7xl px-6 pb-20 pt-28 sm:px-10 sm:pt-36">
-      <div class="mx-auto max-w-3xl text-center">
-        <p class="text-xs font-bold uppercase tracking-[0.2em] text-sky-400">Our services</p>
-        <h1 class="mt-3 text-4xl font-bold text-[color:var(--public-text)] sm:text-5xl">Find the right welding service</h1>
-        <p class="services-intro mt-4 text-base">Search all available services and compare hourly labor prices.</p>
-      </div>
+    <main class="mx-auto max-w-7xl px-6 pb-24 pt-28 sm:px-10 sm:pt-36">
+      <section class="services-hero relative overflow-hidden rounded-3xl border px-6 py-12 text-center shadow-2xl sm:px-12 sm:py-16">
+        <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-sky-500/15 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl"></div>
+        <div class="relative mx-auto max-w-3xl">
+          <div class="mx-auto inline-flex items-center gap-2 rounded-full border border-sky-400/25 bg-sky-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-400">
+            <ShieldCheck class="h-4 w-4" /> Professional welding
+          </div>
+          <h1 class="mt-5 text-4xl font-black tracking-tight text-[color:var(--public-text)] sm:text-6xl">Built strong. Repaired right.</h1>
+          <p class="services-intro mx-auto mt-5 max-w-2xl text-base leading-7 sm:text-lg">Explore every service, compare transparent hourly labor rates, and find the right expertise for your next project.</p>
+        </div>
 
-      <div class="relative mx-auto mt-10 max-w-2xl">
-        <Search class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+        <div class="relative mx-auto mt-9 max-w-2xl">
+          <Search class="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
         <input v-model="search" type="search" placeholder="Search by service name or description..." aria-label="Search services"
-          class="w-full rounded-xl border border-slate-700 bg-white py-4 pl-12 pr-4 text-slate-950 shadow-lg outline-none placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30" />
+            class="w-full rounded-2xl border border-slate-300 bg-white py-4 pl-13 pr-12 text-slate-950 shadow-xl outline-none placeholder:text-slate-500 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15" />
+          <button v-if="search" type="button" aria-label="Clear search" class="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900" @click="search = ''"><X class="h-4 w-4" /></button>
+        </div>
+      </section>
+
+      <div v-if="!loading && !loadError" class="mt-10 flex items-center justify-between gap-4">
+        <div>
+          <p class="service-title text-xl font-bold">{{ search ? 'Search results' : 'Available services' }}</p>
+          <p class="services-muted mt-1 text-sm">{{ filteredServices.length }} {{ filteredServices.length === 1 ? 'service' : 'services' }} available</p>
+        </div>
+        <div class="services-muted hidden items-center gap-2 text-sm sm:flex"><Clock3 class="h-4 w-4 text-sky-500" /> Rates shown per labor hour</div>
       </div>
 
       <div v-if="loading" class="services-muted py-20 text-center">Loading services...</div>
@@ -82,15 +97,18 @@ onMounted(fetchServices)
         <p class="mt-3 font-semibold text-[color:var(--public-text)]">No matching services found.</p>
       </div>
 
-      <div v-else class="mt-12 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+      <div v-else class="mt-6 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
         <article v-for="service in filteredServices" :id="`service-${service.id}`" :key="service.id"
-          :class="['service-card overflow-hidden rounded-2xl border shadow-xl transition hover:-translate-y-1 hover:border-sky-500', route.query.service === service.id ? 'border-sky-400 ring-2 ring-sky-400/40' : 'border-slate-800']">
-          <img :src="getImageUrl(service.image_url)" :alt="service.name" class="h-56 w-full object-cover" />
-          <div class="p-6">
-            <span class="service-price inline-flex rounded-md px-3 py-1.5 text-xs font-extrabold">{{ formatCurrency(service.price_hour) }} per hour</span>
+          :class="['service-card group overflow-hidden rounded-3xl border shadow-lg transition duration-300 hover:-translate-y-1.5 hover:border-sky-500 hover:shadow-2xl', route.query.service === service.id ? 'border-sky-400 ring-2 ring-sky-400/40' : 'border-slate-800']">
+          <div class="relative h-60 overflow-hidden">
+            <img :src="getImageUrl(service.image_url)" :alt="service.name" class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+            <div class="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent"></div>
+            <span class="service-price absolute bottom-4 left-4 inline-flex rounded-xl px-3.5 py-2 text-xs font-extrabold shadow-lg">{{ formatCurrency(service.price_hour) }} <span class="ml-1 font-medium opacity-70">/ hour</span></span>
+          </div>
+          <div class="flex min-h-64 flex-col p-6">
             <h2 class="service-title mt-4 text-xl font-bold">{{ service.name }}</h2>
-            <p class="service-description mt-2 min-h-16 text-sm leading-6">{{ service.description || 'Contact us to discuss the requirements for this service.' }}</p>
-            <RouterLink to="/signup" class="service-request mt-5 inline-flex rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold hover:bg-sky-500">Request this service</RouterLink>
+            <p class="service-description mt-2 flex-1 text-sm leading-6">{{ service.description || 'Contact us to discuss the requirements for this service.' }}</p>
+            <RouterLink to="/signup" class="service-request mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold shadow-lg shadow-sky-600/15 transition hover:bg-sky-500">Request this service <ArrowUpRight class="h-4 w-4" /></RouterLink>
           </div>
         </article>
       </div>
@@ -102,6 +120,7 @@ onMounted(fetchServices)
 <style scoped>
 .services-intro,
 .services-muted { color: #94a3b8; }
+.services-hero { border-color: #1e293b; background: linear-gradient(145deg, #0f172a 0%, #020617 70%); }
 .service-card { background: #020617; }
 .service-price { background: #ffffff; color: #020617; }
 .service-title { color: #ffffff; }
@@ -110,6 +129,7 @@ onMounted(fetchServices)
 
 .theme-light .services-intro,
 .theme-light .services-muted { color: #475569; }
+.theme-light .services-hero { border-color: #e2e8f0; background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%); }
 .theme-light .service-card { background: #ffffff; }
 .theme-light .service-price { background: #0f172a; color: #ffffff; }
 .theme-light .service-title { color: #0f172a; }
