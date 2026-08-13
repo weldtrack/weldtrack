@@ -12,7 +12,7 @@ function extractServiceName(service: any) {
 }
 
 function extractServicePrice(service: any) {
-  return Number(service?.price ?? service?.laborPrice ?? service?.labor_price ?? 0)
+  return Number(service?.price_hour ?? 0)
 }
 
 export async function loadServicePriceMap(forceReload = false): Promise<Record<string, number>> {

@@ -10,8 +10,8 @@ from app.models.booking import Booking
 
 
 class MovementType(str, enum.Enum):
-    stock_in = "stock-in"
-    stock_out = "stock-out"
+    stock_in = "stock_in"
+    stock_out = "stock_out"
 
 
 class InventoryItem(Base):

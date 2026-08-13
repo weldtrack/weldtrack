@@ -42,12 +42,12 @@ const cancelForm = reactive({
 
 const isSubmitting = ref(false)
 
-const services = ref<Array<{ id: string; name: string; price: number }>>([])
+const services = ref<Array<{ id: string; name: string; price_hour: number }>>([])
 const loadingServices = ref(false)
 
 const selectedLaborPrice = computed(() => {
   const service = services.value.find((s) => s.name === formData.projectType)
-  return service?.price ?? 0
+  return service?.price_hour ?? 0
 })
 
 const selectedTotalCost = computed(() => selectedLaborPrice.value)
@@ -80,7 +80,7 @@ async function fetchServices() {
     services.value = (response.data || []).map((s: any) => ({
       id: s.id,
       name: s.name,
-      price: s.price || 0,
+      price_hour: s.price_hour || 0,
     }))
   } catch (error) {
     console.error('Failed to load services:', error)
@@ -251,7 +251,7 @@ function formatDate(value: string) {
 
 function getLaborCost(projectType: string) {
   const service = services.value.find((s) => s.name.trim().toLowerCase() === projectType.trim().toLowerCase())
-  return service?.price ?? 0
+  return service?.price_hour ?? 0
 }
 
 function getMaterialCostMessage(booking: BookingItem) {
@@ -544,7 +544,7 @@ function getBookingTimeline(booking: BookingItem) {
                 <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="projectType">Project Type <span class="text-rose-500">*</span><InfoTooltip text="Please select the project type." /></label>
                 <select id="projectType" v-model="formData.projectType" required :disabled="loadingServices || services.length === 0" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-xs disabled:opacity-50 disabled:cursor-not-allowed font-medium text-slate-800 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 focus:border-sky-500 outline-none transition">
                   <option value="">{{ loadingServices ? 'Loading services...' : services.length === 0 ? 'No services available' : 'Select project type' }}</option>
-                  <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }} — ₱{{ service.price.toLocaleString() }}</option>
+                  <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }} — ₱{{ service.price_hour.toLocaleString() }} per hour</option>
                 </select>
                 <p v-if="isDuplicateServiceActive" class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
                   <AlertTriangle class="h-4 w-4 shrink-0" />

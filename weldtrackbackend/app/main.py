@@ -1,46 +1,46 @@
-import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
-load_dotenv()
-
 from app.api import router
+from app.core.config import settings
 
-ENV = os.getenv("ENV", "development")
-IS_PROD = ENV == "production"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+STATIC_DIR.mkdir(exist_ok=True, parents=True)
 
 app = FastAPI(
     title="Weldtrack",
     root_path="/api",
-    docs_url=None if IS_PROD else "/docs",
-    redoc_url=None if IS_PROD else "/redoc",
-    openapi_url=None if IS_PROD else "/openapi.json",
+    docs_url=None if settings.is_prod else "/docs",
+    redoc_url=None if settings.is_prod else "/redoc",
+    openapi_url=None if settings.is_prod else "/openapi.json",
 )
+
+# Mount static files for both /static and /api/static paths
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/api/static", StaticFiles(directory=str(STATIC_DIR)), name="api_static")
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["50/minute"])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-origins = [
-    origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", "http://localhost:8080").split(",")
-    if origin.strip()
-]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Include routes with /api prefix and without prefix to support both dev and proxy environments
+app.include_router(router, prefix="/api")
 app.include_router(router)
 
 
@@ -52,7 +52,9 @@ def root():
 if __name__ == "__main__":
     import uvicorn
 
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", 8000))
-
-    uvicorn.run("app.main:app", host=host, port=port, reload=not IS_PROD)
+    uvicorn.run(
+        "app.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=not settings.is_prod,
+    )

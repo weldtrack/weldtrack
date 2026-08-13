@@ -16,7 +16,7 @@ const isMobileMenuOpen = ref(false)
             <div class="hidden items-center gap-8 lg:flex">
                 <RouterLink to="/#home" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Home</RouterLink>
                 <RouterLink to="/#about" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">How it works</RouterLink>
-                <RouterLink to="/#services" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Services</RouterLink>
+                <RouterLink to="/services" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Services</RouterLink>
                 <RouterLink to="/#contact" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Contact</RouterLink>
             </div>
 
@@ -39,7 +39,7 @@ const isMobileMenuOpen = ref(false)
             <div class="flex flex-col gap-6">
                 <RouterLink to="/#home" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Home</RouterLink>
                 <RouterLink to="/#about" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">How it works</RouterLink>
-                <RouterLink to="/#services" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Services</RouterLink>
+                <RouterLink to="/services" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Services</RouterLink>
                 <RouterLink to="/#contact" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Contact</RouterLink>
             </div>
             <div class="flex flex-col gap-4 pt-4 border-t border-white/5">

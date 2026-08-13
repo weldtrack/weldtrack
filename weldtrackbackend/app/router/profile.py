@@ -1,4 +1,3 @@
-import base64
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
 
@@ -8,12 +7,9 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User, UserRole
 from app.schemas.user import UserRead, UserUpdate
 from app.services.auth_service import get_user_by_email
+from app.router.uploads import store_image
 
 router = APIRouter(prefix="/profile", tags=["profile"])
-
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-
 
 @router.get("/", response_model=UserRead)
 def get_profile(current_user: User = Depends(get_current_user)):
@@ -59,26 +55,7 @@ async def upload_profile_image(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if file.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file type. Allowed: jpg, jpeg, png, webp",
-        )
-
-    # Check file size
-    file_data = await file.read()
-    if len(file_data) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File too large. Max size 5MB",
-        )
-
-    # Encode to Base64
-    encoded_image = base64.b64encode(file_data).decode("utf-8")
-    image_data_uri = f"data:{file.content_type};base64,{encoded_image}"
-
-    # Update user model
-    current_user.profile_image = image_data_uri
+    current_user.profile_image = await store_image(file, "avatars")
     db.add(current_user)
     db.commit()
     db.refresh(current_user)

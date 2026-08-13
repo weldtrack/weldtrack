@@ -180,6 +180,7 @@ import { getProfile, updateProfile, uploadProfileImage } from '../../services/pr
 import type { UserRead } from '../../types/auth';
 import { useAuthStore } from '../../stores/auth';
 import { getUserFriendlyApiError } from '../../services/errorMessage';
+import { resolveImageUrl } from '../../services/images';
 
 const authStore = useAuthStore();
 const user = ref<UserRead | null>(null);
@@ -326,12 +327,5 @@ const handleImageUpload = async (event: any) => {
   }
 };
 
-const getImageUrl = (url?: string) => {
-    if (!url) return '';
-    // If it's a data URI, return as is
-    if (url.startsWith('data:')) return url;
-    // Otherwise, handle as API path
-    const cleanUrl = url.replace('/api', '');
-    return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
-};
+const getImageUrl = resolveImageUrl;
 </script>

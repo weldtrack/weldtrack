@@ -5,12 +5,13 @@ import { Briefcase, ImagePlus, Info, LoaderCircle } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useModalStore } from '../../../../stores/modal'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
+import { resolveImageUrl, uploadImage } from '../../../../services/images'
 
 interface Service {
   id: string
   name: string
   description: string | null
-  price: number
+  price_hour: number
   image_url: string | null
   created_at: string
   updated_at: string
@@ -19,7 +20,7 @@ interface Service {
 interface FormData {
   name: string
   description: string
-  price: string
+  price_hour: string
   image_url: string
 }
 
@@ -36,7 +37,7 @@ const imagePreview = ref<string | null>(null)
 const formData = reactive<FormData>({
   name: '',
   description: '',
-  price: '',
+  price_hour: '',
   image_url: '',
 })
 
@@ -74,7 +75,7 @@ function resetForm() {
   formError.value = ''
   formData.name = ''
   formData.description = ''
-  formData.price = ''
+  formData.price_hour = ''
   formData.image_url = ''
   imagePreview.value = null
   if (fileInputRef.value) fileInputRef.value.value = ''
@@ -84,7 +85,7 @@ function triggerFileInput() {
   fileInputRef.value?.click()
 }
 
-function handleFileInput(event: Event) {
+async function handleFileInput(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
 
@@ -110,14 +111,19 @@ function handleFileInput(event: Event) {
     return
   }
 
-  // Convert to base64
-  const reader = new FileReader()
-  reader.onload = () => {
-    const base64 = reader.result as string
-    formData.image_url = base64
-    imagePreview.value = base64
+  imagePreview.value = URL.createObjectURL(file)
+  try {
+    formData.image_url = await uploadImage(file, 'services')
+    imagePreview.value = resolveImageUrl(formData.image_url)
+  } catch (err: any) {
+    formData.image_url = ''
+    imagePreview.value = null
+    modalStore.open({
+      title: 'Image upload failed',
+      message: err.response?.data?.detail || 'The service image could not be uploaded.',
+      variant: 'error',
+    })
   }
-  reader.readAsDataURL(file)
 }
 
 function openAddDialog() {
@@ -130,9 +136,9 @@ function openEditDialog(service: Service) {
   editingId.value = service.id
   formData.name = service.name
   formData.description = service.description || ''
-  formData.price = String(service.price)
+  formData.price_hour = String(service.price_hour)
   formData.image_url = service.image_url || ''
-  imagePreview.value = service.image_url
+  imagePreview.value = resolveImageUrl(service.image_url)
   isDialogOpen.value = true
 }
 
@@ -148,9 +154,9 @@ async function saveService() {
     return
   }
 
-  const price = Number(formData.price)
-  if (isNaN(price) || price < 0) {
-    formError.value = 'Enter a valid labor price of zero or more.'
+  const priceHour = Number(formData.price_hour)
+  if (isNaN(priceHour) || priceHour < 0) {
+    formError.value = 'Enter a valid hourly labor price of zero or more.'
     return
   }
 
@@ -160,7 +166,7 @@ async function saveService() {
     const payload = {
       name: formData.name.trim(),
       description: formData.description.trim() || null,
-      price,
+      price_hour: priceHour,
       image_url: formData.image_url.trim() || null,
     }
 
@@ -273,7 +279,7 @@ function formatDate(value: string) {
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Image</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Service Name</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Description</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Labor Price /hour</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Labor Price per Hour</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Created</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
               </tr>
@@ -284,7 +290,7 @@ function formatDate(value: string) {
                   <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-xs">
                     <img
                       v-if="service.image_url"
-                      :src="service.image_url"
+                      :src="resolveImageUrl(service.image_url)"
                       :alt="service.name"
                       class="h-full w-full object-cover"
                     />
@@ -295,7 +301,7 @@ function formatDate(value: string) {
                 <td class="px-6 py-4 text-sm text-gray-600">
                   {{ service.description ? service.description.substring(0, 50) + (service.description.length > 50 ? '...' : '') : '-' }}
                 </td>
-                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(service.price) }}</td>
+                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(service.price_hour) }} / hour</td>
                 <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(service.created_at) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex gap-3 justify-end">
@@ -346,7 +352,7 @@ function formatDate(value: string) {
           <form id="service-form" class="space-y-6 max-w-4xl" @submit.prevent="saveService">
             <div class="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
               <Info class="mt-0.5 h-4 w-4 shrink-0" />
-              <p>This information appears in the customer service catalogue. Use a clear name, useful description, and accurate starting labor price.</p>
+              <p>This information appears in the customer service catalogue. Use a clear name, useful description, and accurate labor price per hour.</p>
             </div>
             <div>
               <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Service Name <span class="text-red-500">*</span><InfoTooltip text="Please provide the service name." /></label>
@@ -378,7 +384,7 @@ function formatDate(value: string) {
               <div>
                 <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Labor Price per Hour <span class="text-red-500">*</span><InfoTooltip text="Please provide the labor price per hour." /></label>
                 <input
-                  v-model="formData.price"
+                  v-model="formData.price_hour"
                   type="number"
                   step="0.01"
                   min="0"

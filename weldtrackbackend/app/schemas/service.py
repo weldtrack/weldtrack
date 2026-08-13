@@ -6,7 +6,7 @@ from typing import Optional
 class ServiceBase(BaseModel):
     name: str
     description: Optional[str] = None
-    price: float
+    price_hour: float
     image_url: Optional[str] = None
 
 
@@ -17,7 +17,7 @@ class ServiceCreate(ServiceBase):
 class ServiceUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    price: Optional[float] = None
+    price_hour: Optional[float] = None
     image_url: Optional[str] = None
 
 

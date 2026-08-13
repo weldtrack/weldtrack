@@ -24,6 +24,42 @@ Detailed setup instructions are provided within each component directory:
 1.  **[Backend Setup](./weldtrackbackend/README.md):** Configure the Python environment, database, and SendGrid integration.
 2.  **[Frontend Setup](./weldtrackfrontend/README.md):** Install Node.js dependencies and configure the API endpoint.
 
+## Testing Credentials
+
+The development bootstrap creates the following verified accounts for local testing:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@weldtrack.com` | `Admin123!@#$` |
+| Staff | `staff1@weldtrack.com` | `Staff123!@#` |
+| Staff | `staff2@weldtrack.com` | `Staff123!@#` |
+| Customer | `user1@weldtrack.com` | `User123!@#` |
+| Customer | `user2@weldtrack.com` | `User123!@#` |
+
+These credentials are intended only for development and testing. Change or disable them before deploying WeldTrack to a public or production environment. The admin values can also be overridden through the `ADMIN_EMAIL` and `ADMIN_PASSWORD` backend settings.
+
+## MinIO Image Storage
+
+Docker Compose includes MinIO for profile avatars, service images, and staff before/after job photos. Uploaded files use an anonymous read-only bucket policy and are served from stable public object URLs. Uploading, changing, and deleting application records still requires the appropriate authenticated role.
+
+- **MinIO API:** `http://localhost:9000`
+- **MinIO Console:** `http://localhost:9001`
+- **Username:** `minioadmin`
+- **Password:** `minioadmin`
+- **Bucket:** `weldtrack` (created automatically on the first upload)
+
+The credentials above are development defaults and must be changed for production.
+
+For Kubernetes, create the credential Secret before applying the workload manifests:
+
+```bash
+kubectl -n weldtrack create secret generic minio-secret \
+  --from-literal=MINIO_ROOT_USER='<your-access-key>' \
+  --from-literal=MINIO_ROOT_PASSWORD='<your-secret-key>'
+```
+
+The Kubernetes deployment exposes public read-only objects at `https://minio.weldtrack.ruzzgd.dev`. Point that hostname to the ingress controller; cert-manager will populate the `weldtrack-minio-tls` certificate Secret.
+
 ## Core Capabilities
 
 - **Inventory Tracking:** Real-time stock monitoring with low-stock alerts and movement logs.

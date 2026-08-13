@@ -2,6 +2,7 @@
 import type { Component } from 'vue'
 import { computed, reactive, ref, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { resolveImageUrl } from '../../services/images'
 import {
   Archive,
   BarChart2,
@@ -127,14 +128,7 @@ const roleHint = computed(() => {
   return 'Navigation'
 })
 
-const getImageUrl = (url?: string) => {
-  if (!url) return ''
-  // If it's a data URI, return as is
-  if (url.startsWith('data:')) return url
-  // Otherwise, handle as API path
-  const cleanUrl = url.replace('/api', '')
-  return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`
-}
+const getImageUrl = resolveImageUrl
 
 function toggleSidebarMeta() {
   isSidebarMetaCollapsed.value = !isSidebarMetaCollapsed.value

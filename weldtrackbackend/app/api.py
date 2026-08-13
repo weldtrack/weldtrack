@@ -16,6 +16,7 @@ from app.router.settings import router as settings_router
 from app.router.service import router as service_router
 from app.router.profile import router as profile_router
 from app.router.payroll import router as payroll_router
+from app.router.uploads import router as uploads_router
 
 router = APIRouter()
 router.include_router(auth_router)
@@ -40,3 +41,4 @@ router.include_router(admin_router)
 router.include_router(verification_router)
 router.include_router(profile_router)
 router.include_router(payroll_router)
+router.include_router(uploads_router)

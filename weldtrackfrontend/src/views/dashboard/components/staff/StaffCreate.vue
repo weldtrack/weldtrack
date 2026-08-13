@@ -6,6 +6,7 @@ import api from '../../../../api/api'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
 import { User } from 'lucide-vue-next'
+import { resolveImageUrl } from '../../../../services/images'
 
 interface StaffMember {
   id: string
@@ -108,14 +109,7 @@ async function confirmDeleteStaff() {
   }
 }
 
-const getImageUrl = (url?: string | null) => {
-  if (!url) return '';
-  // If it's a data URI, return as is
-  if (url.startsWith('data:')) return url;
-  // Otherwise, handle as API path
-  const cleanUrl = url.replace('/api', '');
-  return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`;
-};
+const getImageUrl = resolveImageUrl;
 
 const isLoading = ref(true)
 

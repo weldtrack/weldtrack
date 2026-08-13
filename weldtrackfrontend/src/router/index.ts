@@ -19,6 +19,11 @@ export function createRouter() {
         component: () => import('../views/Webpage.vue'),
       },
       {
+        path: '/services',
+        name: 'public-services',
+        component: () => import('../views/PublicServices.vue'),
+      },
+      {
         path: '/dashboard',
         name: 'customer-dashboard',
         meta: { requiresAuth: true, roles: ['customer'] },

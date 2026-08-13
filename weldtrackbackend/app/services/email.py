@@ -1,10 +1,8 @@
-import os
 import resend
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL")
+from app.core.config import settings
 
-resend.api_key = RESEND_API_KEY
+resend.api_key = settings.RESEND_API_KEY
 
 
 def send_verification_email(to_email: str, verification_code: str) -> bool:
@@ -21,7 +19,7 @@ def send_verification_email(to_email: str, verification_code: str) -> bool:
     try:
         response = resend.Emails.send(
             {
-                "from": RESEND_FROM_EMAIL,
+                "from": settings.RESEND_FROM_EMAIL,
                 "to": to_email,
                 "subject": "WeldTrack Email Verification",
                 "html": f"""

@@ -127,7 +127,7 @@ async function loadServicePrices() {
     servicePriceMap.value = services.reduce((acc: Record<string, number>, service: any) => {
       const name = String(service.name ?? service.serviceName ?? service.title ?? '').trim()
       if (!name) return acc
-      acc[normalizeServiceName(name)] = Number(service.price ?? service.laborPrice ?? service.labor_price ?? 0)
+      acc[normalizeServiceName(name)] = Number(service.price_hour ?? 0)
       return acc
     }, {})
   } catch (err) {

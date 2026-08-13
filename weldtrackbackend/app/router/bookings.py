@@ -252,7 +252,7 @@ def add_booking_materials(
     if task:
         staff_count = len(task.assignees)
         service = db.scalar(select(Service).where(Service.name == booking.project_type))
-        labor_price = service.price if service else 0
+        labor_price = service.price_hour if service else 0
         booking.estimated_cost = payload.laborHours * staff_count * labor_price
     
     for line in payload.lines:

@@ -13,6 +13,7 @@ import { useThemeMode } from '../../../composables/useThemeMode'
 import { useAuthStore } from '../../../stores/auth'
 import ThemeToggle from '../../../components/ui/ThemeToggle.vue'
 import NotificationDropdown from '../components/shared/NotificationDropdown.vue'
+import { resolveImageUrl } from '../../../services/images'
 
 export type SidebarLeaf = {
   kind: 'item'
@@ -74,12 +75,7 @@ const currentDateLabel = computed(() =>
 
 const dashboardThemeClass = computed(() => (isDarkMode.value ? 'dashboard-dark' : 'dashboard-light'))
 
-function getImageUrl(url?: string) {
-  if (!url) return ''
-  if (url.startsWith('data:')) return url
-  const cleanUrl = url.replace('/api', '')
-  return `${import.meta.env.VITE_API_BASE_URL}${cleanUrl}`
-}
+const getImageUrl = resolveImageUrl
 
 function isEntryActive(entry: SidebarEntry): boolean {
   const current = String(route.name ?? '')

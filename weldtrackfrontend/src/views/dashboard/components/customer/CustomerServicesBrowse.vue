@@ -8,6 +8,7 @@ import { useBookingsStore } from '../../../../stores/bookings'
 import { useAuthStore } from '../../../../stores/auth'
 import { useModalStore } from '../../../../stores/modal'
 import { useRouter } from 'vue-router'
+import { resolveImageUrl } from '../../../../services/images'
 
 const router = useRouter()
 const adminSectionStore = useAdminSectionStore()
@@ -19,7 +20,7 @@ interface Service {
   id: string
   name: string
   description: string | null
-  price: number
+  price_hour: number
   image_url: string | null
 }
 
@@ -152,7 +153,7 @@ onMounted(() => {
         <div class="relative h-48 overflow-hidden bg-slate-100 dark:bg-slate-800 md:h-full md:min-h-56">
           <img
             v-if="service.image_url"
-            :src="service.image_url"
+            :src="resolveImageUrl(service.image_url)"
             :alt="service.name"
             class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -181,7 +182,7 @@ onMounted(() => {
           <div class="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p class="text-xs text-slate-400">Starting rate</p>
-              <p class="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ formatCurrency(service.price) }} <span class="text-xs font-normal text-slate-500">/ hour</span></p>
+              <p class="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ formatCurrency(service.price_hour) }} <span class="text-xs font-normal text-slate-500">per hour</span></p>
             </div>
             <button
               type="button"

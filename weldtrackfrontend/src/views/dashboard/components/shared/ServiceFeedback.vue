@@ -8,6 +8,7 @@ import { useFeedbackStore } from '../../../../stores/feedback'
 import { useModalStore } from '../../../../stores/modal'
 import api from '../../../../api/api'
 import { type Feedback, type FeedbackComment } from '../../../../types/feedback'
+import { resolveImageUrl } from '../../../../services/images'
 
 const props = defineProps<{ isAdmin?: boolean }>()
 
@@ -37,16 +38,7 @@ const loadingServices = ref(false)
 
 const failedProfileImages = ref<Record<string, boolean>>({})
 
-const getImageUrl = (url?: string) => {
-  if (!url) return ''
-  if (/^(data:|blob:|https?:\/\/)/i.test(url)) return url
-
-  const apiBase = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
-  const cleanUrl = url.startsWith('/api/') && apiBase.endsWith('/api')
-    ? url.slice(4)
-    : url
-  return `${apiBase}${cleanUrl.startsWith('/') ? '' : '/'}${cleanUrl}`
-}
+const getImageUrl = resolveImageUrl
 
 function markProfileImageFailed(key: string) {
   failedProfileImages.value[key] = true

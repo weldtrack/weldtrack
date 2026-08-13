@@ -11,6 +11,7 @@ import api from '../../../../api/api'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { useModalStore } from '../../../../stores/modal'
 import { loadServicePriceMap } from '../../../../services/servicePricing'
+import { resolveImageUrl, uploadImage } from '../../../../services/images'
 
 interface StaffMember {
   id: string
@@ -301,14 +302,19 @@ async function recordMaterialsUsage() {
     return
   }
 
+  const [beforeImage, afterImage] = await Promise.all([
+    recordForm.beforeImageFile ? uploadImage(recordForm.beforeImageFile, 'jobs') : Promise.resolve(recordForm.beforeImagePreview),
+    recordForm.afterImageFile ? uploadImage(recordForm.afterImageFile, 'jobs') : Promise.resolve(recordForm.afterImagePreview),
+  ])
+
   const payload = {
     submittedBy: currentUserId.value || undefined,
     taskId,
     movementType: 'stock_out',
     lines: validLines.map((l) => ({ itemId: l.itemId, quantity: l.quantity })),
     laborHours: recordForm.laborHours,
-    beforeImage: recordForm.beforeImagePreview || undefined,
-    afterImage: recordForm.afterImagePreview || undefined,
+    beforeImage: beforeImage || undefined,
+    afterImage: afterImage || undefined,
   }
   await api.post(`/bookings/${bookingId}/materials`, payload)
   await inventoryStore.fetchInventory()
@@ -810,7 +816,7 @@ async function confirmRemoveTask() {
                 <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Before Image <span class="text-red-500">*</span><InfoTooltip text="Please provide the before image." /></label>
                 <input type="file" accept="image/*" class="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100" @change="handleBeforeImageChange" />
                 <div v-if="recordForm.beforeImagePreview" class="mt-3">
-                  <img :src="recordForm.beforeImagePreview" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
+                  <img :src="resolveImageUrl(recordForm.beforeImagePreview)" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
                 </div>
               </div>
 
@@ -818,7 +824,7 @@ async function confirmRemoveTask() {
                 <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">After Image <span class="text-red-500">*</span><InfoTooltip text="Please provide the after image." /></label>
                 <input type="file" accept="image/*" class="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100" @change="handleAfterImageChange" />
                 <div v-if="recordForm.afterImagePreview" class="mt-3">
-                  <img :src="recordForm.afterImagePreview" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
+                  <img :src="resolveImageUrl(recordForm.afterImagePreview)" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
                 </div>
               </div>
             </div>

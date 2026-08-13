@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import hash_password
 from app.db import get_db
 from app.models.user import User, UserRole
@@ -23,7 +24,7 @@ from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["verification"])
 
-EMAIL_CHECKER = os.getenv("EMAIL_CHECKER_API_KEY")
+EMAIL_CHECKER = settings.EMAIL_CHECKER_API_KEY
 
 
 @router.post("/signup", status_code=status.HTTP_200_OK)

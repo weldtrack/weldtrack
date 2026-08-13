@@ -25,18 +25,9 @@ import re
 import sys
 from pathlib import Path
 
-# 1. Load environment variables from .env immediately
-from dotenv import load_dotenv
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
-
-# 2. Setup project root path for internal application utility imports
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from sqlalchemy import text
 
+from app.core.config import settings
 from app.core.id import new_ulid
 from app.core.security import hash_password
 from app.db import SessionLocal
@@ -65,13 +56,8 @@ def validate_password(password: str) -> None:
 
 
 def seed_admin() -> None:
-    admin_email = os.getenv("ADMIN_EMAIL")
-    admin_password = os.getenv("ADMIN_PASSWORD")
-
-    if not admin_email or not admin_password:
-        raise ValueError(
-            "ADMIN_EMAIL and ADMIN_PASSWORD are required in your environment or .env file."
-        )
+    admin_email = settings.ADMIN_EMAIL
+    admin_password = settings.ADMIN_PASSWORD
 
     # Validate password strength BEFORE running queries
     # validate_password(admin_password)

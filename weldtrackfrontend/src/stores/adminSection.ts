@@ -20,7 +20,7 @@ export const useAdminSectionStore = defineStore('admin-section', {
       id: string
       name: string
       description?: string | null
-      price: number
+      price_hour: number
       image_url?: string | null
     },
   }),
@@ -34,7 +34,7 @@ export const useAdminSectionStore = defineStore('admin-section', {
     setSelectedMaterial(payload: { id: string; name: string; price: number; requestedQuantity?: number }) {
       this.selectedMaterial = payload
     },
-    setSelectedService(payload: { id: string; name: string; description?: string | null; price: number; image_url?: string | null }) {
+    setSelectedService(payload: { id: string; name: string; description?: string | null; price_hour: number; image_url?: string | null }) {
       this.selectedService = payload
     },
     clearSelectedMaterial() {

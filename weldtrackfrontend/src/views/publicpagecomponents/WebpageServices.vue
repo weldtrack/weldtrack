@@ -3,12 +3,13 @@ import { onBeforeUnmount, onMounted, nextTick, ref, inject } from 'vue'
 import type { Ref } from 'vue'
 import api from '../../api/api'
 import { ArrowLeft, ArrowRight, Wrench } from 'lucide-vue-next'
+import { resolveImageUrl } from '../../services/images'
 
 interface Service {
     id: string
     name: string
     description: string | null
-    price: number
+    price_hour: number
     image_url: string | null
     created_at: string
     updated_at: string
@@ -32,16 +33,22 @@ function prevSlide() {
     currentSlide.value = (currentSlide.value - 1 + services.value.length) % services.value.length
 }
 
+function getImageUrl(url: string | null): string {
+    if (!url) return 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2164&auto=format&fit=crop'
+    return resolveImageUrl(url)
+}
+
 async function fetchServices() {
     isLoading.value = true
     loadError.value = ''
     try {
-        const response = await api.get('/services?limit=5')
+        const response = await api.get('/services?limit=20')
         services.value = response.data || []
         await nextTick()
-        document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((el) => {
-            if (!el.classList.contains('is-visible')) {
-                observerRef?.value?.observe(el)
+        document.querySelectorAll<HTMLElement>('#services [data-reveal]').forEach((el) => {
+            el.classList.add('is-visible')
+            if (observerRef?.value) {
+                observerRef.value.observe(el)
             }
         })
     } catch (err) {
@@ -104,25 +111,33 @@ onBeforeUnmount(() => {
                 <p class="mt-1 text-xs text-slate-400">Contact us and we’ll assist with your specific welding requirements.</p>
             </div>
 
-            <div v-else data-reveal class="reveal relative mx-auto max-w-5xl" @mouseenter="stopAutoplay" @mouseleave="startAutoplay">
+            <div v-else data-reveal class="reveal is-visible relative mx-auto max-w-5xl" @mouseenter="stopAutoplay" @mouseleave="startAutoplay">
                 <div class="group relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80 p-3 shadow-xl backdrop-blur-sm sm:p-4">
                     <div class="relative h-[380px] overflow-hidden rounded-lg sm:h-[460px]">
                         <transition name="fade" mode="out-in">
-                            <div :key="currentSlide" class="h-full w-full">
-                                <img :src="services[currentSlide]?.image_url || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2164&auto=format&fit=crop'"
+                            <RouterLink
+                                :key="currentSlide"
+                                :to="{ name: 'public-services', query: { service: services[currentSlide]?.id } }"
+                                class="block h-full w-full cursor-pointer"
+                                :aria-label="`View details for ${services[currentSlide]?.name}`"
+                            >
+                                <img :src="getImageUrl(services[currentSlide]?.image_url)"
                                     :alt="services[currentSlide]?.name"
                                     class="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-105" />
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
                                 <div class="absolute inset-x-5 bottom-5 text-left sm:inset-x-8 sm:bottom-8">
-                                    <div class="mb-2.5 inline-block rounded-md border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold text-sky-400 backdrop-blur-md">
-                                        Starting at {{ formatCurrency(services[currentSlide]?.price || 0) }}
+                                    <div class="mb-3 inline-block rounded-md bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-lg">
+                                        {{ formatCurrency(services[currentSlide]?.price_hour || 0) }} per hour
                                     </div>
-                                    <h3 class="public-service-text mb-2 text-2xl font-bold text-white sm:text-4xl">{{ services[currentSlide]?.name }}</h3>
-                                    <p class="public-service-text max-w-xl text-sm leading-6 text-slate-300">
-                                        {{ services[currentSlide]?.description || 'A service option customers can book directly from the portal.' }}
-                                    </p>
+                                    <div class="max-w-2xl rounded-xl bg-slate-950/90 p-4 shadow-xl backdrop-blur-sm sm:p-5">
+                                        <h3 class="text-2xl font-bold !text-white sm:text-4xl">{{ services[currentSlide]?.name }}</h3>
+                                        <p class="mt-2 text-sm leading-6 !text-white">
+                                            {{ services[currentSlide]?.description || 'A service option customers can book directly from the portal.' }}
+                                        </p>
+                                        <span class="mt-3 inline-flex text-xs font-bold text-sky-300">View service details →</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </RouterLink>
                         </transition>
                     </div>
 
@@ -142,7 +157,3 @@ onBeforeUnmount(() => {
         </div>
     </section>
 </template>
-<style scoped>
-.public-service-text {
-    color: var(--public-service-text, rgba(227, 227, 227, 0.95));}
-</style>
