@@ -82,9 +82,9 @@ onBeforeUnmount(() => {
 <template>
     <section id="services" class="relative py-16 sm:py-24 border-t border-slate-800/60">
         <div class="mx-auto max-w-7xl px-6 sm:px-10 text-center">
-            <div data-reveal class="reveal mb-3 text-xs font-semibold tracking-wider text-sky-400 uppercase">Popular Services</div>
-            <h2 data-reveal class="reveal text-3xl font-bold tracking-tight text-white sm:text-4xl">Built for the work you need.</h2>
-            <p data-reveal class="reveal mx-auto mb-12 mt-4 max-w-2xl text-base leading-7 text-slate-300">Explore available services, then log in to request quotes and schedule work.</p>
+            <div data-reveal class="reveal mb-3 text-xs font-semibold tracking-wider text-sky-400 uppercase">Available services</div>
+            <h2 data-reveal class="reveal text-3xl font-bold tracking-tight text-white sm:text-4xl">What can we help you build or repair?</h2>
+            <p data-reveal class="reveal mx-auto mb-12 mt-4 max-w-2xl text-base leading-7 text-slate-300">Browse the shop’s current services and starting labor rates. Final costs depend on the job and materials required.</p>
 
             <div v-if="isLoading" class="mx-auto max-w-xl py-16" role="status">
                 <div class="flex flex-col items-center gap-4">

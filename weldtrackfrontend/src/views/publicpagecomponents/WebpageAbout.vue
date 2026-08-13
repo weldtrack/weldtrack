@@ -2,9 +2,9 @@
 import { CalendarCheck2, LockKeyhole, MessagesSquare } from 'lucide-vue-next'
 
 const highlights = [
-    { icon: CalendarCheck2, number: '01', title: 'Simple booking flow', description: 'Choose a service and send a complete request from one guided workspace.' },
-    { icon: MessagesSquare, number: '02', title: 'Updates without guesswork', description: 'See confirmations, schedules, and project progress without repeated calls.' },
-    { icon: LockKeyhole, number: '03', title: 'A private customer portal', description: 'Keep addresses, requests, history, and feedback organized under your account.' },
+    { icon: CalendarCheck2, number: '01', title: 'Tell us what needs doing', description: 'Choose a service, add the job address, and send the details our team needs to review it.' },
+    { icon: MessagesSquare, number: '02', title: 'We review and schedule it', description: 'Your request is checked by the shop before a date is confirmed. You can see each status change online.' },
+    { icon: LockKeyhole, number: '03', title: 'Keep the record afterward', description: 'Completed work, cost details, and your feedback stay together in your private account.' },
 ]
 </script>
 
@@ -19,9 +19,9 @@ const highlights = [
                 </div>
 
                 <div class="order-1 lg:order-2 lg:col-span-7">
-                    <p data-reveal class="reveal text-xs font-semibold uppercase tracking-wider text-sky-400">Why WeldTrack</p>
-                    <h2 data-reveal class="reveal mt-3 max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">Less chasing. More clarity.</h2>
-                    <p data-reveal class="reveal mt-4 max-w-xl text-base leading-7 text-slate-300">A straightforward digital experience for customers who need dependable welding work and visibility at every stage.</p>
+                    <p data-reveal class="reveal text-xs font-semibold uppercase tracking-wider text-sky-400">How a booking works</p>
+                    <h2 data-reveal class="reveal mt-3 max-w-2xl text-3xl font-bold tracking-tight text-white sm:text-4xl">The shop does the work. WeldTrack keeps the details straight.</h2>
+                    <p data-reveal class="reveal mt-4 max-w-xl text-base leading-7 text-slate-300">No vague instant estimates or automatic promises. The team reviews each request, confirms what is practical, and updates the booking as the job moves forward.</p>
 
                     <div class="mt-8 space-y-3">
                         <article v-for="highlight in highlights" :key="highlight.title" data-reveal class="reveal flex gap-4 rounded-lg border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-700 hover:bg-slate-900">

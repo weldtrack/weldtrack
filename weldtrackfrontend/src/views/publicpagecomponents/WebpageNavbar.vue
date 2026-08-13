@@ -15,7 +15,7 @@ const isMobileMenuOpen = ref(false)
 
             <div class="hidden items-center gap-8 lg:flex">
                 <RouterLink to="/#home" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Home</RouterLink>
-                <RouterLink to="/#about" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Why WeldTrack</RouterLink>
+                <RouterLink to="/#about" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">How it works</RouterLink>
                 <RouterLink to="/#services" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Services</RouterLink>
                 <RouterLink to="/#contact" class="text-sm font-medium text-slate-300 transition-colors hover:text-white">Contact</RouterLink>
             </div>
@@ -23,7 +23,7 @@ const isMobileMenuOpen = ref(false)
             <div class="hidden items-center gap-3 lg:flex">
                 <ThemeToggle />
                 <RouterLink to="/login" class="px-3.5 py-1.5 text-sm font-semibold text-slate-300 transition-colors hover:text-white">Sign In</RouterLink>
-                <RouterLink to="/signup" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-sky-500 active:scale-95 shadow-sm">Get Started</RouterLink>
+                <RouterLink to="/signup" class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-sky-500 active:scale-95 shadow-sm">Request a job</RouterLink>
             </div>
 
             <button type="button" class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10 lg:hidden" :aria-label="isMobileMenuOpen ? 'Close navigation' : 'Open navigation'" :aria-expanded="isMobileMenuOpen" aria-controls="public-mobile-menu" @click="isMobileMenuOpen = !isMobileMenuOpen">
@@ -38,13 +38,13 @@ const isMobileMenuOpen = ref(false)
             </div>
             <div class="flex flex-col gap-6">
                 <RouterLink to="/#home" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Home</RouterLink>
-                <RouterLink to="/#about" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Why WeldTrack</RouterLink>
+                <RouterLink to="/#about" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">How it works</RouterLink>
                 <RouterLink to="/#services" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Services</RouterLink>
                 <RouterLink to="/#contact" class="text-lg font-medium text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Contact</RouterLink>
             </div>
             <div class="flex flex-col gap-4 pt-4 border-t border-white/5">
                 <RouterLink to="/login" class="flex h-12 items-center justify-center font-semibold text-slate-400 transition-colors hover:text-[color:var(--public-text)]" @click="isMobileMenuOpen = false">Sign In</RouterLink>
-                <RouterLink to="/signup" class="flex h-12 items-center justify-center rounded-lg bg-[color:var(--public-text)] font-bold text-[color:var(--public-bg)]" @click="isMobileMenuOpen = false">Get Started</RouterLink>
+                <RouterLink to="/signup" class="flex h-12 items-center justify-center rounded-lg bg-[color:var(--public-text)] font-bold text-[color:var(--public-bg)]" @click="isMobileMenuOpen = false">Request a job</RouterLink>
             </div>
         </div>
     </nav>

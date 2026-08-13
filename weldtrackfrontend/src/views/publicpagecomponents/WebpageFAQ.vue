@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-vue-next'
 const faqs = reactive([
     {
         question: 'How do I track the progress of my project?',
-        answer: 'Once you book a service, you will get access to a private Customer Portal. You can log in anytime to see the live status, whether it is pending approval, scheduled, or actively in-progress.',
+        answer: 'Sign in to your customer account and open Booking History. Each request shows whether it is pending review, approved, scheduled, in progress, or completed.',
         open: false
     },
     {
@@ -15,7 +15,7 @@ const faqs = reactive([
     },
     {
         question: 'Can I cancel my booking if my plans change?',
-        answer: 'Yes! As long as the booking is still in the "Pending" state, you can cancel it directly from your dashboard and provide a reason.',
+        answer: 'Yes. If the booking is still pending, you can cancel it from your dashboard and provide a reason.',
         open: false
     },
     {
@@ -41,7 +41,8 @@ const toggleFaq = (index: number) => {
             <div class="space-y-3">
                 <div v-for="(faq, index) in faqs" :key="index" data-reveal class="reveal rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden transition-all">
                     <button 
-                        @click="toggleFaq(index)" 
+                        @click="toggleFaq(index)"
+                        :aria-expanded="faq.open"
                         class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-semibold text-[color:var(--public-text)] hover:bg-slate-800/50 transition-colors"
                     >
                         {{ faq.question }}

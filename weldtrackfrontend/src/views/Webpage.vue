@@ -6,7 +6,6 @@ import WebpageHero from './publicpagecomponents/WebpageHero.vue'
 import WebpageAbout from './publicpagecomponents/WebpageAbout.vue'
 import WebpageServices from './publicpagecomponents/WebpageServices.vue'
 import WebpageContact from './publicpagecomponents/WebpageContact.vue'
-import WebpageTestimonials from './publicpagecomponents/WebpageTestimonials.vue'
 import WebpageFAQ from './publicpagecomponents/WebpageFAQ.vue'
 import WebpageCTA from './publicpagecomponents/WebpageCTA.vue'
 import WebpageFooter from './publicpagecomponents/WebpageFooter.vue'
@@ -47,7 +46,6 @@ onBeforeUnmount(() => {
         <WebpageHero />
         <WebpageAbout />
         <WebpageServices />
-        <WebpageTestimonials />
         <WebpageFAQ />
         <WebpageContact />
         <WebpageCTA />
