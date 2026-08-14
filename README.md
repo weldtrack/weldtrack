@@ -58,7 +58,7 @@ kubectl -n weldtrack create secret generic minio-secret \
   --from-literal=MINIO_ROOT_PASSWORD='<your-secret-key>'
 ```
 
-The Kubernetes deployment exposes public read-only objects at `https://cdn.weldtrack.ruzzgd.dev`. Point that hostname to the ingress controller; cert-manager will populate the `weldtrack-minio-tls` certificate Secret.
+The Kubernetes deployment exposes public read-only objects at `https://cdn-weldtrack.ruzzgd.dev`. Point that hostname to the ingress controller; cert-manager will populate the `weldtrack-minio-tls` certificate Secret.
 
 ## Core Capabilities
 
