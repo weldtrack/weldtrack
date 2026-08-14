@@ -71,13 +71,6 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
-    @property
-    def minio_endpoint(self) -> str:
-        if Path("/.dockerenv").exists():
-            return self.MINIO_ENDPOINT
-        return self.MINIO_ENDPOINT.replace("minio:", "localhost:", 1)
-
-
 settings = Settings()
 
 # Module-level variable exports for backward compatibility
