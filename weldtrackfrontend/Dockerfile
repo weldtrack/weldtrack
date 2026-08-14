@@ -10,6 +10,9 @@ COPY . .
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
+ARG VITE_CDN_URL
+ENV VITE_CDN_URL=$VITE_CDN_URL
+
 RUN npm run build
 
 FROM nginx:stable-alpine AS production-stage

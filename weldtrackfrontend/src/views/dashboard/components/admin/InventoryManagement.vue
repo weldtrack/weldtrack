@@ -309,11 +309,11 @@ function formatDateTime(value?: string) {
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Supplier</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date Added</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
-              <tr v-for="item in filteredInventory" :key="item.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+              <tr v-for="item in filteredInventory" :key="item.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
@@ -342,7 +342,7 @@ function formatDateTime(value?: string) {
                     In Stock
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
+                <td class="px-6 py-4 whitespace-nowrap sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                   <div class="flex gap-3 justify-end">
                     <button type="button" class="text-sky-600 transition-colors hover:text-sky-800" @click="openEditDialog(item)">
                       <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

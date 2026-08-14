@@ -13,9 +13,9 @@ Rules:
     - Will only create admin if none exists.
 
 Usage:
-    python3 app/bootstrap/create_initial_admin.py
+    python3 app/scripts/create_initial_admin.py
     OR
-    python3 -m app.bootstrap.create_initial_admin
+    python3 -m app.scripts.create_initial_admin
 """
 
 from __future__ import annotations

@@ -281,11 +281,11 @@ function formatDate(value: string) {
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Description</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Labor Price per Hour</th>
                 <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Created</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
-              <tr v-for="service in filteredServices" :key="service.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+              <tr v-for="service in filteredServices" :key="service.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-100 shadow-xs">
                     <img
@@ -303,7 +303,7 @@ function formatDate(value: string) {
                 </td>
                 <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(service.price_hour) }} / hour</td>
                 <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(service.created_at) }}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
+                <td class="px-6 py-4 whitespace-nowrap sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                   <div class="flex gap-3 justify-end">
                     <button
                       @click="openEditDialog(service)"

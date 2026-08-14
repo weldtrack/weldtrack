@@ -4,7 +4,8 @@ services:
       context: ./weldtrackfrontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:8000
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_CDN_URL: ${VITE_CDN_URL}
     container_name: weldtrack_frontend
     restart: always
     ports:
@@ -21,7 +22,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./weldtrackbackend/.env
+      - ./.env
     environment:
       DATABASE_URL: postgresql+psycopg2://weldtrack:weldtrack_123@postgres:5432/weldtrack_db
       MINIO_ENDPOINT: minio:9000
@@ -31,7 +32,7 @@ services:
       MINIO_BUCKET: weldtrack
       MINIO_SECURE: "false"
     command: >
-      sh -c "python -m app.bootstrap.docker_bootstrap && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      sh -c "python -m app.scripts.docker_bootstrap && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     depends_on:
       postgres:
         condition: service_started

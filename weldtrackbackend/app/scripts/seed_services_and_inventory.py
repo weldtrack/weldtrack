@@ -20,67 +20,68 @@ from sqlalchemy import text
 from app.core.id import new_ulid
 from app.db import SessionLocal
 from app.models.inventory import MovementType
+from app.services.object_storage import upload, public_url
 
 SEED_SERVICES = [
     {
         "name": "MIG Pipe Welding Service",
         "description": "High-precision Metal Inert Gas (MIG) welding for structural steel and industrial piping systems.",
         "price_hour": 3500.00,
-        "image_url": "/api/static/services/mig_pipe_welding.jpg",
+        "image_url": "mig_pipe_welding.jpg",
     },
     {
         "name": "TIG Stainless Steel Fabrication",
         "description": "Premium Tungsten Inert Gas (TIG) welding for clean, high-aesthetic stainless steel tanks, handrails, and frames.",
         "price_hour": 4800.00,
-        "image_url": "/api/static/services/tig_stainless_steel.jpg",
+        "image_url": "tig_stainless_steel.jpg",
     },
     {
         "name": "SMAW Heavy Structural Steel Welding",
         "description": "Shielded Metal Arc Welding (Stick) for heavy-duty structural steel beams, I-beams, and load-bearing columns.",
         "price_hour": 5200.00,
-        "image_url": "/api/static/services/smaw_structural_steel.jpg",
+        "image_url": "smaw_structural_steel.jpg",
     },
     {
         "name": "FCAW Ship & Heavy Equipment Repair",
         "description": "Flux-Cored Arc Welding designed for high-deposition repairs on heavy machinery, excavator buckets, and marine hulls.",
         "price_hour": 6500.00,
-        "image_url": "/api/static/services/fcaw_heavy_repair.jpg",
+        "image_url": "fcaw_heavy_repair.jpg",
     },
     {
         "name": "Aluminum Gate & Railing Fabrication",
         "description": "Custom TIG welding and assembly for lightweight aluminum gates, security grilles, and decorative railings.",
         "price_hour": 4200.00,
-        "image_url": "/api/static/services/aluminum_railing_weld.jpg",
+        "image_url": "aluminum_railing_weld.jpg",
     },
     {
         "name": "High-Pressure Pipeline Joint Welding",
         "description": "Certified code-compliant pipe joint welding and pressure testing for industrial oil, gas, and water distribution lines.",
         "price_hour": 7800.00,
-        "image_url": "/api/static/services/pipeline_joint_welding.jpg",
+        "image_url": "pipeline_joint_welding.jpg",
     },
     {
         "name": "Custom Metal Furniture & Canopy Welding",
         "description": "Architectural metalworking and precision welding for custom steel furniture, pergolas, and roof framing.",
         "price_hour": 3900.00,
-        "image_url": "/api/static/services/custom_metal_canopy.jpg",
+        "image_url": "custom_metal_canopy.jpg",
     },
     {
         "name": "Automotive & Trailer Chassis Repair",
         "description": "Frame reinforcement, rust section cutout, and heavy weld repair for utility trailers and commercial truck chassis.",
         "price_hour": 2800.00,
-        "image_url": "/api/static/services/trailer_chassis_repair.jpg",
+        "image_url": "trailer_chassis_repair.jpg",
     },
     {
         "name": "On-Site Mobile Emergency Welding",
         "description": "On-demand mobile welding unit dispatched directly to client job sites for urgent structural and pipe repairs.",
         "price_hour": 3000.00,
-        "image_url": "/api/static/services/mobile_emergency_welding.jpg",
+        "image_url": "mobile_emergency_welding.jpg",
     },
     {
         "name": "Hardfacing & Wear Plate Overlay Service",
         "description": "Application of wear-resistant alloy weld overlays to extend service life of heavy excavator components and crusher jaws.",
         "price_hour": 5500.00,
-        "image_url": "/api/static/services/hardfacing_overlay.jpg",
+        "image_url": "hardfacing_overlay.jpg",
     },
 ]
 
@@ -162,21 +163,40 @@ def seed_services_and_inventory() -> None:
     db = SessionLocal()
     try:
         # 1. Seed Services
-        print("Seeding welding services with images...")
+        print("Seeding welding services with images to MinIO...")
+        bootstrap_images_dir = Path(__file__).resolve().parent / "images"
+        
         for svc in SEED_SERVICES:
             name = svc["name"]
+            
+            filename = svc["image_url"]
+            object_name = f"services/{filename}"
+            final_image_url = filename
+            
+            image_path = bootstrap_images_dir / filename
+            if image_path.exists():
+                with open(image_path, "rb") as f:
+                    data = f.read()
+                try:
+                    upload(object_name, data, "image/jpeg")
+                    final_image_url = public_url(object_name)
+                except Exception as e:
+                    print(f"Failed to upload {filename} to MinIO: {e}")
+            else:
+                print(f"Warning: Local image {image_path} not found.")
+
             existing = db.execute(
                 text("SELECT id FROM services WHERE name = :name LIMIT 1"),
                 {"name": name},
             ).fetchone()
 
             if existing:
-                # Update image_url if missing
+                # Update image_url to ensure it points to minio
                 db.execute(
-                    text("UPDATE services SET image_url = :image_url WHERE name = :name AND (image_url IS NULL OR image_url = '')"),
-                    {"image_url": svc["image_url"], "name": name},
+                    text("UPDATE services SET image_url = :image_url WHERE name = :name"),
+                    {"image_url": final_image_url, "name": name},
                 )
-                print(f"Service already exists: {name}")
+                print(f"Service already exists: {name}, image updated.")
                 continue
 
             service_id = new_ulid()
@@ -191,7 +211,7 @@ def seed_services_and_inventory() -> None:
                     "name": name,
                     "description": svc["description"],
                     "price_hour": svc["price_hour"],
-                    "image_url": svc["image_url"],
+                    "image_url": final_image_url,
                 },
             )
             print(f"Successfully created service with image: {name}")

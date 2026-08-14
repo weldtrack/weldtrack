@@ -14,9 +14,9 @@ import time
 
 from sqlalchemy import create_engine, text
 
-from app.bootstrap.create_initial_admin import seed_admin
-from app.bootstrap.seed_services_and_inventory import seed_services_and_inventory
-from app.bootstrap.seed_users import seed_users_and_staff
+from app.scripts.create_initial_admin import seed_admin
+from app.scripts.seed_services_and_inventory import seed_services_and_inventory
+from app.scripts.seed_users import seed_users_and_staff
 from app.core.config import settings
 from app.db import Base
 import app.models  # noqa: F401

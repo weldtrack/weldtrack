@@ -3,6 +3,16 @@ import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+})
 import { Calendar, CheckCircle2, Clock3, MapPin, Pencil } from 'lucide-vue-next'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { useAuthStore } from '../../../../stores/auth'
@@ -508,7 +518,20 @@ onBeforeUnmount(() => {
         <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
           <div class="mb-5 flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">Attendance Geofence</h3><p class="mt-1 text-sm text-gray-500">Required for every morning and afternoon attendance event.</p></div><span class="rounded-full px-3 py-1 text-xs font-semibold" :class="attendanceLocation ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">{{ attendanceLocation ? 'Configured' : 'Required' }}</span></div>
           <form class="space-y-4" @submit.prevent="saveGeofence">
-            <div class="grid gap-4 sm:grid-cols-3"><label class="text-sm font-medium text-gray-700 flex items-center">Latitude<input v-model.number="settingsForm.lat" required type="number" step="any" class="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg" /><InfoTooltip text="Please provide the latitude." /></label><label class="text-sm font-medium text-gray-700 flex items-center">Longitude<input v-model.number="settingsForm.lng" required type="number" step="any" class="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg" /><InfoTooltip text="Please provide the longitude." /></label><label class="text-sm font-medium text-gray-700 flex items-center">Radius (meters)<input v-model.number="settingsForm.radius_meters" required type="number" min="20" max="5000" class="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg" /><InfoTooltip text="Please provide the radius meters." /></label></div>
+            <div class="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label class="flex items-center text-sm font-medium text-gray-700 mb-1.5">Latitude<InfoTooltip text="Please provide the latitude." /></label>
+                <input v-model.number="settingsForm.lat" required type="number" step="any" class="w-full border border-gray-300 px-3 py-2 rounded-lg outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+              </div>
+              <div>
+                <label class="flex items-center text-sm font-medium text-gray-700 mb-1.5">Longitude<InfoTooltip text="Please provide the longitude." /></label>
+                <input v-model.number="settingsForm.lng" required type="number" step="any" class="w-full border border-gray-300 px-3 py-2 rounded-lg outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+              </div>
+              <div>
+                <label class="flex items-center text-sm font-medium text-gray-700 mb-1.5">Radius (meters)<InfoTooltip text="Please provide the radius meters." /></label>
+                <input v-model.number="settingsForm.radius_meters" required type="number" min="20" max="5000" class="w-full border border-gray-300 px-3 py-2 rounded-lg outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+              </div>
+            </div>
             <div class="overflow-hidden rounded-xl border border-gray-200"><div ref="mapContainer" class="h-64 w-full"></div></div>
             <p v-if="settingsMessage" class="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{{ settingsMessage }}</p><p v-if="settingsError" class="rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ settingsError }}</p>
             <div class="flex flex-col gap-2 sm:flex-row sm:justify-between"><button type="button" :disabled="isLocatingAdmin" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60" @click="useAdminLocation"><MapPin class="h-4 w-4" /> {{ isLocatingAdmin ? 'Improving GPS accuracy…' : 'Use My Location' }}</button><button type="submit" :disabled="isSavingLocation || isLocatingAdmin" class="rounded-lg bg-sky-600 px-5 py-2 font-semibold text-white hover:bg-sky-700 disabled:bg-gray-400">{{ isSavingLocation ? 'Saving…' : 'Save Geofence' }}</button></div>

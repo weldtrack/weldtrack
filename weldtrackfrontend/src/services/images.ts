@@ -13,7 +13,6 @@ export async function uploadImage(file: File, folder: ImageFolder) {
 
 export function resolveImageUrl(url?: string | null) {
   if (!url || url.startsWith('data:') || url.startsWith('blob:') || /^https?:\/\//.test(url)) return url || ''
-  const apiBase = String(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '')
-  const origin = apiBase.replace(/\/api$/, '')
-  return `${origin}${url.startsWith('/') ? url : `/${url}`}`
+  const cdnBase = String(import.meta.env.VITE_CDN_URL || 'http://localhost:9000/weldtrack').replace(/\/$/, '')
+  return `${cdnBase}${url.startsWith('/') ? url : `/${url}`}`
 }

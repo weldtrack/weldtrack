@@ -176,9 +176,18 @@ onMounted(() => {
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="rounded-lg bg-sky-50 p-4"><p class="text-xs uppercase tracking-wide text-sky-600">Payslips</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ payslips.length }}</p></div>
-        <div class="rounded-lg bg-sky-50 p-4"><p class="text-xs uppercase tracking-wide text-sky-600">Total net payroll</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ currency(totalPayroll) }}</p></div>
-        <div class="rounded-lg bg-sky-50 p-4"><p class="text-xs uppercase tracking-wide text-sky-600">Awaiting approval</p><p class="mt-1 text-2xl font-bold text-gray-900">{{ payslips.filter(p => p.status === 'draft').length }}</p></div>
+        <div class="rounded-xl border border-sky-200 bg-sky-50 p-5 dark:border-sky-900/50 dark:bg-sky-950/40">
+          <p class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Payslips</p>
+          <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ payslips.length }}</p>
+        </div>
+        <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-950/40">
+          <p class="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Total Net Payroll</p>
+          <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ currency(totalPayroll) }}</p>
+        </div>
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900/50 dark:bg-emerald-950/40">
+          <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Awaiting Approval</p>
+          <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ payslips.filter(p => p.status === 'draft').length }}</p>
+        </div>
       </div>
 
       <!-- Reusable payroll rates -->
@@ -205,10 +214,67 @@ onMounted(() => {
 
       <p v-if="error" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</p>
       
-      <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <div v-if="loading" class="p-8 text-center text-gray-500">Loading payroll…</div>
-        <div v-else-if="!payslips.length" class="p-8 text-center text-gray-500">No payslips created yet.</div>
-        <div v-else class="overflow-x-auto"><table class="w-full min-w-[700px] text-left text-sm"><thead class="border-b bg-gray-50 text-gray-500"><tr><th class="p-4">Staff</th><th class="p-4">Period</th><th class="p-4">Hours</th><th class="p-4">Net pay</th><th class="p-4">Status</th><th class="p-4 text-right">Actions</th></tr></thead><tbody><tr v-for="item in payslips" :key="item.id" class="border-b last:border-0"><td class="p-4 font-medium">{{ item.staff_email }}</td><td class="p-4">{{ period(item) }}</td><td class="p-4">{{ item.regular_hours }} + {{ item.overtime_hours }} OT</td><td class="p-4 font-semibold">{{ currency(item.net_pay) }}</td><td class="p-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize">{{ item.status }}</span></td><td class="p-4"><div class="flex justify-end gap-2"><button v-if="item.status !== 'paid'" class="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5" @click="advance(item)"><Check class="h-3.5 w-3.5" />{{ item.status === 'draft' ? 'Approve' : 'Mark paid' }}</button><button v-if="item.status === 'draft'" class="rounded-lg border p-2 text-red-600" aria-label="Delete draft" @click="remove(item)"><Trash2 class="h-4 w-4" /></button></div></td></tr></tbody></table></div>
+      <div v-if="loading" class="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+        <p class="text-slate-600 dark:text-slate-400">Loading payroll...</p>
+      </div>
+      <div v-else-if="!payslips.length" class="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+        <p class="text-slate-600 dark:text-slate-400">No payslips created yet.</p>
+      </div>
+      <div v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[900px] divide-y divide-slate-100 dark:divide-slate-800">
+            <thead class="bg-slate-50 dark:bg-slate-800/80">
+              <tr class="text-left">
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Staff</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Period</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Hours</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Net Pay</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
+              <tr v-for="item in payslips" :key="item.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group">
+                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ item.staff_email }}</td>
+                <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ period(item) }}</td>
+                <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ item.regular_hours }} + {{ item.overtime_hours }} OT</td>
+                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ currency(item.net_pay) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    :class="[
+                      'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap capitalize',
+                      item.status === 'paid' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20' : 
+                      item.status === 'approved' ? 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20' : 
+                      'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-600/20'
+                    ]"
+                  >
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
+                  <div class="flex justify-end gap-3">
+                    <button
+                      v-if="item.status !== 'paid'"
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+                      @click="advance(item)"
+                    >
+                      <Check class="h-3.5 w-3.5 text-emerald-600" />
+                      {{ item.status === 'draft' ? 'Approve' : 'Mark paid' }}
+                    </button>
+                    <button
+                      v-if="item.status === 'draft'"
+                      class="text-red-600 transition-colors hover:text-red-800 p-1.5"
+                      aria-label="Delete draft"
+                      @click="remove(item)"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </template>
 

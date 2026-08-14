@@ -185,11 +185,11 @@ onBeforeUnmount(() => {
               <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hidden sm:table-cell">Role</th>
               <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
               <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hidden lg:table-cell">Last Active</th>
-              <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Actions</th>
+              <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
-            <tr v-for="u in filtered" :key="u.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 text-xs sm:text-sm">
+            <tr v-for="u in filtered" :key="u.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 text-xs sm:text-sm group">
               <td class="px-5 py-4 text-slate-500 dark:text-slate-400 font-mono">{{ u.id }}</td>
               <td class="px-5 py-4 font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-xs">{{ u.email }}</td>
               <td class="px-5 py-4 text-slate-600 dark:text-slate-300 capitalize hidden sm:table-cell font-medium">{{ u.role }}</td>
@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
                 </div>
               </td>
               <td class="px-5 py-4 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-xs">{{ u.last_active ? new Date(u.last_active).toLocaleString() : '-' }}</td>
-              <td class="px-5 py-4 text-right">
+              <td class="px-5 py-4 text-right sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                 <div class="flex items-center justify-end gap-2">
                   <button
                     v-if="!u.is_banned"

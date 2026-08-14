@@ -457,14 +457,14 @@ function getDisplayedLaborCost(booking: BookingItem) {
                 <th class="w-[22%] px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Booking</th>
                 <th class="w-[16%] px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Schedule</th>
                 <th class="w-[20%] px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cost</th>
-                <th class="w-[18%] px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status & Actions</th>
+                <th class="w-[18%] px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 sticky right-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">Status & Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 bg-transparent dark:divide-slate-800">
               <tr v-if="filteredBookings.length === 0">
                 <td colspan="5" class="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400">No active bookings match the selected filters.</td>
               </tr>
-              <tr v-for="booking in filteredBookings" :key="booking.id" class="align-top transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+              <tr v-for="booking in filteredBookings" :key="booking.id" class="align-top transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40 group">
                 <td class="px-5 py-5">
                   <p class="break-all text-sm font-semibold text-slate-900 dark:text-slate-100">{{ booking.email }}</p>
                   <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ booking.phone || 'No phone provided' }}</p>
@@ -490,7 +490,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
                     </p>
                   </div>
                 </td>
-                <td class="px-5 py-5 text-right">
+                <td class="px-5 py-5 text-right sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                   <span
                     class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset"
                     :class="getStatusClass(booking.status)">

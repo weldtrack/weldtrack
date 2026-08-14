@@ -36,7 +36,7 @@ cp .env.example .env
 Key variables to configure:
 - `DATABASE_URL`: Your PostgreSQL connection string.
 - `SENDGRID_API_KEY`: For email verifications.
-- `ADMIN_EMAIL` & `ADMIN_PASSWORD`: Initial admin credentials (bootstrap).
+- `ADMIN_EMAIL` & `ADMIN_PASSWORD`: Initial admin credentials (scripts).
 
 ### 4. Running the Server
 ```bash

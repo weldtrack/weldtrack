@@ -500,12 +500,12 @@ async function confirmRemoveTask() {
         <div class="p-6 space-y-6">
           <!-- Confirmed Bookings Selector -->
           <div class="rounded-xl border border-sky-200 bg-sky-50 p-5 space-y-3">
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 items-start">
               <div>
                 <p class="text-sm font-bold text-sky-950 dark:text-sky-300">Confirmed Bookings</p>
-                <p class="text-xs text-sky-800 dark:text-sky-300">Select a confirmed booking to auto-fill project and location details.</p>
+                <p class="text-xs text-sky-800 dark:text-sky-300 mt-0.5">Select a confirmed booking to auto-fill project and location details.</p>
               </div>
-              <span class="text-xs font-semibold text-sky-800 dark:text-sky-300 bg-sky-100/80 px-3 py-1 rounded-full border border-sky-200">
+              <span class="text-xs font-semibold text-sky-800 dark:text-sky-300 bg-sky-100/80 px-3 py-1.5 rounded-full border border-sky-200 shadow-xs max-w-full truncate">
                 Selected: {{ selectedBookingLabel }}
               </span>
             </div>
