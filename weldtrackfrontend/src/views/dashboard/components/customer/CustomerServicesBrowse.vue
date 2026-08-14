@@ -142,63 +142,71 @@ onMounted(() => {
       </p>
     </div>
 
-    <!-- Full-width service list -->
-    <div v-else class="grid w-full grid-cols-1 gap-4">
+    <!-- Service list -->
+    <div v-else class="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
       <article
         v-for="service in filteredServices"
         :key="service.id"
-        class="group grid min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-800 md:grid-cols-[18rem_minmax(0,1fr)]"
+        class="group relative flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(14,165,233,0.15)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-800"
       >
-        <!-- Service Image or Banner Header -->
-        <div class="relative h-52 overflow-hidden bg-slate-100 dark:bg-slate-800 md:h-full md:min-h-64">
+        <!-- Service Image -->
+        <div class="relative h-64 overflow-hidden bg-slate-100 dark:bg-slate-950">
           <img
             v-if="service.image_url"
             :src="resolveImageUrl(service.image_url)"
             :alt="service.name"
-            class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div v-else class="flex h-full w-full items-center justify-center bg-linear-to-br from-sky-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
-            <Briefcase class="h-10 w-10 text-slate-300 dark:text-slate-700" />
+          <div v-else class="flex h-full w-full items-center justify-center bg-linear-to-br from-sky-50 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+            <Briefcase class="h-12 w-12 text-slate-300 dark:text-slate-700" />
           </div>
-          <div class="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-950/55 via-transparent to-transparent md:bg-linear-to-r"></div>
-          <span class="absolute bottom-4 left-4 rounded-xl bg-white px-3 py-2 text-sm font-extrabold text-slate-950 shadow-lg dark:bg-slate-950/90 dark:text-white dark:ring-1 dark:ring-white/15 dark:backdrop-blur-sm">{{ formatCurrency(service.price_hour) }} <span class="text-xs font-medium text-slate-500 dark:text-slate-300">/ hour</span></span>
+          <div class="pointer-events-none absolute inset-0 bg-linear-to-t from-slate-900/80 via-slate-900/20 to-transparent transition-opacity duration-500 group-hover:opacity-90 dark:from-slate-950/90 dark:via-slate-950/40"></div>
+          
+          <div class="absolute right-4 top-4 rounded-full bg-slate-900/60 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-md ring-1 ring-white/20 dark:bg-slate-950/60">
+            <div class="flex items-center gap-1.5"><ShieldCheck class="h-3.5 w-3.5 text-sky-400" /> Premium</div>
+          </div>
+
+          <div class="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+            <span class="inline-flex items-baseline gap-1 rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-slate-900 shadow-2xl dark:bg-slate-900/90 dark:text-white dark:ring-1 dark:ring-white/10 dark:backdrop-blur-md">
+              {{ formatCurrency(service.price_hour) }}
+              <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">/ HR</span>
+            </span>
+          </div>
         </div>
 
         <!-- Card Body -->
-        <div class="flex min-w-0 flex-col p-5 sm:p-7">
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">Welding Service</span>
-              <span v-if="isAlreadyBooked(service.name)" class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-300 dark:ring-amber-800">
-                <AlertCircle class="h-3.5 w-3.5" />
-                Active booking
-              </span>
+        <div class="relative flex flex-1 flex-col p-6 sm:p-8">
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-500">
+              <Briefcase class="h-4 w-4" /> Expert Service
             </div>
-            <h4 class="mt-3 break-words text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ service.name }}</h4>
-            <p class="mt-3 max-w-3xl break-words text-sm leading-7 text-slate-600 dark:text-slate-400">
-              {{ service.description || 'Professional welding service tailored to your exact project specifications.' }}
-            </p>
+            <span v-if="isAlreadyBooked(service.name)" class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-950/60 dark:text-amber-400 dark:ring-amber-800">
+              <AlertCircle class="h-3.5 w-3.5" /> Active Booking
+            </span>
           </div>
+          
+          <h4 class="mt-1 break-words text-2xl font-black tracking-tight text-slate-900 transition-colors group-hover:text-sky-600 dark:text-slate-100 dark:group-hover:text-sky-400">{{ service.name }}</h4>
+          <p class="mt-3 flex-1 break-words text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            {{ service.description || 'Professional welding service tailored to your exact project specifications.' }}
+          </p>
 
-          <div class="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Final cost may vary based on materials and project requirements.</p>
+          <div class="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800/60">
             <button
               type="button"
               :class="[
-                'inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-xs transition sm:w-auto',
+                'relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-6 py-3.5 text-sm font-bold shadow-lg transition-all active:scale-[0.98]',
                 isAlreadyBooked(service.name)
-                  ? 'cursor-not-allowed border border-amber-200 bg-amber-100 text-amber-800 opacity-90 dark:border-amber-900/50 dark:bg-amber-950/60 dark:text-amber-300'
-                  : 'bg-sky-600 text-white shadow-lg shadow-sky-600/20 hover:bg-sky-700 active:scale-[0.98] dark:bg-sky-600 dark:hover:bg-sky-500'
+                  ? 'cursor-not-allowed border border-amber-200 bg-amber-50 text-amber-800 opacity-90 shadow-none dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300'
+                  : 'bg-sky-600 text-white shadow-sky-600/20 hover:bg-sky-500 hover:shadow-sky-500/30'
               ]"
               @click="openBooking(service)"
             >
               <template v-if="isAlreadyBooked(service.name)">
-                <AlertCircle class="h-4 w-4" />
+                <AlertCircle class="h-4.5 w-4.5" />
                 <span>Already Booked</span>
               </template>
               <template v-else>
-                <span>Request Service</span>
-                <ArrowUpRight class="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                <span class="relative z-10 flex items-center gap-2">Request Service <ArrowUpRight class="h-4.5 w-4.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></span>
               </template>
             </button>
           </div>

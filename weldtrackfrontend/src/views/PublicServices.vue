@@ -97,18 +97,38 @@ onMounted(fetchServices)
         <p class="mt-3 font-semibold text-[color:var(--public-text)]">No matching services found.</p>
       </div>
 
-      <div v-else class="mt-6 grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+      <div v-else class="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         <article v-for="service in filteredServices" :id="`service-${service.id}`" :key="service.id"
-          :class="['service-card group overflow-hidden rounded-3xl border shadow-lg transition duration-300 hover:-translate-y-1.5 hover:border-sky-500 hover:shadow-2xl', route.query.service === service.id ? 'border-sky-400 ring-2 ring-sky-400/40' : 'border-slate-800']">
-          <div class="relative h-60 overflow-hidden">
-            <img :src="getImageUrl(service.image_url)" :alt="service.name" class="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-            <div class="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent"></div>
-            <span class="service-price absolute bottom-4 left-4 inline-flex rounded-xl px-3.5 py-2 text-xs font-extrabold shadow-lg">{{ formatCurrency(service.price_hour) }} <span class="ml-1 font-medium opacity-70">/ hour</span></span>
+          :class="['service-card group relative flex flex-col overflow-hidden rounded-[2rem] border transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(14,165,233,0.15)]', route.query.service === service.id ? 'border-sky-400 ring-4 ring-sky-400/20' : 'border-slate-800 hover:border-sky-500/50']">
+          
+          <div class="relative h-64 overflow-hidden bg-slate-900">
+            <img :src="getImageUrl(service.image_url)" :alt="service.name" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            <div class="absolute inset-0 bg-linear-to-t from-slate-950/90 via-slate-950/20 to-transparent transition-opacity duration-500 group-hover:opacity-80"></div>
+            
+            <div class="absolute right-4 top-4 rounded-full bg-slate-950/60 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-md ring-1 ring-white/20">
+              <div class="flex items-center gap-1.5"><ShieldCheck class="h-3.5 w-3.5 text-sky-400" /> Premium</div>
+            </div>
+
+            <div class="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+              <span class="service-price inline-flex items-baseline gap-1 rounded-2xl px-4 py-2.5 text-sm font-black shadow-2xl backdrop-blur-md">
+                {{ formatCurrency(service.price_hour) }}
+                <span class="text-[10px] font-semibold uppercase tracking-wider opacity-70">/ HR</span>
+              </span>
+            </div>
           </div>
-          <div class="flex min-h-64 flex-col p-6">
-            <h2 class="service-title mt-4 text-xl font-bold">{{ service.name }}</h2>
-            <p class="service-description mt-2 flex-1 text-sm leading-6">{{ service.description || 'Contact us to discuss the requirements for this service.' }}</p>
-            <RouterLink to="/signup" class="service-request mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold shadow-lg shadow-sky-600/15 transition hover:bg-sky-500">Request this service <ArrowUpRight class="h-4 w-4" /></RouterLink>
+          
+          <div class="relative flex flex-1 flex-col p-6 sm:p-8">
+            <div class="mb-4 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky-500">
+              <Wrench class="h-4 w-4" /> Expert Service
+            </div>
+            <h2 class="service-title text-2xl font-black tracking-tight transition-colors group-hover:text-sky-400">{{ service.name }}</h2>
+            <p class="service-description mt-3 flex-1 text-sm leading-relaxed">{{ service.description || 'Professional welding service tailored to your exact project specifications.' }}</p>
+            
+            <div class="mt-8 border-t border-slate-800/50 pt-6">
+              <RouterLink to="/signup" class="service-request relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-sky-600 px-6 py-3.5 text-sm font-bold shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-500 hover:shadow-sky-500/30 active:scale-[0.98]">
+                <span class="relative z-10 flex items-center gap-2">Request this service <ArrowUpRight class="h-4.5 w-4.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></span>
+              </RouterLink>
+            </div>
           </div>
         </article>
       </div>

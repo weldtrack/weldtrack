@@ -13,18 +13,31 @@
     
     <template v-if="!showPasswordModal">
       <div v-if="user" class="grid overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-[18rem_1fr]">
-        <aside class="flex flex-col items-center border-b border-slate-200 bg-slate-50/70 px-6 py-8 text-center dark:border-slate-800 dark:bg-slate-950/40 lg:border-r lg:border-b-0">
-          <div class="relative group">
-            <img v-if="user.profile_image" :src="getImageUrl(user.profile_image)" alt="Profile" class="h-28 w-28 rounded-2xl border border-slate-200 object-cover shadow-sm dark:border-slate-700">
-            <div v-else class="flex h-28 w-28 items-center justify-center rounded-2xl border border-slate-200 bg-white text-3xl font-semibold text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ profileInitial }}</div>
-            <label class="absolute -right-2 -bottom-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-slate-50 bg-sky-600 text-white shadow-md transition hover:bg-sky-700 dark:border-slate-950" title="Upload profile photo">
-              <Camera class="h-4 w-4" />
+        <aside class="relative flex flex-col items-center overflow-hidden border-b border-slate-200 bg-white pb-8 text-center dark:border-slate-800 dark:bg-slate-900 lg:border-r lg:border-b-0">
+          <!-- Banner Background -->
+          <div class="h-32 w-full bg-linear-to-br from-sky-500 to-indigo-600 dark:from-sky-900 dark:to-indigo-950"></div>
+          
+          <div class="relative -mt-16 group">
+            <div class="absolute -inset-1 rounded-[2rem] bg-linear-to-b from-white/40 to-white/0 blur-sm dark:from-sky-400/20"></div>
+            <img v-if="user.profile_image" :src="getImageUrl(user.profile_image)" alt="Profile" class="relative h-32 w-32 rounded-3xl border-4 border-white object-cover shadow-xl dark:border-slate-900">
+            <div v-else class="relative flex h-32 w-32 items-center justify-center rounded-3xl border-4 border-white bg-linear-to-br from-slate-100 to-slate-200 text-4xl font-bold text-slate-500 shadow-xl dark:border-slate-900 dark:from-slate-800 dark:to-slate-900 dark:text-slate-300">{{ profileInitial }}</div>
+            
+            <label class="absolute -right-3 -bottom-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border-4 border-white bg-sky-600 text-white shadow-xl transition-all hover:scale-105 hover:bg-sky-500 dark:border-slate-900" title="Upload profile photo">
+              <Camera class="h-5 w-5" />
               <input type="file" accept="image/*" class="hidden" @change="handleImageUpload">
-            <InfoTooltip text="Please provide the information." /></label>
+            </label>
           </div>
-          <p class="mt-5 max-w-full truncate text-base font-semibold text-slate-900 dark:text-slate-100">{{ user.email }}</p>
-          <span class="mt-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">{{ roleLabel }}</span>
-          <p class="mt-5 text-xs leading-5 text-slate-500 dark:text-slate-400">Use a clear photo so your account is easier to identify across WeldTrack.</p>
+          
+          <div class="mt-6 px-6">
+            <div class="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs font-black uppercase tracking-widest text-sky-600 dark:bg-sky-950/40 dark:text-sky-400">
+              <ShieldCheck class="h-3.5 w-3.5" />
+              {{ roleLabel }}
+            </div>
+            <p class="mt-4 max-w-full truncate text-xl font-bold tracking-tight text-slate-900 dark:text-white">{{ user.email }}</p>
+            <p class="mt-4 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              Maintain a clear and professional photo to make your account easily identifiable across WeldTrack.
+            </p>
+          </div>
         </aside>
 
         <div class="p-6 sm:p-8">
