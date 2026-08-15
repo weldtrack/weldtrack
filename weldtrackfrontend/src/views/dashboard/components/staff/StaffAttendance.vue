@@ -13,7 +13,7 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 })
-import { Calendar, CheckCircle2, Clock3, MapPin, Pencil } from 'lucide-vue-next'
+import { Calendar, CheckCircle2, Clock3, MapPin, Navigation, Pencil, ShieldCheck } from 'lucide-vue-next'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { useAuthStore } from '../../../../stores/auth'
 import {
@@ -206,7 +206,7 @@ async function confirmAttendanceAction() {
   }
 }
 
-// Admin geofence settings
+// Admin attendance work-area settings
 const attendanceLocation = ref<AttendanceSite | null>(null)
 const settingsForm = reactive({ lat: 0, lng: 0, radius_meters: 150 })
 const settingsMessage = ref('')
@@ -245,7 +245,7 @@ watch(() => [settingsForm.lat, settingsForm.lng, settingsForm.radius_meters], ([
   map.panTo(point)
 })
 
-async function loadGeofence() {
+async function loadAttendanceWorkArea() {
   attendanceLocation.value = await fetchAttendanceLocation()
   if (attendanceLocation.value) {
     settingsForm.lat = attendanceLocation.value.lat
@@ -286,7 +286,7 @@ function useAdminLocation() {
     const { latitude, longitude, accuracy } = bestPosition.coords
     settingsForm.lat = Number(latitude.toFixed(6))
     settingsForm.lng = Number(longitude.toFixed(6))
-    settingsMessage.value = `Location captured with ±${Math.round(accuracy)}m accuracy. Verify the marker, then save the geofence.`
+    settingsMessage.value = `Location captured with ±${Math.round(accuracy)}m accuracy. Check the marker and work-area boundary, then save.`
     map?.setView([latitude, longitude], 18)
   }
 
@@ -311,14 +311,14 @@ function useAdminLocation() {
   adminLocationTimeout = window.setTimeout(finish, 12000)
 }
 
-async function saveGeofence() {
+async function saveAttendanceWorkArea() {
   if (isSavingLocation.value) return
   isSavingLocation.value = true
   settingsMessage.value = ''
   settingsError.value = ''
   try {
     attendanceLocation.value = await setAttendanceLocation({ ...settingsForm })
-    settingsMessage.value = 'Attendance geofence saved successfully.'
+    settingsMessage.value = 'Attendance work area saved successfully.'
   } catch (error) {
     settingsError.value = getUserFriendlyApiError(error)
   } finally {
@@ -382,7 +382,7 @@ onMounted(async () => {
     if (isAdmin.value) {
       await authStore.fetchStaffDirectory()
       await loadAttendance()
-      await loadGeofence()
+      await loadAttendanceWorkArea()
     } else {
       await loadAttendance()
     }
@@ -515,26 +515,89 @@ onBeforeUnmount(() => {
           </div>
         </article>
 
-        <article class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
-          <div class="mb-5 flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">Attendance Geofence</h3><p class="mt-1 text-sm text-gray-500">Required for every morning and afternoon attendance event.</p></div><span class="rounded-full px-3 py-1 text-xs font-semibold" :class="attendanceLocation ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">{{ attendanceLocation ? 'Configured' : 'Required' }}</span></div>
-          <form class="space-y-4" @submit.prevent="saveGeofence">
-            <div class="grid gap-4 sm:grid-cols-3">
-              <div>
-                <label class="flex items-center text-sm font-medium text-gray-700 mb-1.5">Latitude<InfoTooltip text="Please provide the latitude." /></label>
-                <input v-model.number="settingsForm.lat" required type="number" step="any" class="w-full border border-gray-300 px-3 py-2 rounded-lg outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+        <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="border-b border-slate-200 bg-linear-to-r from-sky-50 via-white to-white px-5 py-5 sm:px-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div class="flex gap-3.5">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm shadow-sky-200">
+                  <MapPin class="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">Attendance Work Area</h3>
+                  <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-600">Choose the approved workplace where staff can time in and out. Attendance is accepted only while they are inside the distance shown on the map.</p>
+                </div>
               </div>
-              <div>
-                <label class="flex items-center text-sm font-medium text-gray-700 mb-1.5">Longitude<InfoTooltip text="Please provide the longitude." /></label>
-                <input v-model.number="settingsForm.lng" required type="number" step="any" class="w-full border border-gray-300 px-3 py-2 rounded-lg outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+              <span class="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold" :class="attendanceLocation ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'">
+                <CheckCircle2 v-if="attendanceLocation" class="h-3.5 w-3.5" />
+                <ShieldCheck v-else class="h-3.5 w-3.5" />
+                {{ attendanceLocation ? 'Work area active' : 'Setup required' }}
+              </span>
+            </div>
+          </div>
+
+          <form class="grid gap-0 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]" @submit.prevent="saveAttendanceWorkArea">
+            <div class="border-b border-slate-200 p-5 lg:border-b-0 lg:border-r sm:p-6">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p class="font-semibold text-slate-900">Work area map</p>
+                  <p class="mt-0.5 text-xs text-slate-500">Drag the marker to adjust the workplace center.</p>
+                </div>
+                <span class="rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">{{ settingsForm.radius_meters }} m allowed distance</span>
               </div>
-              <div>
-                <label class="flex items-center text-sm font-medium text-gray-700 mb-1.5">Radius (meters)<InfoTooltip text="Please provide the radius meters." /></label>
-                <input v-model.number="settingsForm.radius_meters" required type="number" min="20" max="5000" class="w-full border border-gray-300 px-3 py-2 rounded-lg outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
+              <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner">
+                <div ref="mapContainer" class="h-80 w-full sm:h-96"></div>
+              </div>
+              <div class="mt-3 flex items-start gap-2 rounded-xl bg-slate-50 px-3.5 py-3 text-xs leading-5 text-slate-600">
+                <ShieldCheck class="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+                The blue circle is the approved attendance area. Staff outside it will be asked to move closer before recording attendance.
               </div>
             </div>
-            <div class="overflow-hidden rounded-xl border border-gray-200"><div ref="mapContainer" class="h-64 w-full"></div></div>
-            <p v-if="settingsMessage" class="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">{{ settingsMessage }}</p><p v-if="settingsError" class="rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ settingsError }}</p>
-            <div class="flex flex-col gap-2 sm:flex-row sm:justify-between"><button type="button" :disabled="isLocatingAdmin" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-wait disabled:opacity-60" @click="useAdminLocation"><MapPin class="h-4 w-4" /> {{ isLocatingAdmin ? 'Improving GPS accuracy…' : 'Use My Location' }}</button><button type="submit" :disabled="isSavingLocation || isLocatingAdmin" class="rounded-lg bg-sky-600 px-5 py-2 font-semibold text-white hover:bg-sky-700 disabled:bg-gray-400">{{ isSavingLocation ? 'Saving…' : 'Save Geofence' }}</button></div>
+
+            <div class="flex flex-col p-5 sm:p-6">
+              <div>
+                <p class="font-semibold text-slate-900">Workplace details</p>
+                <p class="mt-1 text-sm text-slate-500">Capture your current position or enter the exact coordinates.</p>
+              </div>
+
+              <button type="button" :disabled="isLocatingAdmin" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-bold text-sky-700 transition hover:bg-sky-100 disabled:cursor-wait disabled:opacity-60" @click="useAdminLocation">
+                <Navigation class="h-4 w-4" :class="isLocatingAdmin ? 'animate-pulse' : ''" />
+                {{ isLocatingAdmin ? 'Finding your precise location…' : 'Set to My Current Location' }}
+              </button>
+
+              <div class="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <span class="h-px flex-1 bg-slate-200"></span>Precise settings<span class="h-px flex-1 bg-slate-200"></span>
+              </div>
+
+              <div class="space-y-4">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <div>
+                    <label for="attendance-work-area-lat" class="mb-1.5 flex items-center text-sm font-semibold text-slate-700">Latitude<InfoTooltip text="The north-south coordinate of the workplace center." /></label>
+                    <input id="attendance-work-area-lat" v-model.number="settingsForm.lat" required type="number" step="any" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+                  </div>
+                  <div>
+                    <label for="attendance-work-area-lng" class="mb-1.5 flex items-center text-sm font-semibold text-slate-700">Longitude<InfoTooltip text="The east-west coordinate of the workplace center." /></label>
+                    <input id="attendance-work-area-lng" v-model.number="settingsForm.lng" required type="number" step="any" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+                  </div>
+                </div>
+                <div>
+                  <label for="attendance-work-area-distance" class="mb-1.5 flex items-center text-sm font-semibold text-slate-700">Allowed distance from workplace<InfoTooltip text="Staff must be within this distance of the marker to record attendance." /></label>
+                  <div class="relative">
+                    <input id="attendance-work-area-distance" v-model.number="settingsForm.radius_meters" required type="number" min="20" max="5000" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pr-16 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200" />
+                    <span class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">meters</span>
+                  </div>
+                  <p class="mt-1.5 text-xs text-slate-500">Recommended: 50–150 meters for a typical workplace.</p>
+                </div>
+              </div>
+
+              <div class="mt-5 space-y-3">
+                <p v-if="settingsMessage" class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">{{ settingsMessage }}</p>
+                <p v-if="settingsError" class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800">{{ settingsError }}</p>
+              </div>
+
+              <button type="submit" :disabled="isSavingLocation || isLocatingAdmin" class="mt-auto w-full rounded-xl bg-sky-600 px-5 py-3 text-sm font-bold text-white shadow-sm shadow-sky-200 transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">
+                {{ isSavingLocation ? 'Saving work area…' : 'Save Attendance Work Area' }}
+              </button>
+            </div>
           </form>
         </article>
       </template>

@@ -5,7 +5,7 @@ import { onMounted, reactive, ref } from 'vue'
 import api from '../../../../api/api'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
-import { User } from 'lucide-vue-next'
+import { CalendarDays, Phone, ShieldCheck, Trash2, User } from 'lucide-vue-next'
 import { resolveImageUrl } from '../../../../services/images'
 
 interface StaffMember {
@@ -246,43 +246,47 @@ onMounted(async () => {
         <div
           v-for="staff in staffList"
           :key="staff.id"
-          class="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md"
+          class="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-900/10 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-800"
         >
-          <!-- Top Badge & Avatar -->
-          <div>
-            <div class="flex items-start justify-between mb-4">
-              <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-linear-to-br from-slate-50 to-slate-100 shadow-xs overflow-hidden">
-                <img v-if="staff.profile_image" :src="getImageUrl(staff.profile_image)" :alt="staff.email" class="h-full w-full object-cover" />
-                <span v-else class="text-xl font-bold text-sky-700">{{ staff.email.slice(0, 1).toUpperCase() }}</span>
-              </div>
-              <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 tracking-wider uppercase">
-                Staff
-              </span>
-            </div>
-
-            <!-- Profile Info -->
-            <div class="space-y-1">
-              <h4 class="truncate text-base font-bold text-slate-900" :title="staff.email">{{ staff.email }}</h4>
-              <p class="truncate text-xs font-medium text-slate-500">
-                {{ staff.mobile_phone || 'No phone recorded' }}
-              </p>
-            </div>
+          <!-- Profile-style color header -->
+          <div class="relative h-24 overflow-hidden bg-linear-to-br from-sky-500 via-blue-600 to-indigo-700 dark:from-sky-800 dark:via-blue-900 dark:to-indigo-950">
+            <div class="absolute -right-8 -top-10 h-28 w-28 rounded-full border border-white/15 bg-white/10"></div>
+            <div class="absolute -bottom-12 left-8 h-24 w-24 rounded-full bg-cyan-300/15 blur-xl"></div>
+            <span class="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-slate-950/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+              <ShieldCheck class="h-3.5 w-3.5 text-sky-200" /> Staff account
+            </span>
           </div>
 
-          <!-- Footer Metadata & Action -->
-          <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <div>
-              <span class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400">Joined</span>
-              <span class="font-medium text-slate-700">
-                {{ new Date(staff.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) }}
-              </span>
+          <div class="relative flex flex-1 flex-col px-5 pb-5">
+            <div class="-mt-10 mb-4">
+              <div class="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-linear-to-br from-sky-50 to-slate-100 shadow-lg dark:border-slate-900 dark:from-slate-700 dark:to-slate-800">
+                <img v-if="staff.profile_image" :src="getImageUrl(staff.profile_image)" :alt="staff.email" class="h-full w-full object-cover" />
+                <span v-else class="text-2xl font-black text-sky-700 dark:text-sky-300">{{ staff.email.slice(0, 1).toUpperCase() }}</span>
+              </div>
             </div>
+
+            <div class="min-w-0">
+              <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-400">WeldTrack team member</p>
+              <h4 class="mt-1 truncate text-base font-bold text-slate-900 dark:text-white" :title="staff.email">{{ staff.email }}</h4>
+            </div>
+
+            <div class="mt-5 space-y-2.5 rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-800/50">
+              <div class="flex items-center gap-2.5 text-slate-600 dark:text-slate-300">
+                <Phone class="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+                <span class="truncate font-medium">{{ staff.mobile_phone || 'No phone number added' }}</span>
+              </div>
+              <div class="flex items-center gap-2.5 text-slate-600 dark:text-slate-300">
+                <CalendarDays class="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+                <span><span class="text-slate-400">Joined</span> · {{ new Date(staff.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) }}</span>
+              </div>
+            </div>
+
             <button
               type="button"
               @click="openDeleteModal(staff)"
-              class="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 hover:border-red-300"
+              class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2.5 text-xs font-bold text-red-600 transition-colors hover:border-red-300 hover:bg-red-50 dark:border-red-900/60 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/30"
             >
-              Delete
+              <Trash2 class="h-3.5 w-3.5" /> Remove Staff Account
             </button>
           </div>
         </div>

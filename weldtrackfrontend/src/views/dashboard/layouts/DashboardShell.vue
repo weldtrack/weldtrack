@@ -126,7 +126,7 @@ function handleLogout() {
     :class="['dashboard-theme-page min-h-screen overflow-x-hidden lg:pl-80', dashboardThemeClass]"
     :style="{ '--role-accent': props.accent }"
   >
-    <header class="dashboard-header fixed top-0 right-0 z-30 flex h-[3.25rem] w-full items-center justify-between px-4 sm:px-6 lg:w-[calc(100%-320px)]">
+    <header class="dashboard-header fixed top-0 right-0 z-30 flex h-20 w-full items-center justify-between px-4 sm:px-6 lg:w-[calc(100%-320px)]">
       <button
         type="button"
         class="dashboard-icon-btn inline-flex lg:hidden"
@@ -179,7 +179,7 @@ function handleLogout() {
     >
       <div class="gauge-rail" aria-hidden="true"></div>
 
-      <div class="border-b px-5 py-5 lg:px-6 dashboard-border-soft">
+      <div class="flex h-20 shrink-0 items-center border-b px-5 lg:px-6 dashboard-border-soft">
         <div class="flex items-start justify-between gap-4">
           <div class="flex items-center gap-3">
             <img src="/weldtrack.png" alt="WeldTrack Logo" class="h-10 w-auto shrink-0 object-contain" />
@@ -272,7 +272,7 @@ function handleLogout() {
     </aside>
 
     <div class="flex-1 lg:h-screen lg:overflow-y-auto">
-      <section class="p-4 pt-18 sm:p-6 sm:pt-20 lg:p-8 lg:pt-18">
+      <section class="p-4 pt-24 sm:p-6 sm:pt-[6.5rem] lg:p-8 lg:pt-28">
         <slot />
       </section>
     </div>
