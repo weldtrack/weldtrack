@@ -16,7 +16,7 @@ idna==3.13
 Mako==1.3.12
 MarkupSafe==3.0.3
 minio==7.2.15
-psycopg2-binary==2.9.11
+psycopg[binary]
 pycparser==3.0
 pydantic==2.13.3
 pydantic_core==2.46.3
