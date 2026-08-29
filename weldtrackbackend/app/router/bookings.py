@@ -388,6 +388,11 @@ def add_booking_materials(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Inventory item {line.itemId} not found",
             )
+        if item.is_archived:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"{item.name} is archived and cannot be used",
+            )
 
         qty = int(line.quantity)
         if qty <= 0:

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 
 from sqlalchemy.orm import Session
@@ -20,10 +22,17 @@ router = APIRouter(prefix="/inventory", tags=["inventory"])
 def list_inventory(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
+    archived: bool = Query(False),
     db: Session = Depends(get_db),
 ):
-    """Get all inventory items"""
-    query = select(InventoryItem).offset(skip).limit(limit)
+    """Get active or archived inventory items."""
+    query = (
+        select(InventoryItem)
+        .where(InventoryItem.is_archived.is_(archived))
+        .order_by(desc(InventoryItem.date_added))
+        .offset(skip)
+        .limit(limit)
+    )
     items = db.scalars(query).all()
     return items
 
@@ -71,6 +80,11 @@ def update_inventory_item(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
         )
+    if item.is_archived:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Restore this item before updating it",
+        )
 
     for key, value in payload.model_dump(exclude_unset=True).items():
         if hasattr(item, key):
@@ -93,6 +107,11 @@ def partial_update_inventory_item(
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
+        )
+    if item.is_archived:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Restore this item before updating it",
         )
 
     old_quantity = item.quantity or 0
@@ -127,15 +146,54 @@ def delete_inventory_item(
     _admin=Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    """Delete an inventory item"""
+    """Archive an inventory item (kept for backwards-compatible clients)."""
     item = db.get(InventoryItem, item_id)
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
         )
 
-    db.delete(item)
+    item.is_archived = True
+    item.archived_at = datetime.now(timezone.utc)
     db.commit()
+
+
+@router.post("/{item_id}/archive", response_model=InventoryItemResponse)
+def archive_inventory_item(
+    item_id: str,
+    _admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Move an active inventory item to the archive."""
+    item = db.get(InventoryItem, item_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    if item.is_archived:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Item is already archived")
+    item.is_archived = True
+    item.archived_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.post("/{item_id}/restore", response_model=InventoryItemResponse)
+def restore_inventory_item(
+    item_id: str,
+    _admin=Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Restore an archived inventory item to active inventory."""
+    item = db.get(InventoryItem, item_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    if not item.is_archived:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Item is already active")
+    item.is_archived = False
+    item.archived_at = None
+    db.commit()
+    db.refresh(item)
+    return item
 
 
 @router.get("/movements/history", response_model=list[StockMovementResponse])

@@ -26,6 +26,8 @@ class InventoryItemUpdate(BaseModel):
 class InventoryItemResponse(InventoryItemBase):
     id: str
     date_added: datetime
+    is_archived: bool = False
+    archived_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 

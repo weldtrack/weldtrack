@@ -6,6 +6,8 @@ export interface InventoryItem {
   supplier: string
   dateAdded: string
   lowStockThreshold: number
+  isArchived: boolean
+  archivedAt: string | null
 }
 
 export type MovementType = 'stock-in' | 'stock-out'
@@ -31,6 +33,8 @@ export type BackendInventoryItem = {
   supplier?: string | null
   date_added?: string
   low_stock_threshold: number
+  is_archived?: boolean
+  archived_at?: string | null
 }
 
 export type BackendStockMovement = {

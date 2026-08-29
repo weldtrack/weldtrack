@@ -6,6 +6,7 @@ import * as inventoryService from '../api/inventory'
 export const useInventoryStore = defineStore('inventory', {
   state: () => ({
     items: [] as InventoryItem[],
+    archivedItems: [] as InventoryItem[],
     movements: [] as StockMovement[],
   }),
   actions: {
@@ -22,6 +23,11 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
 
+    async fetchArchivedInventory() {
+      this.archivedItems = await inventoryService.fetchInventory(true)
+      return this.archivedItems
+    },
+
     async fetchMovements(params?: { bookingId?: string; taskId?: string; itemId?: string }) {
       try {
         this.movements = await inventoryService.fetchMovements(params)
@@ -35,7 +41,7 @@ export const useInventoryStore = defineStore('inventory', {
       }
     },
 
-    async addItem(payload: Omit<InventoryItem, 'id'>) {
+    async addItem(payload: Omit<InventoryItem, 'id' | 'isArchived' | 'archivedAt'>) {
       const created = await inventoryService.addItem(payload)
       this.items.unshift(created)
       return created
@@ -50,9 +56,16 @@ export const useInventoryStore = defineStore('inventory', {
       return updated
     },
 
-    async deleteItem(id: string) {
-      await inventoryService.deleteItem(id)
+    async archiveItem(id: string) {
+      const archived = await inventoryService.archiveItem(id)
       this.items = this.items.filter((i) => i.id !== id)
+      this.archivedItems.unshift(archived)
+    },
+
+    async restoreItem(id: string) {
+      const restored = await inventoryService.restoreItem(id)
+      this.archivedItems = this.archivedItems.filter((i) => i.id !== id)
+      this.items.unshift(restored)
     },
 
     async stockIn(itemId: string, qty: number) {

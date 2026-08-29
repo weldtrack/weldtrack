@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Archive, Info, LoaderCircle, PackagePlus } from 'lucide-vue-next'
+import { Archive, ArchiveRestore, Info, LoaderCircle, PackagePlus } from 'lucide-vue-next'
 import { useInventoryStore } from '../../../../stores/inventory'
 import { type InventoryItem } from '../../../../types/inventory'
 import { useModalStore } from '../../../../stores/modal'
@@ -16,6 +16,7 @@ const editingItem = ref<InventoryItem | null>(null)
 const selectedItems = ref<Set<string>>(new Set())
 const selectedStockAdjustment = ref<number | null>(null)
 const searchTerm = ref('')
+const inventoryView = ref<'active' | 'archived'>('active')
 const isSubmitting = ref(false)
 const isStockSubmitting = ref(false)
 const formError = ref('')
@@ -29,9 +30,10 @@ const formData = reactive({
 })
 
 const filteredInventory = computed(() => {
+  const source = inventoryView.value === 'active' ? store.items : store.archivedItems
   const query = searchTerm.value.trim().toLowerCase()
-  if (!query) return store.items
-  return store.items.filter((item) => item.name.toLowerCase().includes(query) || item.supplier.toLowerCase().includes(query))
+  if (!query) return source
+  return source.filter((item) => item.name.toLowerCase().includes(query) || item.supplier.toLowerCase().includes(query))
 })
 
 const totalItems = computed(() => store.items.reduce((sum, item) => sum + item.quantity, 0))
@@ -46,7 +48,7 @@ const isLoading = ref(true)
 onMounted(async () => {
   isLoading.value = true
   try {
-    await Promise.all([store.fetchInventory(), store.fetchMovements()])
+    await Promise.all([store.fetchInventory(), store.fetchArchivedInventory(), store.fetchMovements()])
   } finally {
     isLoading.value = false
   }
@@ -176,14 +178,24 @@ async function handleSubmit() {
   }
 }
 
-async function handleDelete(id: string) {
+async function handleArchive(id: string) {
   modalStore.open({
-    title: 'Delete material?',
-    message: 'This action will permanently remove the item from inventory.',
-    variant: 'error',
-    confirmLabel: 'Delete',
+    title: 'Archive material?',
+    message: 'This material will be hidden from active inventory but can be restored later.',
+    variant: 'warning',
+    confirmLabel: 'Archive',
     cancelLabel: 'Cancel',
-    onConfirm: () => store.deleteItem(id),
+    onConfirm: () => store.archiveItem(id),
+  })
+}
+
+async function handleRestore(id: string) {
+  modalStore.open({
+    title: 'Restore material?',
+    message: 'This material will return to active inventory with its existing stock information.',
+    confirmLabel: 'Restore',
+    cancelLabel: 'Cancel',
+    onConfirm: () => store.restoreItem(id),
   })
 }
 
@@ -232,6 +244,7 @@ function formatDateTime(value?: string) {
           </div>
         </div>
         <button
+          v-if="inventoryView === 'active'"
           type="button"
           class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 shrink-0"
           @click="openAddDialog"
@@ -243,8 +256,25 @@ function formatDateTime(value?: string) {
         </button>
       </div>
 
+      <div class="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <button
+          type="button"
+          :class="['rounded-lg px-4 py-2 text-sm font-semibold transition-colors', inventoryView === 'active' ? 'bg-sky-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800']"
+          @click="inventoryView = 'active'; selectedItems.clear()"
+        >
+          Active ({{ store.items.length }})
+        </button>
+        <button
+          type="button"
+          :class="['rounded-lg px-4 py-2 text-sm font-semibold transition-colors', inventoryView === 'archived' ? 'bg-slate-700 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800']"
+          @click="inventoryView = 'archived'; selectedItems.clear()"
+        >
+          Archived ({{ store.archivedItems.length }})
+        </button>
+      </div>
+
       <!-- Summary Metric Cards -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div v-if="inventoryView === 'active'" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="rounded-xl border border-sky-200 bg-sky-50 p-5 dark:border-sky-900/50 dark:bg-sky-950/40">
           <p class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Total Items</p>
           <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ totalItems }}</p>
@@ -275,7 +305,7 @@ function formatDateTime(value?: string) {
       </div>
 
       <!-- Selection Action Alert -->
-      <div v-if="selectedCount > 0" class="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/50 dark:bg-sky-950/40">
+      <div v-if="inventoryView === 'active' && selectedCount > 0" class="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/50 dark:bg-sky-950/40">
         <div>
           <p class="font-bold text-sky-900 dark:text-sky-300 text-sm">{{ selectedCount }} item(s) selected for bulk action</p>
         </div>
@@ -296,6 +326,7 @@ function formatDateTime(value?: string) {
               <tr class="text-left">
                 <th class="w-12 px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   <input
+                    v-if="inventoryView === 'active'"
                     type="checkbox"
                     :checked="allSelected"
                     class="h-4 w-4 cursor-pointer rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-700"
@@ -316,6 +347,7 @@ function formatDateTime(value?: string) {
               <tr v-for="item in filteredInventory" :key="item.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <input
+                    v-if="inventoryView === 'active'"
                     type="checkbox"
                     :checked="selectedItems.has(item.id)"
                     class="h-4 w-4 cursor-pointer rounded border-gray-300 text-sky-600 focus:ring-sky-500"
@@ -330,7 +362,13 @@ function formatDateTime(value?: string) {
                 <td class="px-6 py-4 text-gray-600 whitespace-nowrap">{{ formatDate(item.dateAdded) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span
-                    v-if="item.quantity <= item.lowStockThreshold"
+                    v-if="inventoryView === 'archived'"
+                    class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-300 whitespace-nowrap"
+                  >
+                    Archived
+                  </span>
+                  <span
+                    v-else-if="item.quantity <= item.lowStockThreshold"
                     class="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700 ring-1 ring-inset ring-orange-600/10 whitespace-nowrap"
                   >
                     <svg class="mr-1 h-3.5 w-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,17 +382,24 @@ function formatDateTime(value?: string) {
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                   <div class="flex gap-3 justify-end">
-                    <button type="button" class="text-sky-600 transition-colors hover:text-sky-800" @click="openEditDialog(item)">
+                    <button v-if="inventoryView === 'active'" type="button" title="Edit material" class="text-sky-600 transition-colors hover:text-sky-800" @click="openEditDialog(item)">
                       <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
-                    <button type="button" class="text-red-600 transition-colors hover:text-red-800" @click="handleDelete(item.id)">
-                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                    <button v-if="inventoryView === 'active'" type="button" title="Archive material" class="text-amber-600 transition-colors hover:text-amber-800" @click="handleArchive(item.id)">
+                      <Archive class="h-5 w-5" />
+                    </button>
+                    <button v-else type="button" title="Restore material" class="inline-flex items-center gap-1.5 text-emerald-600 transition-colors hover:text-emerald-800" @click="handleRestore(item.id)">
+                      <ArchiveRestore class="h-5 w-5" />
+                      <span class="text-sm font-semibold">Restore</span>
                     </button>
                   </div>
+                </td>
+              </tr>
+              <tr v-if="filteredInventory.length === 0">
+                <td colspan="9" class="px-6 py-12 text-center text-sm text-slate-500">
+                  {{ inventoryView === 'archived' ? 'No archived materials.' : 'No active materials found.' }}
                 </td>
               </tr>
             </tbody>

@@ -10,6 +10,8 @@ export function toInventoryItem(item: BackendInventoryItem): InventoryItem {
     supplier: item.supplier ?? '',
     dateAdded: item.date_added ?? '',
     lowStockThreshold: Number(item.low_stock_threshold ?? 0),
+    isArchived: Boolean(item.is_archived),
+    archivedAt: item.archived_at ?? null,
   }
 }
 
@@ -28,8 +30,8 @@ export function toStockMovement(movement: BackendStockMovement): StockMovement {
   }
 }
 
-export async function fetchInventory() {
-  const { data } = await api.get<BackendInventoryItem[]>('/inventory')
+export async function fetchInventory(archived = false) {
+  const { data } = await api.get<BackendInventoryItem[]>('/inventory', { params: { archived } })
   return Array.isArray(data) ? data.map(toInventoryItem) : []
 }
 
@@ -44,7 +46,7 @@ export async function fetchMovements(params?: { bookingId?: string; taskId?: str
   return Array.isArray(data) ? data.map(toStockMovement) : []
 }
 
-export async function addItem(payload: Omit<InventoryItem, 'id'>) {
+export async function addItem(payload: Omit<InventoryItem, 'id' | 'isArchived' | 'archivedAt'>) {
   const { data } = await api.post<BackendInventoryItem>('/inventory', {
     name: payload.name,
     quantity: payload.quantity,
@@ -68,6 +70,12 @@ export async function updateItem(id: string, patch: Partial<InventoryItem>) {
   return toInventoryItem(data)
 }
 
-export async function deleteItem(id: string) {
-  await api.delete(`/inventory/${id}`)
+export async function archiveItem(id: string) {
+  const { data } = await api.post<BackendInventoryItem>(`/inventory/${id}/archive`)
+  return toInventoryItem(data)
+}
+
+export async function restoreItem(id: string) {
+  const { data } = await api.post<BackendInventoryItem>(`/inventory/${id}/restore`)
+  return toInventoryItem(data)
 }
