@@ -6,6 +6,7 @@ import { useModalStore } from '../../stores/modal'
 import { getUserFriendlyApiError } from '../../services/errorMessage'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
 import { useThemeMode } from '../../composables/useThemeMode'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -20,6 +21,8 @@ const cooldownSeconds = 60
 const signupError = ref('')
 const isSubmittingSignup = ref(false)
 const isVerifyingCode = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const isProgressActive = computed(() => step.value >= 2)
 const leaveWarningMessage = 'Progress data will be deleted if you go back. Leave this page?'
 const pendingRoute = ref<string | null>(null)
@@ -276,11 +279,15 @@ onBeforeUnmount(() => {
                     <input
                       id="password"
                       v-model="form.password"
-                      type="password"
+                      :type="showPassword ? 'text' : 'password'"
                       placeholder="••••••••"
-                      class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-11 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                      class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-24 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                     />
-                    <div class="absolute inset-y-0 right-3 flex items-center">
+                    <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">
+                      <EyeOff v-if="showPassword" class="h-5 w-5" aria-hidden="true" />
+                      <Eye v-else class="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <div class="absolute inset-y-0 right-12 flex items-center">
                       <div class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-white/20 bg-white/5 text-[11px] font-black text-slate-300 shadow-sm transition group-hover:border-cyan-400/60 group-hover:text-cyan-200 group-focus-within:border-cyan-400/60 group-focus-within:text-cyan-200">
                         !
                         <div class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-left text-[11px] leading-snug text-slate-200 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
@@ -293,13 +300,19 @@ onBeforeUnmount(() => {
 
                 <div class="space-y-2">
                   <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="confirm">Confirm Password</label>
+                  <div class="relative">
                   <input
                     id="confirm"
                     v-model="form.confirm"
-                    type="password"
+                    :type="showConfirmPassword ? 'text' : 'password'"
                     placeholder="••••••••"
-                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-12 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                   />
+                  <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'" :aria-pressed="showConfirmPassword" @click="showConfirmPassword = !showConfirmPassword">
+                    <EyeOff v-if="showConfirmPassword" class="h-5 w-5" aria-hidden="true" />
+                    <Eye v-else class="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  </div>
                 </div>
 
                 <button

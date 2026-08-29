@@ -155,8 +155,12 @@
             <div>
               <label class="flex items-center text-sm font-semibold text-slate-700 mb-1.5 dark:text-slate-300">New Password<InfoTooltip text="Please provide the new password." /></label>
               <div class="group relative">
-                <input v-model="resetForm.newPassword" type="password" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:focus:ring-blue-900" placeholder="Enter new password" />
-                <div class="absolute inset-y-0 right-3 flex items-center">
+                <input v-model="resetForm.newPassword" :type="showNewPassword ? 'text' : 'password'" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-24 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:focus:ring-blue-900" placeholder="Enter new password" />
+                <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:hover:text-blue-400" :aria-label="showNewPassword ? 'Hide new password' : 'Show new password'" :aria-pressed="showNewPassword" @click="showNewPassword = !showNewPassword">
+                  <EyeOff v-if="showNewPassword" class="h-5 w-5" aria-hidden="true" />
+                  <Eye v-else class="h-5 w-5" aria-hidden="true" />
+                </button>
+                <div class="absolute inset-y-0 right-12 flex items-center">
                   <div class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-black text-slate-500 shadow-sm transition dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400">
                     !
                     <div class="pointer-events-none absolute right-0 top-full z-[99999] mt-2 w-56 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-xs leading-snug text-slate-700 opacity-0 shadow-2xl transition group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -169,7 +173,13 @@
             
             <div>
               <label class="flex items-center text-sm font-semibold text-slate-700 mb-1.5 dark:text-slate-300">Confirm Password<InfoTooltip text="Please provide the confirm password." /></label>
-              <input v-model="resetForm.confirmPassword" type="password" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:focus:ring-blue-900" placeholder="Re-enter new password" />
+              <div class="relative">
+                <input v-model="resetForm.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:focus:ring-blue-900" placeholder="Re-enter new password" />
+                <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:hover:text-blue-400" :aria-label="showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'" :aria-pressed="showConfirmPassword" @click="showConfirmPassword = !showConfirmPassword">
+                  <EyeOff v-if="showConfirmPassword" class="h-5 w-5" aria-hidden="true" />
+                  <Eye v-else class="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
@@ -188,7 +198,7 @@
 <script setup lang="ts">
 import InfoTooltip from '../../components/ui/InfoTooltip.vue'
 import { computed, ref, onMounted, watch } from 'vue';
-import { Camera, ChevronRight, Mail, Key, Phone, ShieldCheck } from 'lucide-vue-next';
+import { Camera, ChevronRight, Eye, EyeOff, Mail, Key, Phone, ShieldCheck } from 'lucide-vue-next';
 import { getProfile, updateProfile, uploadProfileImage } from '../../services/profile.service';
 import type { UserRead } from '../../types/auth';
 import { useAuthStore } from '../../stores/auth';
@@ -204,6 +214,8 @@ let debounceTimer: ReturnType<typeof setTimeout>;
 const showPasswordModal = ref(false);
 const resetStep = ref(1);
 const resetForm = ref({ email: '', code: '', newPassword: '', confirmPassword: '' });
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
 const resetError = ref('');
 const isSubmitting = ref(false);
 const canEditEmail = computed(() => ['staff', 'admin'].includes(authStore.role.trim().toLowerCase()));

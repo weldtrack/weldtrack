@@ -5,7 +5,7 @@ import { onMounted, reactive, ref } from 'vue'
 import api from '../../../../api/api'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import ModalShell from '../../../../components/ui/ModalShell.vue'
-import { CalendarDays, Phone, ShieldCheck, Trash2, User } from 'lucide-vue-next'
+import { CalendarDays, Eye, EyeOff, Phone, ShieldCheck, Trash2, User } from 'lucide-vue-next'
 import { resolveImageUrl } from '../../../../services/images'
 
 interface StaffMember {
@@ -21,6 +21,8 @@ const createStaffForm = reactive({ email: '', password: '', confirmPassword: '',
 const creatingStaff = ref(false)
 const createStaffError = ref('')
 const createStaffSuccess = ref('')
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 const staffList = ref<StaffMember[]>([])
 const showDeleteModal = ref(false)
@@ -177,14 +179,20 @@ onMounted(async () => {
                 Password <span class="text-red-500 ml-1">*</span>
                 <InfoTooltip text="Must be at least 8 characters long." />
               </label>
+              <div class="relative">
               <input
                 id="create-staff-password"
                 v-model="createStaffForm.password"
-                type="password"
+                :type="showPassword ? 'text' : 'password'"
                 required
                 placeholder="••••••••"
-                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
               />
+              <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">
+                <EyeOff v-if="showPassword" class="h-5 w-5" aria-hidden="true" />
+                <Eye v-else class="h-5 w-5" aria-hidden="true" />
+              </button>
+              </div>
             </div>
 
             <div>
@@ -192,14 +200,20 @@ onMounted(async () => {
                 Confirm Password <span class="text-red-500 ml-1">*</span>
                 <InfoTooltip text="Re-enter the password to verify." />
               </label>
+              <div class="relative">
               <input
                 id="create-staff-confirm-password"
                 v-model="createStaffForm.confirmPassword"
-                type="password"
+                :type="showConfirmPassword ? 'text' : 'password'"
                 required
                 placeholder="••••••••"
-                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
               />
+              <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500" :aria-label="showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'" :aria-pressed="showConfirmPassword" @click="showConfirmPassword = !showConfirmPassword">
+                <EyeOff v-if="showConfirmPassword" class="h-5 w-5" aria-hidden="true" />
+                <Eye v-else class="h-5 w-5" aria-hidden="true" />
+              </button>
+              </div>
             </div>
           </div>
 
