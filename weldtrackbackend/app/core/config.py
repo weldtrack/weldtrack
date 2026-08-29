@@ -36,7 +36,6 @@ class Settings(BaseSettings):
     # Email & Integrations
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "noreply@ruzzgd.dev"
-    EMAIL_CHECKER_API_KEY: str = ""
 
     # Object storage
     MINIO_ENDPOINT: str = "localhost:9000"

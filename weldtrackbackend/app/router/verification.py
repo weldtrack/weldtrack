@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import os
 from datetime import datetime, timedelta, timezone
 
-import requests
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -24,37 +22,9 @@ from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["verification"])
 
-EMAIL_CHECKER = settings.EMAIL_CHECKER_API_KEY
-
-
 @router.post("/signup", status_code=status.HTTP_200_OK)
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
     """Request signup — validate email and send verification code. Account is not created yet."""
-
-    if EMAIL_CHECKER:
-        url = f"https://emailreputation.abstractapi.com/v1/?api_key={EMAIL_CHECKER}&email={payload.email}"
-        try:
-            response = requests.get(url, timeout=20)
-            data = response.json()
-            
-            is_disposable = data.get("email_quality", {}).get("is_disposable", False)
-            
-            if is_disposable:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Disposable email addresses are not allowed. Please use a permanent email.",
-                )
-        except HTTPException:
-            raise  
-        except requests.exceptions.Timeout:
-            
-            print("Abstract API Error: Request timed out after 20 seconds.")
-            pass
-        except Exception as e:
-            print(f"Abstract API Error: {e}")
-            pass
-    else:
-        print("Warning: EMAIL_CHECKER_API_KEY is missing from environment variables!")
 
     if get_user_by_email(db, payload.email):
         raise HTTPException(
