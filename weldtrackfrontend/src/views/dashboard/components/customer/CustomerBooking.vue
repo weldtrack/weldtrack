@@ -267,7 +267,8 @@ function getMaterialCostMessage(booking: BookingItem) {
 }
 
 function getTotalCost(booking: BookingItem) {
-  return getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType)) + (booking.materialCost ?? 0)
+  const labor = booking.actualLaborCost ?? getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))
+  return booking.totalPrice ?? labor + (booking.materialCost ?? 0)
 }
 
 function getScheduleMessage(booking: BookingItem) {
@@ -429,7 +430,7 @@ function getBookingTimeline(booking: BookingItem) {
 
               <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Labor Cost /hr</p>
-                <p class="mt-1 font-semibold text-slate-900 dark:text-slate-100 truncate">{{ formatCurrency(getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-slate-100 truncate">{{ formatCurrency(booking.actualLaborCost ?? getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
               </div>
 
               <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">

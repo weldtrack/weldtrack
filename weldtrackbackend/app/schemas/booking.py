@@ -33,6 +33,8 @@ class BookingBase(BaseModel):
     preferred_date: Optional[str] = None
     schedule_date: Optional[str] = None
     estimated_cost: Optional[float] = None
+    estimated_labor_hours: Optional[float] = None
+    actual_labor_cost: Optional[float] = None
     material_cost: Optional[float] = None
     total_price: Optional[float] = None
     # location
@@ -57,6 +59,8 @@ class BookingUpdate(BaseModel):
     preferred_date: Optional[str] = None
     schedule_date: Optional[str] = None
     estimated_cost: Optional[float] = None
+    estimated_labor_hours: Optional[float] = None
+    actual_labor_cost: Optional[float] = None
     material_cost: Optional[float] = None
     total_price: Optional[float] = None
     # location

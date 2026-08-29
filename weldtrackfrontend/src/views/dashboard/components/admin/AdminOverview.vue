@@ -42,8 +42,9 @@ function formatDate(value?: string) {
   })
 }
 
-function getBookingCost(booking: { projectType?: string; estimatedCost?: number; materialCost?: number; totalPrice?: number }) {
-  return Number(booking.totalPrice ?? (getServicePriceDisplay(booking.projectType || '', booking.estimatedCost) + Number(booking.materialCost ?? 0)))
+function getBookingCost(booking: { projectType?: string; estimatedCost?: number; actualLaborCost?: number; materialCost?: number; totalPrice?: number }) {
+  const labor = booking.actualLaborCost ?? getServicePriceDisplay(booking.projectType || '', booking.estimatedCost)
+  return Number(booking.totalPrice ?? (labor + Number(booking.materialCost ?? 0)))
 }
 
 const customers = computed(() => users.value.filter((user) => user.role === 'customer'))
@@ -79,7 +80,7 @@ const recentCompletedProjects = computed(() =>
       name: booking.projectType,
       client: booking.customerName || booking.email || '-',
       materialsCost: Number(booking.materialCost ?? 0),
-      laborCost: getServicePriceDisplay(booking.projectType, booking.estimatedCost),
+      laborCost: booking.actualLaborCost ?? getServicePriceDisplay(booking.projectType, booking.estimatedCost),
       totalCost: getBookingCost(booking),
     }))
     .sort((a, b) => new Date(b.endDate || 0).getTime() - new Date(a.endDate || 0).getTime()),

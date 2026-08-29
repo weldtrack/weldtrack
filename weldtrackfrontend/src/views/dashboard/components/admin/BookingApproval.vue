@@ -82,6 +82,7 @@ const isApprovalModalOpen = ref(false)
 const selectedBooking = ref<BookingItem | null>(null)
 const approvalForm = reactive({
   scheduleDate: '',
+  estimatedLaborHours: '1',
 })
 const isCompleteModalOpen = ref(false)
 const completionForm = reactive({
@@ -193,6 +194,7 @@ function formatDate(value: string) {
 async function openApprovalModal(booking: BookingItem) {
   selectedBooking.value = booking
   approvalForm.scheduleDate = String(booking.scheduleDate ?? booking.preferredDate ?? '')
+  approvalForm.estimatedLaborHours = String(booking.estimatedLaborHours ?? 1)
   if (!Object.keys(servicePriceMap.value).length) {
     await loadServicePrices()
   }
@@ -216,6 +218,7 @@ function closeApprovalModal() {
   isApprovalModalOpen.value = false
   selectedBooking.value = null
   approvalForm.scheduleDate = ''
+  approvalForm.estimatedLaborHours = '1'
 }
 
 function openCancelModal(booking: BookingItem) {
@@ -252,9 +255,22 @@ async function confirmApproval() {
     return
   }
 
+  const estimatedHours = Number(approvalForm.estimatedLaborHours)
+  if (!Number.isFinite(estimatedHours) || estimatedHours <= 0) {
+    modalStore.open({
+      title: 'Invalid Labor Estimate',
+      message: 'Estimated labor hours must be greater than zero.',
+      variant: 'error',
+    })
+    return
+  }
+
+  const hourlyRate = getLaborPriceFor(selectedBooking.value.projectType)
+
   const patch = {
     scheduleDate: approvalForm.scheduleDate,
-    estimatedCost: getLaborPriceFor(selectedBooking.value.projectType),
+    estimatedLaborHours: estimatedHours,
+    estimatedCost: hourlyRate * estimatedHours,
     status: 'confirmed' as BookingStatus,
   }
 
@@ -276,7 +292,7 @@ async function cancelBookingAsAdmin() {
 
 const computedCompletionTotal = computed(() => {
   if (!selectedBooking.value) return 0
-  const labor = selectedBooking.value.estimatedCost || getLaborPriceFor(selectedBooking.value.projectType)
+  const labor = selectedBooking.value.actualLaborCost ?? selectedBooking.value.estimatedCost ?? 0
   const mat = Number(completionForm.materialCost) || 0
   return labor + mat
 })
@@ -301,13 +317,8 @@ async function confirmComplete() {
 
 async function completeBookingForce() {
   if (!selectedBooking.value) return
-  const labor = selectedBooking.value.estimatedCost || getLaborPriceFor(selectedBooking.value.projectType)
-  const material = Number(completionForm.materialCost) || 0
   const patch = {
     status: 'completed' as BookingStatus,
-    estimatedCost: labor,
-    materialCost: material,
-    totalPrice: labor + material,
   }
 
   await bookingsStore.updateBooking(selectedBooking.value.id, patch)
@@ -373,6 +384,7 @@ function hasStaffMaterialSubmission(bookingId: string) {
 }
 
 function getDisplayedLaborCost(booking: BookingItem) {
+  if (booking.actualLaborCost != null) return booking.actualLaborCost
   return booking.estimatedCost && booking.estimatedCost > 0 ? booking.estimatedCost : getLaborPriceFor(booking.projectType)
 }
 </script>
@@ -616,6 +628,14 @@ function getDisplayedLaborCost(booking: BookingItem) {
               <input id="scheduleDate" v-model="approvalForm.scheduleDate" type="date" :min="minDate" :max="maxDate"
                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
             </div>
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="estimatedLaborHours">Estimated Labor Hours <span class="text-red-500">*</span><InfoTooltip text="Used with the service hourly rate to calculate the initial project estimate." /></label>
+              <input id="estimatedLaborHours" v-model="approvalForm.estimatedLaborHours" type="number" min="0.5" step="0.5"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
+              <p v-if="selectedBooking" class="mt-2 text-xs text-slate-500">
+                Estimated labor cost: ₱{{ (getLaborPriceFor(selectedBooking.projectType) * (Number(approvalForm.estimatedLaborHours) || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}
+              </p>
+            </div>
           </div>
 
           <div class="mt-8 pt-5 border-t border-slate-100 flex justify-end gap-3">
@@ -684,7 +704,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
 
           <div class="space-y-6">
             <div class="rounded-xl bg-slate-50 p-4 border border-slate-100 flex justify-between items-center">
-              <p class="text-sm font-medium text-gray-600">Labor Cost /hour</p>
+              <p class="text-sm font-medium text-gray-600">{{ selectedBooking?.actualLaborCost != null ? 'Actual Labor Cost' : 'Estimated Labor Cost' }}</p>
               <p class="text-xl font-bold text-gray-900">₱{{ (selectedBooking ?
                 getDisplayedLaborCost(selectedBooking) :
                 0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</p>
@@ -699,10 +719,10 @@ function getDisplayedLaborCost(booking: BookingItem) {
             </div>
 
             <div>
-              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="materialCost">Material Cost<InfoTooltip text="Please provide the material cost." /></label>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="materialCost">Recorded Material Cost<InfoTooltip text="Calculated from the materials recorded by assigned staff." /></label>
               <div class="flex flex-col sm:flex-row gap-3">
-                <input id="materialCost" v-model="completionForm.materialCost" type="number" min="0"
-                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-200" />
+                <input id="materialCost" v-model="completionForm.materialCost" type="number" min="0" readonly
+                  class="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-700 shadow-sm outline-none" />
                 <button type="button"
                   class="whitespace-nowrap rounded-xl bg-amber-100 px-5 py-3 font-semibold text-amber-800 hover:bg-amber-200 transition-colors"
                   @click="loadMaterialsForBooking">Load from recorded materials</button>

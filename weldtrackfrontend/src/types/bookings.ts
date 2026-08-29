@@ -10,6 +10,8 @@ export interface BookingItem {
   preferredDate?: string
   scheduleDate?: string
   estimatedCost?: number
+  estimatedLaborHours?: number
+  actualLaborCost?: number
   materialCost?: number
   totalPrice?: number
   description?: string
@@ -57,6 +59,8 @@ export type BackendBooking = {
   preferred_date?: string
   schedule_date?: string
   estimated_cost?: number
+  estimated_labor_hours?: number
+  actual_labor_cost?: number
   material_cost?: number
   total_price?: number
   description?: string

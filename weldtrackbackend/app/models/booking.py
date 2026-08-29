@@ -51,6 +51,8 @@ class Booking(Base):
     schedule_date: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     estimated_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
+    estimated_labor_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    actual_labor_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
     material_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
     total_price: Mapped[float | None] = mapped_column(Float, nullable=True)
 

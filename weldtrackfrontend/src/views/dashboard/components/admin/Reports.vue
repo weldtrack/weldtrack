@@ -184,7 +184,7 @@ const projects = computed(() =>
   bookingsStore.bookings
     .filter((b) => b.status !== 'cancelled' && b.createdDate && isWithinSelectedRange(b.createdDate))
     .map((b) => {
-      const laborCost = getServicePriceDisplay(b.projectType, b.estimatedCost)
+      const laborCost = b.actualLaborCost ?? getServicePriceDisplay(b.projectType, b.estimatedCost)
       const recordedTotal = Number(b.totalPrice ?? laborCost + Number(b.materialCost ?? 0))
       return {
         id: String(b.id),

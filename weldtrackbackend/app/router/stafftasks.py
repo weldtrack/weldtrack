@@ -2,13 +2,27 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 from app.db import get_db
-from app.models.stafftask import StaffTask, TaskStatus
+from app.models.stafftask import StaffTask, StaffTaskAssignee, TaskStatus
 from app.models.staffcontribution import StaffContributionSnapshot
 from app.schemas.stafftask import TaskCreate, TaskStatusUpdate, TaskOut
 from datetime import datetime
-from app.dependencies.auth import require_admin
+from app.dependencies.auth import get_current_user, require_admin
+from app.models.user import User, UserRole
 
 router = APIRouter(prefix="/staff-tasks", tags=["staff-tasks"])
+
+
+def get_visible_task(task_id: str, current_user: User, db: Session) -> StaffTask:
+    task = db.get(StaffTask, task_id)
+    can_view = task is not None and (
+        current_user.role == UserRole.admin
+        or any(a.staff_id == current_user.id for a in task.assignees)
+    )
+    if not can_view:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+    return task
 
 
 def serialize_task(task: StaffTask) -> dict:
@@ -69,10 +83,16 @@ def list_staff_tasks(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     status: str | None = None,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get all staff tasks"""
+    """List all tasks for admins and assigned tasks for staff."""
     query = select(StaffTask).order_by(desc(StaffTask.assigned_at))
+
+    if current_user.role == UserRole.staff:
+        query = query.join(StaffTaskAssignee).where(
+            StaffTaskAssignee.staff_id == current_user.id
+        )
 
     if status:
         query = query.where(StaffTask.status == status)
@@ -86,15 +106,11 @@ def list_staff_tasks(
 @router.get("/{task_id}", response_model=TaskOut)
 def get_staff_task(
     task_id: str,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get a specific task"""
-    task = db.get(StaffTask, task_id)
-    if not task:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
-        )
-
+    """Get a task only when it is assigned to the current staff member."""
+    task = get_visible_task(task_id, current_user, db)
     return serialize_task(task)
 
 
@@ -166,14 +182,11 @@ def create_staff_task(
 def update_staff_task_status(
     task_id: str,
     payload: TaskStatusUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Update task status"""
-    task = db.get(StaffTask, task_id)
-    if not task:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
-        )
+    task = get_visible_task(task_id, current_user, db)
 
     task.status = TaskStatus(payload.status)
     if task.status == TaskStatus.done:

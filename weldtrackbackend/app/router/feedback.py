@@ -15,7 +15,13 @@ from app.schemas.feedback_interactions import (
 router = APIRouter(prefix="/feedbacks", tags=["feedbacks"])
 
 
-# ... (ensure_customer_feedback_owner unchanged)
+def ensure_feedback_owner_or_admin(feedback: Feedback, current_user: User) -> None:
+    if current_user.role == UserRole.admin:
+        return
+    if feedback.email.casefold() != current_user.email.casefold():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found"
+        )
 
 
 @router.get("", response_model=list[FeedbackResponse])
@@ -122,12 +128,21 @@ def get_feedback(
 @router.post("", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
 def create_feedback(
     payload: FeedbackCreate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Create a new feedback"""
-    payload_data = payload.model_dump()
-    fallback_name = payload_data.get("email", "")
-    feedback = Feedback(customer_name=fallback_name, **payload_data)
+    if current_user.role != UserRole.customer:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only customers can create feedback",
+        )
+    payload_data = payload.model_dump(exclude={"email"})
+    feedback = Feedback(
+        customer_name=current_user.email,
+        email=current_user.email,
+        **payload_data,
+    )
     db.add(feedback)
     db.commit()
     db.refresh(feedback)
@@ -148,10 +163,10 @@ def update_feedback(
             status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found"
         )
 
-    ensure_customer_feedback_owner(feedback, current_user)
+    ensure_feedback_owner_or_admin(feedback, current_user)
 
     for key, value in payload.model_dump(exclude_unset=True).items():
-        if hasattr(feedback, key):
+        if key != "email" and hasattr(feedback, key):
             setattr(feedback, key, value)
 
     db.commit()
@@ -173,10 +188,10 @@ def partial_update_feedback(
             status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found"
         )
 
-    ensure_customer_feedback_owner(feedback, current_user)
+    ensure_feedback_owner_or_admin(feedback, current_user)
 
     for key, value in payload.model_dump(exclude_unset=True).items():
-        if hasattr(feedback, key):
+        if key != "email" and hasattr(feedback, key):
             setattr(feedback, key, value)
 
     db.commit()
@@ -197,7 +212,7 @@ def delete_feedback(
             status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found"
         )
 
-    ensure_customer_feedback_owner(feedback, current_user)
+    ensure_feedback_owner_or_admin(feedback, current_user)
 
     db.delete(feedback)
     db.commit()

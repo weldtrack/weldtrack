@@ -42,7 +42,7 @@ function getMaterialsTotal(bookingId: string, materials?: any[]) {
 }
 
 function getGrandTotal(item: any) {
-  const labor = getServicePriceDisplay(item.projectType, item.estimatedCost)
+  const labor = item.actualLaborCost ?? getServicePriceDisplay(item.projectType, item.estimatedCost)
   const materials = getMaterialsTotal(item.id, item.materials)
   return item.totalPrice ?? labor + materials
 }
@@ -128,7 +128,7 @@ const grandTotal = computed(() => getGrandTotal(item))
           <div class="mt-3 space-y-3 text-sm">
             <div class="flex items-start justify-between gap-4">
               <span class="text-slate-500 dark:text-slate-400">Labor</span>
-              <span class="shrink-0 font-medium text-slate-800 dark:text-slate-200">{{ formatCurrency(getServicePriceDisplay(item.projectType, item.estimatedCost)) }}</span>
+              <span class="shrink-0 font-medium text-slate-800 dark:text-slate-200">{{ formatCurrency(item.actualLaborCost ?? getServicePriceDisplay(item.projectType, item.estimatedCost)) }}</span>
             </div>
             <ul v-if="materialLines.length > 0" class="space-y-2 border-y border-slate-100 py-3 dark:border-slate-800">
               <li v-for="line in materialLines" :key="line.id" class="flex items-start justify-between gap-4 text-sm">
