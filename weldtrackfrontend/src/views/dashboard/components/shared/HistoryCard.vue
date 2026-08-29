@@ -42,6 +42,7 @@ function getMaterialsTotal(bookingId: string, materials?: any[]) {
 }
 
 function getGrandTotal(item: any) {
+  if (item.status === 'cancelled') return undefined
   const labor = item.actualLaborCost ?? getServicePriceDisplay(item.projectType, item.estimatedCost)
   const materials = getMaterialsTotal(item.id, item.materials)
   return item.totalPrice ?? labor + materials
@@ -122,8 +123,7 @@ const grandTotal = computed(() => getGrandTotal(item))
             <p class="mt-1 break-words text-sm text-rose-800 dark:text-rose-200">{{ item.cancelReason || 'No reason provided' }}</p>
           </div>
         </div>
-
-        <div class="min-w-0">
+        <div v-if="item.status !== 'cancelled'" class="min-w-0">
           <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Cost summary</p>
           <div class="mt-3 space-y-3 text-sm">
             <div class="flex items-start justify-between gap-4">
@@ -147,12 +147,18 @@ const grandTotal = computed(() => getGrandTotal(item))
             </div>
           </div>
         </div>
+        <div v-else class="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-800/60">
+          <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Cost summary</p>
+          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            No project cost was charged because this booking was cancelled.
+          </p>
+        </div>
       </div>
     </div>
 
     <div class="flex flex-col gap-1 border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-      <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total project cost</span>
-      <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">{{ formatCurrency(grandTotal) }}</span>
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ item.status === 'cancelled' ? 'Project cost' : 'Total project cost' }}</span>
+      <span class="text-xl font-semibold text-slate-900 dark:text-slate-100">{{ item.status === 'cancelled' ? 'Not charged' : formatCurrency(grandTotal) }}</span>
     </div>
   </article>
 </template>
