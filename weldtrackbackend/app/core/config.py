@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     # Email & Integrations
     RESEND_API_KEY: str = ""
-    RESEND_FROM_EMAIL: str = "noreply@ruzzgd.dev"
+    RESEND_FROM_EMAIL: str = "noreply@weldtrack.shop"
 
     # Object storage
     MINIO_ENDPOINT: str = "localhost:9000"
