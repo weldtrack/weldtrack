@@ -311,7 +311,6 @@ onBeforeUnmount(() => {
 
               <div class="space-y-2">
                 <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="email">Email Address</label>
-                <div class="relative">
                 <input
                   id="email"
                   v-model="loginForm.email"
@@ -323,22 +322,23 @@ onBeforeUnmount(() => {
 
               <div class="space-y-2">
                 <div class="flex justify-between items-center">
-                    <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="password">Password</label>
-                    <button type="button" class="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors" @click="openForgotPassword">
-                      Forgot?
-                    </button>
+                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="password">Password</label>
+                  <button type="button" class="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors" @click="openForgotPassword">
+                    Forgot?
+                  </button>
                 </div>
-                <input
-                  id="password"
-                  v-model="loginForm.password"
-                  :type="showLoginPassword ? 'text' : 'password'"
-                  placeholder="••••••••"
-                  class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-12 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
-                />
-                <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showLoginPassword ? 'Hide password' : 'Show password'" :aria-pressed="showLoginPassword" @click="showLoginPassword = !showLoginPassword">
-                  <EyeOff v-if="showLoginPassword" class="h-5 w-5" aria-hidden="true" />
-                  <Eye v-else class="h-5 w-5" aria-hidden="true" />
-                </button>
+                <div class="relative">
+                  <input
+                    id="password"
+                    v-model="loginForm.password"
+                    :type="showLoginPassword ? 'text' : 'password'"
+                    placeholder="••••••••"
+                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-12 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                  />
+                  <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showLoginPassword ? 'Hide password' : 'Show password'" :aria-pressed="showLoginPassword" @click="showLoginPassword = !showLoginPassword">
+                    <EyeOff v-if="showLoginPassword" class="h-5 w-5" aria-hidden="true" />
+                    <Eye v-else class="h-5 w-5" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
 
