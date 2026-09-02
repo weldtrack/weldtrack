@@ -92,9 +92,11 @@ function isOnline(user: User) {
   return Boolean(user.is_online)
 }
 
+const sortBy = ref<'latest' | 'oldest' | 'az'>('latest')
+
 const filtered = computed(() => {
   const term = search.value.trim().toLowerCase()
-  return users.value
+  let list = users.value
     .filter((u) => u.role.toLowerCase() !== 'admin')
     .filter((u) => {
       if (roleFilter.value === 'customers') return u.role.toLowerCase() === 'customer'
@@ -109,6 +111,18 @@ const filtered = computed(() => {
         String(u.id).includes(term)
       )
     })
+
+  return list.sort((a, b) => {
+    if (sortBy.value === 'az') {
+      return a.email.localeCompare(b.email)
+    }
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+    if (timeA && timeB && timeA !== timeB) {
+      return sortBy.value === 'oldest' ? timeA - timeB : timeB - timeA
+    }
+    return sortBy.value === 'oldest' ? String(a.id).localeCompare(String(b.id)) : String(b.id).localeCompare(String(a.id))
+  })
 })
 
 onMounted(() => {
@@ -164,6 +178,19 @@ onBeforeUnmount(() => {
                 </svg>
               </span>
             </div>
+          </div>
+
+          <!-- Sort by dropdown -->
+          <div class="flex items-center gap-2 shrink-0">
+            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort by:</label>
+            <select
+              v-model="sortBy"
+              class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:focus:border-sky-500"
+            >
+              <option value="latest">Date Latest</option>
+              <option value="oldest">Date Oldest</option>
+              <option value="az">A to Z</option>
+            </select>
           </div>
 
           <button

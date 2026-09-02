@@ -9,7 +9,7 @@ import { useBookingsStore } from '../../../../stores/bookings'
 import { type BookingItem } from '../../../../types/bookings'
 import { useCustomerAddressesStore } from '../../../../stores/customerAddresses'
 import api from '../../../../api/api'
-import { getServicePriceDisplay } from '../../../../services/servicePricing'
+import { getServicePriceDisplay, formatServicePricing, getPricingTypeLabel } from '../../../../services/servicePricing'
 
 import { useModalStore } from '../../../../stores/modal'
 
@@ -42,12 +42,25 @@ const cancelForm = reactive({
 
 const isSubmitting = ref(false)
 
-const services = ref<Array<{ id: string; name: string; price_hour: number }>>([])
+const services = ref<
+  Array<{
+    id: string
+    name: string
+    description?: string | null
+    pricing_type?: 'hourly' | 'fixed' | 'hybrid'
+    price_fixed?: number
+    price_hour: number
+  }>
+>([])
 const loadingServices = ref(false)
 
+const selectedService = computed(() => services.value.find((s) => s.name === formData.projectType))
+
 const selectedLaborPrice = computed(() => {
-  const service = services.value.find((s) => s.name === formData.projectType)
-  return service?.price_hour ?? 0
+  if (!selectedService.value) return 0
+  const type = selectedService.value.pricing_type || 'hourly'
+  if (type === 'fixed') return selectedService.value.price_fixed || 0
+  return selectedService.value.price_hour || 0
 })
 
 const selectedTotalCost = computed(() => selectedLaborPrice.value)
@@ -77,11 +90,16 @@ async function fetchServices() {
   loadingServices.value = true
   try {
     const response = await api.get('/services')
-    services.value = (response.data || []).map((s: any) => ({
-      id: s.id,
-      name: s.name,
-      price_hour: s.price_hour || 0,
-    }))
+    services.value = (response.data || [])
+      .map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        pricing_type: s.pricing_type || 'hourly',
+        price_fixed: Number(s.price_fixed || 0),
+        price_hour: Number(s.price_hour || 0),
+      }))
+      .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
   } catch (error) {
     console.error('Failed to load services:', error)
     services.value = []
@@ -251,7 +269,10 @@ function formatDate(value: string) {
 
 function getLaborCost(projectType: string) {
   const service = services.value.find((s) => s.name.trim().toLowerCase() === projectType.trim().toLowerCase())
-  return service?.price_hour ?? 0
+  if (!service) return 0
+  const type = service.pricing_type || 'hourly'
+  if (type === 'fixed') return service.price_fixed || 0
+  return service.price_hour || 0
 }
 
 function getMaterialCostMessage(booking: BookingItem) {
@@ -545,7 +566,7 @@ function getBookingTimeline(booking: BookingItem) {
                 <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="projectType">Project Type <span class="text-rose-500">*</span><InfoTooltip text="Please select the project type." /></label>
                 <select id="projectType" v-model="formData.projectType" required :disabled="loadingServices || services.length === 0" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-xs disabled:opacity-50 disabled:cursor-not-allowed font-medium text-slate-800 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 focus:border-sky-500 outline-none transition">
                   <option value="">{{ loadingServices ? 'Loading services...' : services.length === 0 ? 'No services available' : 'Select project type' }}</option>
-                  <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }} — ₱{{ service.price_hour.toLocaleString() }} per hour</option>
+                  <option v-for="service in services" :key="service.id" :value="service.name">{{ service.name }} — {{ formatServicePricing(service) }}</option>
                 </select>
                 <p v-if="isDuplicateServiceActive" class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
                   <AlertTriangle class="h-4 w-4 shrink-0" />
@@ -561,14 +582,32 @@ function getBookingTimeline(booking: BookingItem) {
               <span>Material cost will be added after project completion by the team.</span>
             </div>
 
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div class="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3.5 shadow-xs flex justify-between items-center dark:border-slate-800 dark:bg-slate-800/60">
-                <p class="text-xs font-semibold text-slate-600 dark:text-slate-400">Labor Price /hour</p>
-                <p class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ formatCurrency(selectedLaborPrice) }}</p>
+            <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-800/40">
+              <div class="mb-3 flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pricing Breakdown</span>
+                <span class="rounded-lg bg-sky-100 px-2.5 py-0.5 text-xs font-extrabold text-sky-700 dark:bg-sky-950/80 dark:text-sky-300">
+                  {{ selectedService ? getPricingTypeLabel(selectedService.pricing_type) : 'Service Pricing' }}
+                </span>
               </div>
-              <div class="rounded-xl border border-slate-800 bg-slate-900 px-5 py-3.5 shadow-xs flex justify-between items-center text-white dark:bg-slate-800 dark:border-slate-700">
-                <p class="text-xs font-semibold text-slate-300">Total Estimate</p>
-                <p class="text-lg font-black">{{ formatCurrency(selectedTotalCost) }}</p>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="rounded-lg bg-white p-3 shadow-2xs dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
+                  <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Fixed / Base Fee</p>
+                  <p class="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
+                    {{ selectedService?.pricing_type === 'hourly' ? 'None' : formatCurrency(selectedService?.price_fixed || 0) }}
+                  </p>
+                </div>
+                <div class="rounded-lg bg-white p-3 shadow-2xs dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
+                  <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Hourly Labor</p>
+                  <p class="mt-0.5 text-base font-bold text-slate-900 dark:text-slate-100">
+                    {{ selectedService?.pricing_type === 'fixed' ? 'None' : `${formatCurrency(selectedService?.price_hour || 0)} / hr` }}
+                  </p>
+                </div>
+                <div class="rounded-lg bg-slate-900 p-3 text-white shadow-2xs dark:bg-slate-950 border border-slate-800">
+                  <p class="text-[11px] font-semibold text-slate-300">Initial Base / Flat</p>
+                  <p class="mt-0.5 text-base font-black">
+                    {{ formatCurrency(selectedTotalCost) }}
+                  </p>
+                </div>
               </div>
             </div>
 

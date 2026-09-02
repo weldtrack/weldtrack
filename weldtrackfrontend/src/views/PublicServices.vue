@@ -7,11 +7,14 @@ import { useThemeMode } from '../composables/useThemeMode'
 import WebpageNavbar from './publicpagecomponents/WebpageNavbar.vue'
 import WebpageFooter from './publicpagecomponents/WebpageFooter.vue'
 import { resolveImageUrl } from '../services/images'
+import { formatServicePricing, formatCurrency, getPricingTypeLabel } from '../services/servicePricing'
 
 interface Service {
   id: string
   name: string
   description: string | null
+  pricing_type?: 'hourly' | 'fixed' | 'hybrid'
+  price_fixed?: number
   price_hour: number
   image_url: string | null
 }
@@ -24,9 +27,10 @@ const loading = ref(true)
 const loadError = ref('')
 
 const filteredServices = computed(() => {
+  const list = [...services.value].sort((a, b) => a.name.localeCompare(b.name))
   const query = search.value.trim().toLowerCase()
-  if (!query) return services.value
-  return services.value.filter((service) =>
+  if (!query) return list
+  return list.filter((service) =>
     service.name.toLowerCase().includes(query)
     || (service.description?.toLowerCase().includes(query) ?? false),
   )
@@ -36,9 +40,6 @@ function getImageUrl(url: string | null) {
   return resolveImageUrl(url) || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop'
 }
 
-function formatCurrency(value: number) {
-  return `₱${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
-}
 
 async function fetchServices() {
   loading.value = true
@@ -71,7 +72,7 @@ onMounted(fetchServices)
             <ShieldCheck class="h-4 w-4" /> Professional welding
           </div>
           <h1 class="mt-5 text-4xl font-black tracking-tight text-[color:var(--public-text)] sm:text-6xl">Built strong. Repaired right.</h1>
-          <p class="services-intro mx-auto mt-5 max-w-2xl text-base leading-7 sm:text-lg">Explore every service, compare transparent hourly labor rates, and find the right expertise for your next project.</p>
+          <p class="services-intro mx-auto mt-5 max-w-2xl text-base leading-7 sm:text-lg">Explore every service, compare transparent fixed prices and hourly labor rates, and find the right expertise for your next project.</p>
         </div>
 
         <div class="relative mx-auto mt-9 max-w-2xl">
@@ -87,7 +88,7 @@ onMounted(fetchServices)
           <p class="service-title text-xl font-bold">{{ search ? 'Search results' : 'Available services' }}</p>
           <p class="services-muted mt-1 text-sm">{{ filteredServices.length }} {{ filteredServices.length === 1 ? 'service' : 'services' }} available</p>
         </div>
-        <div class="services-muted hidden items-center gap-2 text-sm sm:flex"><Clock3 class="h-4 w-4 text-sky-500" /> Rates shown per labor hour</div>
+        <div class="services-muted hidden items-center gap-2 text-sm sm:flex"><Clock3 class="h-4 w-4 text-sky-500" /> Transparent Fixed & Hourly Rates</div>
       </div>
 
       <div v-if="loading" class="services-muted py-20 text-center">Loading services...</div>
@@ -109,10 +110,12 @@ onMounted(fetchServices)
               <div class="flex items-center gap-1.5"><ShieldCheck class="h-3.5 w-3.5 text-sky-400" /> Premium</div>
             </div>
 
-            <div class="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-              <span class="service-price inline-flex items-baseline gap-1 rounded-2xl px-4 py-2.5 text-sm font-black shadow-2xl backdrop-blur-md">
-                {{ formatCurrency(service.price_hour) }}
-                <span class="text-[10px] font-semibold uppercase tracking-wider opacity-70">/ HR</span>
+            <div class="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
+              <span class="service-price inline-flex items-baseline gap-1 rounded-2xl px-4 py-2 text-sm font-black shadow-2xl backdrop-blur-md">
+                {{ formatServicePricing(service) }}
+              </span>
+              <span class="rounded-xl bg-slate-950/75 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-sky-400 backdrop-blur-md ring-1 ring-white/20">
+                {{ getPricingTypeLabel(service.pricing_type) }}
               </span>
             </div>
           </div>
@@ -123,6 +126,30 @@ onMounted(fetchServices)
             </div>
             <h2 class="service-title text-2xl font-black tracking-tight transition-colors group-hover:text-sky-400">{{ service.name }}</h2>
             <p class="service-description mt-3 flex-1 text-sm leading-relaxed">{{ service.description || 'Professional welding service tailored to your exact project specifications.' }}</p>
+
+            <!-- Pricing Breakdown Details -->
+            <div class="service-breakdown mt-6 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-3.5">
+              <div class="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <span>Service Pricing</span>
+                <span class="rounded-md bg-sky-950/80 px-2 py-0.5 text-[10px] font-bold text-sky-300">
+                  {{ getPricingTypeLabel(service.pricing_type) }}
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/60">
+                <div class="flex flex-col">
+                  <span class="service-breakdown-label text-[11px] font-semibold text-slate-400">Fixed / Base Price</span>
+                  <span class="service-breakdown-value mt-0.5 text-sm font-black text-white">
+                    {{ service.pricing_type === 'hourly' ? 'None' : formatCurrency(service.price_fixed || 0) }}
+                  </span>
+                </div>
+                <div class="flex flex-col border-l border-slate-800/60 pl-3">
+                  <span class="service-breakdown-label text-[11px] font-semibold text-slate-400">Hourly Labor</span>
+                  <span class="service-breakdown-value mt-0.5 text-sm font-black text-white">
+                    {{ service.pricing_type === 'fixed' ? 'None' : `${formatCurrency(service.price_hour || 0)} / hr` }}
+                  </span>
+                </div>
+              </div>
+            </div>
             
             <div class="mt-8 border-t border-slate-800/50 pt-6">
               <RouterLink to="/signup" class="service-request relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-sky-600 px-6 py-3.5 text-sm font-bold shadow-lg shadow-sky-600/20 transition-all hover:bg-sky-500 hover:shadow-sky-500/30 active:scale-[0.98]">
@@ -155,4 +182,7 @@ onMounted(fetchServices)
 .theme-light .service-title { color: #0f172a; }
 .theme-light .service-description { color: #475569; }
 .theme-light .service-request { color: #ffffff !important; }
+.theme-light .service-breakdown { border-color: #e2e8f0; background: #f8fafc; }
+.theme-light .service-breakdown-label { color: #64748b; }
+.theme-light .service-breakdown-value { color: #0f172a; }
 </style>

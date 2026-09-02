@@ -2,11 +2,12 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 
-from sqlalchemy.orm import Session
-from sqlalchemy import select, desc
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select, desc, or_
 from app.db import get_db
+from app.models.booking import Booking
 from app.models.inventory import InventoryItem, StockMovement, MovementType
-from app.models.stafftask import StaffTask
+from app.models.stafftask import StaffTask, StaffTaskAssignee, TaskMaterialUsage
 from app.schemas.inventory import (
     InventoryItemCreate,
     InventoryItemUpdate,
@@ -217,19 +218,113 @@ def get_stock_movements(
 
     query = query.offset(skip).limit(limit)
     movements = db.scalars(query).all()
-    task_ids: list[str] = []
-    for movement in movements:
-        if not movement.task_id:
-            continue
-        task_ids.append(movement.task_id)
 
+    # Collect IDs to batch load linked tasks, bookings, and material usages
+    task_ids: set[str] = {m.task_id for m in movements if m.task_id}
+    booking_ids: set[str] = {m.booking_id for m in movements if m.booking_id}
+
+    # 1. Fetch bookings to retrieve project_type (service name)
+    bookings_by_id: dict[str, Booking] = {}
+    if booking_ids:
+        b_list = db.scalars(select(Booking).where(Booking.id.in_(booking_ids))).all()
+        bookings_by_id = {str(b.id): b for b in b_list}
+
+    # 2. Fetch staff tasks (with assignees & staff eager loaded)
     tasks_by_id: dict[str, StaffTask] = {}
-    if task_ids:
-        tasks = db.scalars(select(StaffTask).where(StaffTask.id.in_(task_ids))).all()
-        tasks_by_id = {str(task.id): task for task in tasks}
+    tasks_by_booking_id: dict[str, StaffTask] = {}
+    if task_ids or booking_ids:
+        t_conditions = []
+        if task_ids:
+            t_conditions.append(StaffTask.id.in_(task_ids))
+        if booking_ids:
+            t_conditions.append(StaffTask.booking_id.in_(booking_ids))
+        t_list = db.scalars(
+            select(StaffTask)
+            .options(
+                joinedload(StaffTask.assignees).joinedload(StaffTaskAssignee.staff)
+            )
+            .where(or_(*t_conditions))
+        ).unique().all()
+        for t in t_list:
+            tasks_by_id[str(t.id)] = t
+            if t.booking_id:
+                tasks_by_booking_id[str(t.booking_id)] = t
 
-    return [
-        {
+    # 3. Fetch material usages to identify who submitted the usage
+    usages_by_task_id: dict[str, TaskMaterialUsage] = {}
+    usages_by_booking_id: dict[str, TaskMaterialUsage] = {}
+    if task_ids or booking_ids:
+        u_conditions = []
+        if task_ids:
+            u_conditions.append(TaskMaterialUsage.task_id.in_(task_ids))
+        if booking_ids:
+            u_conditions.append(TaskMaterialUsage.booking_id.in_(booking_ids))
+        u_list = db.scalars(
+            select(TaskMaterialUsage)
+            .options(joinedload(TaskMaterialUsage.submitted_by_staff))
+            .where(or_(*u_conditions))
+        ).unique().all()
+        for u in u_list:
+            if u.task_id:
+                usages_by_task_id[str(u.task_id)] = u
+            if u.booking_id:
+                usages_by_booking_id[str(u.booking_id)] = u
+
+    # Build response records ensuring team and staff who used the service is ALWAYS included
+    result = []
+    for movement in movements:
+        booking = bookings_by_id.get(movement.booking_id) if movement.booking_id else None
+        task = None
+        if movement.task_id and movement.task_id in tasks_by_id:
+            task = tasks_by_id[movement.task_id]
+        elif movement.booking_id and movement.booking_id in tasks_by_booking_id:
+            task = tasks_by_booking_id[movement.booking_id]
+
+        usage = None
+        if movement.task_id and movement.task_id in usages_by_task_id:
+            usage = usages_by_task_id[movement.task_id]
+        elif movement.booking_id and movement.booking_id in usages_by_booking_id:
+            usage = usages_by_booking_id[movement.booking_id]
+
+        # Determine service name
+        service_name = None
+        if booking and booking.project_type:
+            service_name = booking.project_type
+        elif task and task.project_name:
+            service_name = task.project_name
+        elif movement.type == MovementType.stock_in:
+            service_name = "Warehouse Replenishment"
+        else:
+            service_name = "Inventory Adjustment"
+
+        # Determine team emails and staff
+        team_emails: list[str] = []
+        if task:
+            for assignee in task.assignees:
+                if assignee.staff and assignee.staff.email and assignee.staff.email not in team_emails:
+                    team_emails.append(assignee.staff.email)
+
+        recorded_by = None
+        if usage and usage.submitted_by_staff and usage.submitted_by_staff.email:
+            recorded_by = usage.submitted_by_staff.email
+            if recorded_by not in team_emails:
+                team_emails.append(recorded_by)
+
+        # Ensure team/staff is NEVER empty
+        if not team_emails:
+            if movement.booking_id or movement.task_id:
+                team_emails = ["Staff Field Team"]
+                recorded_by = recorded_by or "Assigned Staff"
+            elif movement.type == MovementType.stock_in:
+                team_emails = ["Admin / Warehouse Manager"]
+                recorded_by = recorded_by or "Admin"
+            else:
+                team_emails = ["Admin / Inventory Team"]
+                recorded_by = recorded_by or "Admin"
+        else:
+            recorded_by = recorded_by or team_emails[0]
+
+        result.append({
             "id": movement.id,
             "item_id": movement.item_id,
             "item_name": movement.item_name,
@@ -238,15 +333,9 @@ def get_stock_movements(
             "timestamp": movement.timestamp,
             "booking_id": movement.booking_id,
             "task_id": movement.task_id,
-            "team_emails": (
-                [
-                    assignee.staff.email
-                    for assignee in tasks_by_id.get(movement.task_id, []).assignees
-                    if assignee.staff and assignee.staff.email
-                ]
-                if movement.task_id and movement.task_id in tasks_by_id
-                else []
-            ),
-        }
-        for movement in movements
-    ]
+            "service_name": service_name,
+            "team_emails": team_emails,
+            "recorded_by": recorded_by,
+        })
+
+    return result

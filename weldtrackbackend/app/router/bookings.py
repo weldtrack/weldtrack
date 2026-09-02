@@ -118,12 +118,38 @@ def _recalculate_booking_totals(booking: Booking) -> None:
     booking.total_price = labor_cost + float(booking.material_cost or 0)
 
 
+def _calculate_service_labor_cost(
+    service: Service | None,
+    labor_hours: float | None,
+) -> float:
+    if not service:
+        return 0.0
+    pricing_type = getattr(service, "pricing_type", "hourly") or "hourly"
+    fixed_price = float(service.price_fixed or 0.0)
+    hourly_rate = float(service.price_hour or 0.0)
+    hours = float(labor_hours or 0.0)
+
+    if pricing_type == "fixed":
+        return fixed_price
+    elif pricing_type == "hybrid":
+        return fixed_price + (hours * hourly_rate)
+    else:  # "hourly"
+        return hours * hourly_rate
+
+
 def _recalculate_booking_estimate(booking: Booking, db: Session) -> None:
-    if booking.estimated_labor_hours is None:
-        return
     service = db.scalar(select(Service).where(Service.name == booking.project_type))
-    hourly_rate = float(service.price_hour or 0) if service else 0
-    booking.estimated_cost = float(booking.estimated_labor_hours) * hourly_rate
+    if not service:
+        return
+    pricing_type = getattr(service, "pricing_type", "hourly") or "hourly"
+    if pricing_type == "fixed":
+        booking.estimated_cost = float(service.price_fixed or 0.0)
+    else:
+        if booking.estimated_labor_hours is None:
+            return
+        booking.estimated_cost = _calculate_service_labor_cost(
+            service, booking.estimated_labor_hours
+        )
 
 
 @router.get("", response_model=list[BookingResponse])
@@ -240,6 +266,7 @@ def create_booking(
         booking_data.setdefault("customer_name", current_user.email)
 
     booking = Booking(**booking_data)
+    _recalculate_booking_estimate(booking, db)
     db.add(booking)
     db.flush()
 
@@ -378,8 +405,9 @@ def add_booking_materials(
     
     # Calculate and update labor cost
     service = db.scalar(select(Service).where(Service.name == booking.project_type))
-    labor_price = service.price_hour if service else 0
-    booking.actual_labor_cost = payload.laborHours * labor_price
+    booking.actual_labor_cost = _calculate_service_labor_cost(
+        service, payload.laborHours
+    )
     
     for line in payload.lines:
         item = db.get(InventoryItem, line.itemId)

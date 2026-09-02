@@ -16,6 +16,10 @@ export function toInventoryItem(item: BackendInventoryItem): InventoryItem {
 }
 
 export function toStockMovement(movement: BackendStockMovement): StockMovement {
+  const teamList = Array.isArray(movement.team_emails) && movement.team_emails.length > 0
+    ? movement.team_emails.filter(Boolean)
+    : [movement.booking_id ? 'Staff Field Team' : 'Admin / Warehouse Manager']
+
   return {
     id: String(movement.id),
     itemId: String(movement.item_id),
@@ -26,7 +30,9 @@ export function toStockMovement(movement: BackendStockMovement): StockMovement {
     timestamp: movement.timestamp ? new Date(movement.timestamp).toLocaleString('en-PH') : '',
     bookingId: movement.booking_id ?? null,
     taskId: movement.task_id ?? null,
-    teamEmails: Array.isArray(movement.team_emails) ? movement.team_emails.filter(Boolean) : [],
+    serviceName: movement.service_name ?? (movement.booking_id ? 'Welding Service' : movement.type === 'stock-in' ? 'Warehouse Replenishment' : 'Inventory Adjustment'),
+    teamEmails: teamList,
+    recordedBy: movement.recorded_by ?? teamList[0],
   }
 }
 

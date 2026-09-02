@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Archive, ArchiveRestore, Info, LoaderCircle, PackagePlus } from 'lucide-vue-next'
+import { Archive, ArchiveRestore, Info, LoaderCircle, PackagePlus, Users, Wrench, Clock, Search } from 'lucide-vue-next'
 import { useInventoryStore } from '../../../../stores/inventory'
 import { type InventoryItem } from '../../../../types/inventory'
 import { useModalStore } from '../../../../stores/modal'
@@ -29,11 +29,27 @@ const formData = reactive({
   lowStockThreshold: '10',
 })
 
+const inventorySortBy = ref<'latest' | 'oldest' | 'az'>('latest')
+
 const filteredInventory = computed(() => {
   const source = inventoryView.value === 'active' ? store.items : store.archivedItems
+  let list = [...source]
   const query = searchTerm.value.trim().toLowerCase()
-  if (!query) return source
-  return source.filter((item) => item.name.toLowerCase().includes(query) || item.supplier.toLowerCase().includes(query))
+  if (query) {
+    list = list.filter((item) => item.name.toLowerCase().includes(query) || item.supplier.toLowerCase().includes(query))
+  }
+
+  return list.sort((a, b) => {
+    if (inventorySortBy.value === 'az') {
+      return a.name.localeCompare(b.name)
+    }
+    const timeA = a.dateAdded ? new Date(a.dateAdded).getTime() : 0
+    const timeB = b.dateAdded ? new Date(b.dateAdded).getTime() : 0
+    if (timeA && timeB && timeA !== timeB) {
+      return inventorySortBy.value === 'oldest' ? timeA - timeB : timeB - timeA
+    }
+    return inventorySortBy.value === 'oldest' ? String(a.id).localeCompare(String(b.id)) : String(b.id).localeCompare(String(a.id))
+  })
 })
 
 const totalItems = computed(() => store.items.reduce((sum, item) => sum + item.quantity, 0))
@@ -226,6 +242,21 @@ function formatDateTime(value?: string) {
     minute: '2-digit',
   })
 }
+
+const movementSearchTerm = ref('')
+
+const filteredMovements = computed(() => {
+  const query = movementSearchTerm.value.trim().toLowerCase()
+  if (!query) return store.movements
+  return store.movements.filter(
+    (m) =>
+      m.itemName.toLowerCase().includes(query) ||
+      (m.serviceName && m.serviceName.toLowerCase().includes(query)) ||
+      (m.recordedBy && m.recordedBy.toLowerCase().includes(query)) ||
+      (Array.isArray(m.teamEmails) && m.teamEmails.some((email) => email.toLowerCase().includes(query))) ||
+      (m.bookingId && m.bookingId.toLowerCase().includes(query)),
+  )
+})
 </script>
 
 <template>
@@ -289,18 +320,33 @@ function formatDateTime(value?: string) {
         </div>
       </div>
 
-      <!-- Search Box Card -->
+      <!-- Search and Sort Box Card -->
       <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <div class="relative">
-          <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
-          </svg>
-          <input
-            v-model="searchTerm"
-            type="text"
-            placeholder="Search materials or suppliers..."
-            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 lg:max-w-md"
-          />
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="relative flex-1 max-w-md">
+            <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+            </svg>
+            <input
+              v-model="searchTerm"
+              type="text"
+              placeholder="Search materials or suppliers..."
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500"
+            />
+          </div>
+
+          <!-- Sort by dropdown -->
+          <div class="flex items-center gap-2 shrink-0">
+            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort by:</label>
+            <select
+              v-model="inventorySortBy"
+              class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:focus:border-sky-500"
+            >
+              <option value="latest">Date Latest</option>
+              <option value="oldest">Date Oldest</option>
+              <option value="az">A to Z</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -625,32 +671,91 @@ function formatDateTime(value?: string) {
       </div>
     </template>
 
-    <div class="rounded-lg border border-gray-200 bg-white p-6">
-      <h3 class="mb-4 text-lg font-semibold text-gray-900">Stock Movement Log</h3>
-      <div class="max-h-80 space-y-2 overflow-y-auto">
-        <div v-if="store.movements.length === 0" class="py-8 text-center text-gray-500">
-          No stock movements yet
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            Stock Movement Log
+            <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              {{ filteredMovements.length }}
+            </span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Audit trail of materials usage, replenishments, and service team assignments
+          </p>
+        </div>
+
+        <div class="relative w-full sm:w-72">
+          <Search class="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            v-model="movementSearchTerm"
+            type="text"
+            placeholder="Search item, service, or staff..."
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500"
+          />
+        </div>
+      </div>
+
+      <div class="max-h-96 space-y-3 overflow-y-auto pr-1">
+        <div v-if="filteredMovements.length === 0" class="py-12 text-center text-slate-500 dark:text-slate-400">
+          <Clock class="mx-auto h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
+          <p class="text-sm font-semibold">{{ movementSearchTerm ? 'No matching stock movements' : 'No stock movements recorded yet' }}</p>
+          <p class="text-xs text-slate-400">{{ movementSearchTerm ? 'Try adjusting your search keywords.' : 'Stock movements will appear when materials are added or used in services.' }}</p>
         </div>
         <div
-          v-for="movement in store.movements"
+          v-for="movement in filteredMovements"
           :key="movement.id"
-          class="flex items-center justify-between rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
+          class="flex flex-col gap-2 rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 transition-colors hover:bg-slate-100/60 dark:border-slate-800 dark:bg-slate-800/40 dark:hover:bg-slate-800/70 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div>
-            <p class="font-medium text-gray-900">{{ movement.itemName }}</p>
-            <p class="text-sm text-gray-600">{{ formatDateTime(movement.timestamp) }}</p>
-            <p v-if="movement.teamEmails.length" class="text-xs text-gray-500">
-              Team: {{ movement.teamEmails.join(', ') }}
-            </p>
+          <div class="space-y-1.5 min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <p class="font-bold text-slate-900 dark:text-slate-100 text-sm">{{ movement.itemName }}</p>
+              <span
+                v-if="movement.serviceName"
+                class="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/60"
+              >
+                <Wrench class="h-3 w-3" />
+                {{ movement.serviceName }}
+              </span>
+              <span
+                v-if="movement.bookingId"
+                class="font-mono text-[10px] text-slate-400 dark:text-slate-500"
+              >
+                #{{ movement.bookingId.substring(0, 8) }}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-4 flex-wrap text-xs text-slate-600 dark:text-slate-300">
+              <!-- Team / Staff who used the service -->
+              <div class="flex items-center gap-1.5">
+                <Users class="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                <span class="text-slate-500 dark:text-slate-400">Team / Staff:</span>
+                <span class="font-semibold text-slate-800 dark:text-slate-200">
+                  {{ movement.teamEmails && movement.teamEmails.length > 0 ? movement.teamEmails.join(', ') : (movement.recordedBy || 'Staff Field Team') }}
+                </span>
+              </div>
+
+              <!-- Timestamp -->
+              <div class="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                <Clock class="h-3 w-3" />
+                <span>{{ formatDateTime(movement.rawTimestamp || movement.timestamp) }}</span>
+              </div>
+            </div>
           </div>
-          <span
-            :class="[
-              'inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold',
-              movement.type === 'stock-in' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
-            ]"
-          >
-            {{ movement.type === 'stock-in' ? '+' : '-' }}{{ movement.quantity }}
-          </span>
+
+          <div class="shrink-0 flex items-center sm:self-center">
+            <span
+              :class="[
+                'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset',
+                movement.type === 'stock-in'
+                  ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-800'
+                  : 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-300 dark:ring-rose-800',
+              ]"
+            >
+              {{ movement.type === 'stock-in' ? '+' : '-' }}{{ movement.quantity }}
+              {{ movement.type === 'stock-in' ? 'Stock In' : 'Stock Out' }}
+            </span>
+          </div>
         </div>
       </div>
     </div>

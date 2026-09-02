@@ -7,10 +7,14 @@ import { useModalStore } from '../../../../stores/modal'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { resolveImageUrl, uploadImage } from '../../../../services/images'
 
+import { formatServicePricing } from '../../../../services/servicePricing'
+
 interface Service {
   id: string
   name: string
   description: string | null
+  pricing_type: 'hourly' | 'fixed' | 'hybrid'
+  price_fixed: number
   price_hour: number
   image_url: string | null
   created_at: string
@@ -20,6 +24,8 @@ interface Service {
 interface FormData {
   name: string
   description: string
+  pricing_type: 'hourly' | 'fixed' | 'hybrid'
+  price_fixed: string
   price_hour: string
   image_url: string
 }
@@ -37,18 +43,36 @@ const imagePreview = ref<string | null>(null)
 const formData = reactive<FormData>({
   name: '',
   description: '',
-  price_hour: '',
+  pricing_type: 'hourly',
+  price_fixed: '0',
+  price_hour: '0',
   image_url: '',
 })
 
+const sortBy = ref<'latest' | 'oldest' | 'az'>('latest')
+
 const filteredServices = computed(() => {
+  let list = [...services.value]
   const query = searchTerm.value.trim().toLowerCase()
-  if (!query) return services.value
-  return services.value.filter(
-    (service) =>
-      service.name.toLowerCase().includes(query) ||
-      (service.description?.toLowerCase().includes(query) ?? false),
-  )
+  if (query) {
+    list = list.filter(
+      (service) =>
+        service.name.toLowerCase().includes(query) ||
+        (service.description?.toLowerCase().includes(query) ?? false),
+    )
+  }
+
+  return list.sort((a, b) => {
+    if (sortBy.value === 'az') {
+      return a.name.localeCompare(b.name)
+    }
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+    if (timeA && timeB && timeA !== timeB) {
+      return sortBy.value === 'oldest' ? timeA - timeB : timeB - timeA
+    }
+    return sortBy.value === 'oldest' ? String(a.id).localeCompare(String(b.id)) : String(b.id).localeCompare(String(a.id))
+  })
 })
 
 onMounted(() => {
@@ -75,7 +99,9 @@ function resetForm() {
   formError.value = ''
   formData.name = ''
   formData.description = ''
-  formData.price_hour = ''
+  formData.pricing_type = 'hourly'
+  formData.price_fixed = '0'
+  formData.price_hour = '0'
   formData.image_url = ''
   imagePreview.value = null
   if (fileInputRef.value) fileInputRef.value.value = ''
@@ -136,7 +162,9 @@ function openEditDialog(service: Service) {
   editingId.value = service.id
   formData.name = service.name
   formData.description = service.description || ''
-  formData.price_hour = String(service.price_hour)
+  formData.pricing_type = service.pricing_type || 'hourly'
+  formData.price_fixed = String(service.price_fixed ?? 0)
+  formData.price_hour = String(service.price_hour ?? 0)
   formData.image_url = service.image_url || ''
   imagePreview.value = resolveImageUrl(service.image_url)
   isDialogOpen.value = true
@@ -154,10 +182,21 @@ async function saveService() {
     return
   }
 
+  const priceFixed = Number(formData.price_fixed)
   const priceHour = Number(formData.price_hour)
-  if (isNaN(priceHour) || priceHour < 0) {
-    formError.value = 'Enter a valid hourly labor price of zero or more.'
-    return
+
+  if (formData.pricing_type === 'fixed' || formData.pricing_type === 'hybrid') {
+    if (isNaN(priceFixed) || priceFixed < 0) {
+      formError.value = 'Enter a valid fixed price of zero or more.'
+      return
+    }
+  }
+
+  if (formData.pricing_type === 'hourly' || formData.pricing_type === 'hybrid') {
+    if (isNaN(priceHour) || priceHour < 0) {
+      formError.value = 'Enter a valid hourly labor price of zero or more.'
+      return
+    }
   }
 
   isSubmitting.value = true
@@ -166,7 +205,9 @@ async function saveService() {
     const payload = {
       name: formData.name.trim(),
       description: formData.description.trim() || null,
-      price_hour: priceHour,
+      pricing_type: formData.pricing_type,
+      price_fixed: formData.pricing_type === 'hourly' ? 0 : priceFixed,
+      price_hour: formData.pricing_type === 'fixed' ? 0 : priceHour,
       image_url: formData.image_url.trim() || null,
     }
 
@@ -207,9 +248,6 @@ function deleteService(id: string, name: string) {
   })
 }
 
-function formatCurrency(value: number) {
-  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
-}
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('en-PH', {
@@ -247,18 +285,33 @@ function formatDate(value: string) {
         </button>
       </div>
 
-      <!-- Search Box Card -->
+      <!-- Search and Sort Box Card -->
       <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <div class="relative">
-          <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
-          </svg>
-          <input
-            v-model="searchTerm"
-            type="text"
-            placeholder="Search services..."
-            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500 lg:max-w-md"
-          />
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="relative flex-1 max-w-md">
+            <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+            </svg>
+            <input
+              v-model="searchTerm"
+              type="text"
+              placeholder="Search services..."
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500"
+            />
+          </div>
+
+          <!-- Sort by dropdown -->
+          <div class="flex items-center gap-2 shrink-0">
+            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort by:</label>
+            <select
+              v-model="sortBy"
+              class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:focus:border-sky-500"
+            >
+              <option value="latest">Date Latest</option>
+              <option value="oldest">Date Oldest</option>
+              <option value="az">A to Z</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -301,7 +354,12 @@ function formatDate(value: string) {
                 <td class="px-6 py-4 text-sm text-gray-600">
                   {{ service.description ? service.description.substring(0, 50) + (service.description.length > 50 ? '...' : '') : '-' }}
                 </td>
-                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ formatCurrency(service.price_hour) }} / hour</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex flex-col">
+                    <span class="font-semibold text-gray-900 dark:text-gray-100">{{ formatServicePricing(service) }}</span>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">{{ service.pricing_type || 'hourly' }}</span>
+                  </div>
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{{ formatDate(service.created_at) }}</td>
                 <td class="px-6 py-4 whitespace-nowrap sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                   <div class="flex gap-3 justify-end">
@@ -383,9 +441,51 @@ function formatDate(value: string) {
               ></textarea>
             </div>
 
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
-                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Labor Price per Hour <span class="text-red-500">*</span><InfoTooltip text="Please provide the labor price per hour." /></label>
+            <!-- Pricing Model Selector -->
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+              <label class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">
+                Pricing Model <span class="text-red-500">*</span>
+                <InfoTooltip text="Choose whether this service has an hourly rate, a fixed flat fee, or a hybrid base fee + hourly rate." />
+              </label>
+              <select
+                v-model="formData.pricing_type"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="hourly">Hourly Rate Only (₱ / hour)</option>
+                <option value="fixed">Fixed Price (Flat ₱ fee)</option>
+                <option value="hybrid">Hybrid (Base Fee + Hourly Rate)</option>
+              </select>
+            </div>
+
+            <!-- Price Inputs based on Model -->
+            <div class="grid grid-cols-1 gap-5" :class="formData.pricing_type === 'hybrid' ? 'sm:grid-cols-2' : ''">
+              <div
+                v-if="formData.pricing_type === 'fixed' || formData.pricing_type === 'hybrid'"
+                class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40"
+              >
+                <label class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">
+                  {{ formData.pricing_type === 'hybrid' ? 'Base / Call-out Fee (₱)' : 'Fixed Price (₱)' }} <span class="text-red-500">*</span>
+                  <InfoTooltip text="Fixed flat fee charged for this service." />
+                </label>
+                <input
+                  v-model="formData.price_fixed"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  placeholder="0"
+                />
+              </div>
+
+              <div
+                v-if="formData.pricing_type === 'hourly' || formData.pricing_type === 'hybrid'"
+                class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40"
+              >
+                <label class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">
+                  Labor Price per Hour (₱/hr) <span class="text-red-500">*</span>
+                  <InfoTooltip text="Hourly rate multiplied by labor hours." />
+                </label>
                 <input
                   v-model="formData.price_hour"
                   type="number"
@@ -396,25 +496,26 @@ function formatDate(value: string) {
                   placeholder="0"
                 />
               </div>
+            </div>
 
-              <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
-                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Service Image<InfoTooltip text="Please provide the service image." /></label>
-                <button
-                  type="button"
-                  @click="triggerFileInput"
-                  class="w-full rounded-xl border border-dashed border-sky-300 bg-white px-4 py-3.5 font-semibold text-sky-700 shadow-sm outline-none transition hover:border-sky-500 hover:bg-sky-50 focus:ring-4 focus:ring-sky-500/10 dark:border-sky-800 dark:bg-slate-900 dark:text-sky-300"
-                >
-                  <ImagePlus class="mr-2 inline h-4 w-4" />
-                  {{ imagePreview ? 'Replace Image' : 'Choose Image' }}
-                </button>
-                <input
-                  ref="fileInputRef"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="handleFileInput"
-                />
-              </div>
+            <!-- Service Image Upload -->
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-950/40">
+              <label class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5">Service Image<InfoTooltip text="Please provide the service image." /></label>
+              <button
+                type="button"
+                @click="triggerFileInput"
+                class="w-full rounded-xl border border-dashed border-sky-300 bg-white px-4 py-3.5 font-semibold text-sky-700 shadow-sm outline-none transition hover:border-sky-500 hover:bg-sky-50 focus:ring-4 focus:ring-sky-500/10 dark:border-sky-800 dark:bg-slate-900 dark:text-sky-300"
+              >
+                <ImagePlus class="mr-2 inline h-4 w-4" />
+                {{ imagePreview ? 'Replace Image' : 'Choose Image' }}
+              </button>
+              <input
+                ref="fileInputRef"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="handleFileInput"
+              />
             </div>
 
             <div v-if="imagePreview" class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-inner dark:border-slate-800 dark:bg-slate-950">

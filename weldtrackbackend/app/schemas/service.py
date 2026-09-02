@@ -1,12 +1,14 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 
 
 class ServiceBase(BaseModel):
     name: str
     description: Optional[str] = None
-    price_hour: float
+    pricing_type: Literal["hourly", "fixed", "hybrid"] = "hourly"
+    price_fixed: float = Field(default=0.0, ge=0.0)
+    price_hour: float = Field(default=0.0, ge=0.0)
     image_url: Optional[str] = None
 
 
@@ -17,7 +19,9 @@ class ServiceCreate(ServiceBase):
 class ServiceUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    price_hour: Optional[float] = None
+    pricing_type: Optional[Literal["hourly", "fixed", "hybrid"]] = None
+    price_fixed: Optional[float] = Field(default=None, ge=0.0)
+    price_hour: Optional[float] = Field(default=None, ge=0.0)
     image_url: Optional[str] = None
 
 

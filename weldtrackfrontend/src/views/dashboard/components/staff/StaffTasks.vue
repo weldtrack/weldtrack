@@ -10,7 +10,13 @@ import { useInventoryStore } from '../../../../stores/inventory'
 import api from '../../../../api/api'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { useModalStore } from '../../../../stores/modal'
-import { loadServicePriceMap } from '../../../../services/servicePricing'
+import {
+  loadServicePriceMap,
+  loadServicePricingInfoMap,
+  formatServicePricing,
+  calculateServiceLabor,
+  type ServicePricingInfo,
+} from '../../../../services/servicePricing'
 import { resolveImageUrl, uploadImage } from '../../../../services/images'
 
 interface StaffMember {
@@ -23,6 +29,7 @@ const staffTasksStore = useStaffTasksStore()
 const bookingsStore = useBookingsStore()
 const modalStore = useModalStore()
 const servicePriceMap = ref<Record<string, number>>({})
+const servicePricingMap = ref<Record<string, ServicePricingInfo>>({})
 const isLoading = ref(true)
 const isAdmin = computed(() => authStore.role === 'admin')
 
@@ -182,6 +189,7 @@ onMounted(async () => {
       inventoryStore.fetchInventory(),
       inventoryStore.fetchMovements(),
       loadServicePriceMap().then((map) => (servicePriceMap.value = map)),
+      loadServicePricingInfoMap().then((map) => (servicePricingMap.value = map)),
     ]
 
     // Staff assignment controls are admin-only, so only an admin needs the
@@ -270,8 +278,19 @@ function getLaborRate(taskId: string) {
   return servicePriceMap.value[normalizedName] || 0
 }
 
+function getTaskPricing(taskId: string): ServicePricingInfo | null {
+  const task = staffTasksStore.tasks.find((t) => t.id === taskId)
+  if (!task) return null
+  const normalizedName = task.projectName.split(' - ')[0].trim().toLowerCase()
+  return servicePricingMap.value[normalizedName] || null
+}
+
 function calculateTotalLaborCost(taskId: string) {
+  const pricing = getTaskPricing(taskId)
   const staffCount = getAssignedStaffCount(taskId)
+  if (pricing) {
+    return calculateServiceLabor(pricing, recordForm.laborHours, staffCount)
+  }
   const rate = getLaborRate(taskId)
   return recordForm.laborHours * staffCount * rate
 }
@@ -807,7 +826,15 @@ async function confirmRemoveTask() {
                 <label class="flex items-center text-sm font-bold text-sky-900 dark:text-sky-300 mb-1.5">Labor Hours (per member)<InfoTooltip text="Please provide the labor hours per member." /></label>
                 <input v-model.number="recordForm.laborHours" type="number" min="0" step="0.5" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
               </div>
-              <p class="text-xs font-medium text-sky-700 dark:text-sky-300">Calculation: {{ recordForm.laborHours }} hours * {{ getAssignedStaffCount(recordingTask || '') }} members * PHP {{ getLaborRate(recordingTask || '') }}/hr</p>
+              <p v-if="getTaskPricing(recordingTask || '')?.pricing_type === 'fixed'" class="text-xs font-medium text-sky-700 dark:text-sky-300">
+                Fixed Service Pricing: {{ formatServicePricing(getTaskPricing(recordingTask || '')) }}
+              </p>
+              <p v-else-if="getTaskPricing(recordingTask || '')?.pricing_type === 'hybrid'" class="text-xs font-medium text-sky-700 dark:text-sky-300">
+                Calculation: {{ formatCurrency(getTaskPricing(recordingTask || '')?.price_fixed || 0) }} base + ({{ recordForm.laborHours }} hrs * {{ getAssignedStaffCount(recordingTask || '') }} members * {{ formatCurrency(getTaskPricing(recordingTask || '')?.price_hour || 0) }}/hr)
+              </p>
+              <p v-else class="text-xs font-medium text-sky-700 dark:text-sky-300">
+                Calculation: {{ recordForm.laborHours }} hours * {{ getAssignedStaffCount(recordingTask || '') }} members * {{ formatCurrency(getLaborRate(recordingTask || '')) }}/hr
+              </p>
               <p class="text-xl font-bold text-sky-900 dark:text-sky-300">Total Labor Cost: {{ formatCurrency(calculateTotalLaborCost(recordingTask || '')) }}</p>
             </div>
 

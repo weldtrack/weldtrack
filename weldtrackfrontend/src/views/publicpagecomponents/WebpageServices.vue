@@ -4,11 +4,14 @@ import type { Ref } from 'vue'
 import api from '../../api/api'
 import { ArrowLeft, ArrowRight, Wrench } from 'lucide-vue-next'
 import { resolveImageUrl } from '../../services/images'
+import { formatServicePricing, formatCurrency } from '../../services/servicePricing'
 
 interface Service {
     id: string
     name: string
     description: string | null
+    pricing_type?: 'hourly' | 'fixed' | 'hybrid'
+    price_fixed?: number
     price_hour: number
     image_url: string | null
     created_at: string
@@ -43,7 +46,7 @@ async function fetchServices() {
     loadError.value = ''
     try {
         const response = await api.get('/services?limit=20')
-        services.value = response.data || []
+        services.value = (response.data || []).slice().sort((a: Service, b: Service) => a.name.localeCompare(b.name))
         await nextTick()
         document.querySelectorAll<HTMLElement>('#services [data-reveal]').forEach((el) => {
             el.classList.add('is-visible')
@@ -60,9 +63,6 @@ async function fetchServices() {
     }
 }
 
-function formatCurrency(value: number) {
-    return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
-}
 
 function stopAutoplay() {
     if (autoplayTimer) window.clearInterval(autoplayTimer)
@@ -126,8 +126,13 @@ onBeforeUnmount(() => {
                                     class="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-105" />
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
                                 <div class="absolute inset-x-5 bottom-5 text-left sm:inset-x-8 sm:bottom-8">
-                                    <div class="mb-3 inline-block rounded-md bg-white px-3 py-1.5 text-xs font-bold text-slate-950 shadow-lg">
-                                        {{ formatCurrency(services[currentSlide]?.price_hour || 0) }} per hour
+                                    <div class="mb-3 flex flex-wrap items-center gap-2">
+                                        <div class="inline-block rounded-md bg-white px-3 py-1.5 text-xs font-black text-slate-950 shadow-lg">
+                                            {{ formatServicePricing(services[currentSlide]) }}
+                                        </div>
+                                        <div v-if="services[currentSlide]?.pricing_type === 'hybrid'" class="inline-block rounded-md bg-sky-500/90 px-2.5 py-1.5 text-xs font-bold text-white shadow-lg backdrop-blur-xs">
+                                            Fixed: {{ formatCurrency(services[currentSlide]?.price_fixed || 0) }} · Hourly: {{ formatCurrency(services[currentSlide]?.price_hour || 0) }}/hr
+                                        </div>
                                     </div>
                                     <div class="max-w-2xl rounded-xl bg-slate-950/90 p-4 shadow-xl backdrop-blur-sm sm:p-5">
                                         <h3 class="text-2xl font-bold !text-white sm:text-4xl">{{ services[currentSlide]?.name }}</h3>

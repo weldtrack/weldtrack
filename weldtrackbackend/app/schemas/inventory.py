@@ -39,7 +39,9 @@ class StockMovementBase(BaseModel):
     type: str  # "stock-in" or "stock-out"
     booking_id: Optional[str] = None
     task_id: Optional[str] = None
+    service_name: Optional[str] = None
     team_emails: list[str] = Field(default_factory=list)
+    recorded_by: Optional[str] = None
 
 
 class StockMovementResponse(StockMovementBase):

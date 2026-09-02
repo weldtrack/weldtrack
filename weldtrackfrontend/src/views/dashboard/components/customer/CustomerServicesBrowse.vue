@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../../stores/auth'
 import { useModalStore } from '../../../../stores/modal'
 import { useRouter } from 'vue-router'
 import { resolveImageUrl } from '../../../../services/images'
+import { formatServicePricing, formatCurrency, getPricingTypeLabel } from '../../../../services/servicePricing'
 
 const router = useRouter()
 const adminSectionStore = useAdminSectionStore()
@@ -20,6 +21,8 @@ interface Service {
   id: string
   name: string
   description: string | null
+  pricing_type?: 'hourly' | 'fixed' | 'hybrid'
+  price_fixed?: number
   price_hour: number
   image_url: string | null
 }
@@ -62,9 +65,10 @@ function isAlreadyBooked(serviceName: string) {
 }
 
 const filteredServices = computed(() => {
-  if (!searchTerm.value.trim()) return services.value
+  const list = [...services.value].sort((a, b) => a.name.localeCompare(b.name))
+  if (!searchTerm.value.trim()) return list
   const term = searchTerm.value.toLowerCase().trim()
-  return services.value.filter(
+  return list.filter(
     (s) => s.name.toLowerCase().includes(term) || (s.description && s.description.toLowerCase().includes(term)),
   )
 })
@@ -83,9 +87,6 @@ function openBooking(service: Service) {
   router.push({ name: 'customer-booking' })
 }
 
-function formatCurrency(value: number) {
-  return `₱${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
-}
 
 onMounted(() => {
   fetchData()
@@ -166,10 +167,12 @@ onMounted(() => {
             <div class="flex items-center gap-1.5"><ShieldCheck class="h-3.5 w-3.5 text-sky-400" /> Premium</div>
           </div>
 
-          <div class="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-            <span class="inline-flex items-baseline gap-1 rounded-2xl bg-white px-4 py-2.5 text-sm font-black text-slate-900 shadow-2xl dark:bg-slate-900/90 dark:text-white dark:ring-1 dark:ring-white/10 dark:backdrop-blur-md">
-              {{ formatCurrency(service.price_hour) }}
-              <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">/ HR</span>
+          <div class="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
+            <span class="inline-flex items-baseline gap-1 rounded-2xl bg-white px-4 py-2 text-sm font-black text-slate-900 shadow-2xl dark:bg-slate-900/90 dark:text-white dark:ring-1 dark:ring-white/10 dark:backdrop-blur-md">
+              {{ formatServicePricing(service) }}
+            </span>
+            <span class="rounded-xl bg-slate-950/75 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-sky-400 backdrop-blur-md ring-1 ring-white/20">
+              {{ getPricingTypeLabel(service.pricing_type) }}
             </span>
           </div>
         </div>
@@ -189,6 +192,30 @@ onMounted(() => {
           <p class="mt-3 flex-1 break-words text-sm leading-relaxed text-slate-600 dark:text-slate-400">
             {{ service.description || 'Professional welding service tailored to your exact project specifications.' }}
           </p>
+
+          <!-- Pricing Breakdown Details -->
+          <div class="mt-6 rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 dark:border-slate-800/80 dark:bg-slate-950/50">
+            <div class="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <span>Service Pricing</span>
+              <span class="rounded-md bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-950/80 dark:text-sky-300">
+                {{ getPricingTypeLabel(service.pricing_type) }}
+              </span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+              <div class="flex flex-col">
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Fixed / Base Price</span>
+                <span class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">
+                  {{ service.pricing_type === 'hourly' ? 'None' : formatCurrency(service.price_fixed || 0) }}
+                </span>
+              </div>
+              <div class="flex flex-col border-l border-slate-200/60 pl-3 dark:border-slate-800/60">
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Hourly Labor</span>
+                <span class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">
+                  {{ service.pricing_type === 'fixed' ? 'None' : `${formatCurrency(service.price_hour || 0)} / hr` }}
+                </span>
+              </div>
+            </div>
+          </div>
 
           <div class="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800/60">
             <button

@@ -5,10 +5,12 @@ import { Clock } from 'lucide-vue-next'
 import { useAuthStore } from '../../../../stores/auth'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
-import HistoryCard from '../shared/HistoryCard.vue'
+import { useInventoryStore } from '../../../../stores/inventory'
+import ProjectHistoryTable from '../shared/ProjectHistoryTable.vue'
 
 const authStore = useAuthStore()
 const bookingsStore = useBookingsStore()
+const inventoryStore = useInventoryStore()
 const loadError = ref('')
 
 const currentEmail = computed(() => authStore.email || '')
@@ -18,7 +20,11 @@ const isLoading = ref(true)
 onMounted(async () => {
   isLoading.value = true
   try {
-    await loadBookings()
+    await Promise.all([
+      loadBookings(),
+      inventoryStore.fetchInventory(),
+      inventoryStore.fetchMovements(),
+    ])
   } finally {
     isLoading.value = false
   }
@@ -80,25 +86,25 @@ const cancelledBookings = computed(() => customerBookings.value.filter((b) => b.
       </div>
     </div>
 
-    <!-- Full-width history list -->
-    <div class="grid w-full grid-cols-1 gap-4">
-      <div v-if="loadError" class="rounded-xl border border-red-200 bg-red-50 p-8 text-center col-span-full dark:border-red-900/50 dark:bg-red-950/40">
-        <h3 class="text-lg font-bold text-red-800 dark:text-red-300">Unable to load booking history</h3>
-        <p class="mt-1 text-sm text-red-700 dark:text-red-400">{{ loadError }}</p>
-        <button
-          type="button"
-          class="mt-4 inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-          @click="loadBookings"
-        >
-          Try again
-        </button>
-      </div>
-      <div v-else-if="customerBookings.length === 0" class="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center col-span-full dark:border-slate-800 dark:bg-slate-900">
-        <Clock class="mx-auto h-10 w-10 text-slate-400" />
-        <h3 class="mt-3 text-lg font-bold text-slate-900 dark:text-slate-100">No booking history recorded</h3>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Your completed or cancelled bookings will appear here.</p>
-      </div>
-      <HistoryCard v-for="b in customerBookings" :key="b.id" :item="b" />
+    <!-- Error Alert -->
+    <div v-if="loadError" class="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-900/50 dark:bg-red-950/40">
+      <h3 class="text-base font-bold text-red-800 dark:text-red-300">Unable to load booking history</h3>
+      <p class="mt-1 text-sm text-red-700 dark:text-red-400">{{ loadError }}</p>
+      <button
+        type="button"
+        class="mt-4 inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+        @click="loadBookings"
+      >
+        Try again
+      </button>
     </div>
+
+    <!-- Management Style Table -->
+    <ProjectHistoryTable
+      v-else
+      :items="customerBookings"
+      :show-customer-column="false"
+      empty-message="No booking history recorded yet."
+    />
   </div>
 </template>

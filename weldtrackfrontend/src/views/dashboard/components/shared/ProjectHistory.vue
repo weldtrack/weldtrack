@@ -4,9 +4,11 @@ import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { Folder } from 'lucide-vue-next'
 import { useBookingsStore } from '../../../../stores/bookings.ts'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage.ts'
-import HistoryCard from './HistoryCard.vue'
+import { useInventoryStore } from '../../../../stores/inventory'
+import ProjectHistoryTable from './ProjectHistoryTable.vue'
 
 const bookingsStore = useBookingsStore()
+const inventoryStore = useInventoryStore()
 const loadError = ref('')
 
 const isLoading = ref(true)
@@ -14,7 +16,11 @@ const isLoading = ref(true)
 onMounted(async () => {
   isLoading.value = true
   try {
-    await loadProjects()
+    await Promise.all([
+      loadProjects(),
+      inventoryStore.fetchInventory(),
+      inventoryStore.fetchMovements(),
+    ])
   } finally {
     isLoading.value = false
   }
@@ -37,10 +43,8 @@ const projectHistory = computed(() => {
     .sort((a, b) => new Date(b.createdDate ?? 0).getTime() - new Date(a.createdDate ?? 0).getTime())
 })
 
-
 const completedCount = computed(() => projectHistory.value.filter((item) => item.status === 'completed').length)
 const cancelledCount = computed(() => projectHistory.value.filter((item) => item.status === 'cancelled').length)
-
 </script>
 
 <template>
@@ -59,7 +63,7 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
     </div>
 
     <!-- Summary Metric Cards -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div class="rounded-xl border border-sky-200 bg-sky-50 p-5 dark:border-sky-900/50 dark:bg-sky-950/40">
         <p class="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">Completed Projects</p>
         <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ completedCount }}</p>
@@ -68,26 +72,31 @@ const cancelledCount = computed(() => projectHistory.value.filter((item) => item
         <p class="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300">Cancelled Projects</p>
         <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ cancelledCount }}</p>
       </div>
+      <div class="rounded-xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Records</p>
+        <p class="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{{ projectHistory.length }}</p>
+      </div>
     </div>
 
-    <!-- Full-width project list -->
-    <div class="grid w-full grid-cols-1 gap-4">
-      <div v-if="loadError" class="rounded-xl border border-red-200 bg-red-50 p-8 text-center col-span-full dark:border-red-900/50 dark:bg-red-950/40">
-        <h3 class="text-lg font-bold text-red-800 dark:text-red-300">Unable to load project history</h3>
-        <p class="mt-1 text-sm text-red-700 dark:text-red-400">{{ loadError }}</p>
-        <button
-          type="button"
-          class="mt-4 inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-          @click="loadProjects"
-        >
-          Try again
-        </button>
-      </div>
-      <div v-else-if="projectHistory.length === 0" class="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center col-span-full dark:border-slate-800 dark:bg-slate-900">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">No completed or cancelled projects yet</h3>
-        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Completed and cancelled projects will appear here once finalized.</p>
-      </div>
-      <HistoryCard v-for="item in projectHistory" :key="item.id" :item="item" />
+    <!-- Error Alert -->
+    <div v-if="loadError" class="rounded-2xl border border-red-200 bg-red-50 p-6 text-center dark:border-red-900/50 dark:bg-red-950/40">
+      <h3 class="text-base font-bold text-red-800 dark:text-red-300">Unable to load project history</h3>
+      <p class="mt-1 text-sm text-red-700 dark:text-red-400">{{ loadError }}</p>
+      <button
+        type="button"
+        class="mt-4 inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+        @click="loadProjects"
+      >
+        Try again
+      </button>
     </div>
+
+    <!-- Management Style Table -->
+    <ProjectHistoryTable
+      v-else
+      :items="projectHistory"
+      :show-customer-column="true"
+      empty-message="No completed or cancelled projects found."
+    />
   </section>
 </template>

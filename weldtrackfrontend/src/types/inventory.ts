@@ -22,7 +22,9 @@ export interface StockMovement {
   rawTimestamp?: string
   bookingId?: string | null
   taskId?: string | null
+  serviceName?: string | null
   teamEmails: string[]
+  recordedBy?: string | null
 }
 
 export type BackendInventoryItem = {
@@ -46,5 +48,7 @@ export type BackendStockMovement = {
   timestamp?: string
   booking_id?: string | null
   task_id?: string | null
+  service_name?: string | null
   team_emails?: string[]
+  recorded_by?: string | null
 }

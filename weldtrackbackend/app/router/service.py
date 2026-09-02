@@ -21,7 +21,7 @@ def list_services(
     db: Session = Depends(get_db),
 ):
     """Get all services"""
-    query = select(Service).offset(skip).limit(limit)
+    query = select(Service).order_by(Service.name.asc()).offset(skip).limit(limit)
     services = db.scalars(query).all()
     return services
 

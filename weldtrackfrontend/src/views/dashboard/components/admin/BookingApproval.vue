@@ -9,6 +9,12 @@ import { useModalStore } from '../../../../stores/modal'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 import api from '../../../../api/api'
+import {
+  extractServicePricingInfo,
+  calculateServiceLabor,
+  formatServicePricing,
+  type ServicePricingInfo,
+} from '../../../../services/servicePricing'
 
 const bookingsStore = useBookingsStore()
 const inventoryStore = useInventoryStore()
@@ -17,6 +23,7 @@ const bookings = computed(() => bookingsStore.bookings)
 
 const searchTerm = ref('')
 const dateFilter = ref('all')
+const bookingSortBy = ref<'latest' | 'oldest' | 'az'>('latest')
 
 const filteredBookings = computed(() => {
   let data = bookings.value.filter(
@@ -66,12 +73,23 @@ const filteredBookings = computed(() => {
     })
   }
 
-  return data
+  return data.sort((a, b) => {
+    if (bookingSortBy.value === 'az') {
+      return (a.projectType || '').localeCompare(b.projectType || '')
+    }
+    const timeA = a.createdDate ? new Date(a.createdDate).getTime() : 0
+    const timeB = b.createdDate ? new Date(b.createdDate).getTime() : 0
+    if (timeA && timeB && timeA !== timeB) {
+      return bookingSortBy.value === 'oldest' ? timeA - timeB : timeB - timeA
+    }
+    return bookingSortBy.value === 'oldest' ? String(a.id).localeCompare(String(b.id)) : String(b.id).localeCompare(String(a.id))
+  })
 })
 
 function resetFilters() {
   searchTerm.value = ''
   dateFilter.value = 'all'
+  bookingSortBy.value = 'latest'
 }
 
 const pendingCount = computed(() => bookings.value.filter((booking) => booking.status === 'pending').length)
@@ -93,6 +111,7 @@ const cancelForm = reactive({
   reason: '',
 })
 const servicePriceMap = ref<Record<string, number>>({})
+const servicePricingMap = ref<Record<string, ServicePricingInfo>>({})
 
 // --- DATE RESTRICTION LOGIC ---
 
@@ -114,8 +133,18 @@ function normalizeServiceName(value: string) {
   return value.trim().toLowerCase()
 }
 
+function getServicePricingFor(projectType: string): ServicePricingInfo {
+  return servicePricingMap.value[normalizeServiceName(projectType)] ?? {
+    pricing_type: 'hourly',
+    price_fixed: 0,
+    price_hour: 0,
+  }
+}
+
 function getLaborPriceFor(projectType: string) {
-  return servicePriceMap.value[normalizeServiceName(projectType)] ?? 0
+  const info = getServicePricingFor(projectType)
+  if (info.pricing_type === 'fixed') return info.price_fixed
+  return info.price_hour
 }
 
 async function loadServicePrices() {
@@ -125,14 +154,23 @@ async function loadServicePrices() {
       ? response.data
       : response.data?.data ?? response.data?.services ?? []
 
+    servicePricingMap.value = services.reduce((acc: Record<string, ServicePricingInfo>, service: any) => {
+      const name = String(service.name ?? service.serviceName ?? service.title ?? '').trim()
+      if (!name) return acc
+      acc[normalizeServiceName(name)] = extractServicePricingInfo(service)
+      return acc
+    }, {})
+
     servicePriceMap.value = services.reduce((acc: Record<string, number>, service: any) => {
       const name = String(service.name ?? service.serviceName ?? service.title ?? '').trim()
       if (!name) return acc
-      acc[normalizeServiceName(name)] = Number(service.price_hour ?? 0)
+      const info = extractServicePricingInfo(service)
+      acc[normalizeServiceName(name)] = info.pricing_type === 'fixed' ? info.price_fixed : info.price_hour
       return acc
     }, {})
   } catch (err) {
     console.error('Failed to fetch service price:', err)
+    servicePricingMap.value = {}
     servicePriceMap.value = {}
   }
 }
@@ -256,21 +294,25 @@ async function confirmApproval() {
   }
 
   const estimatedHours = Number(approvalForm.estimatedLaborHours)
-  if (!Number.isFinite(estimatedHours) || estimatedHours <= 0) {
-    modalStore.open({
-      title: 'Invalid Labor Estimate',
-      message: 'Estimated labor hours must be greater than zero.',
-      variant: 'error',
-    })
-    return
+  const pricing = getServicePricingFor(selectedBooking.value.projectType)
+
+  if (pricing.pricing_type !== 'fixed') {
+    if (!Number.isFinite(estimatedHours) || estimatedHours <= 0) {
+      modalStore.open({
+        title: 'Invalid Labor Estimate',
+        message: 'Estimated labor hours must be greater than zero.',
+        variant: 'error',
+      })
+      return
+    }
   }
 
-  const hourlyRate = getLaborPriceFor(selectedBooking.value.projectType)
+  const estimatedCost = calculateServiceLabor(pricing, estimatedHours)
 
   const patch = {
     scheduleDate: approvalForm.scheduleDate,
     estimatedLaborHours: estimatedHours,
-    estimatedCost: hourlyRate * estimatedHours,
+    estimatedCost: estimatedCost,
     status: 'confirmed' as BookingStatus,
   }
 
@@ -424,8 +466,8 @@ function getDisplayedLaborCost(booking: BookingItem) {
 
       <!-- Filter Controls Card -->
       <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <div class="grid grid-cols-1 gap-3 lg:grid-cols-4">
-          <div class="relative lg:col-span-2">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div class="relative sm:col-span-2">
             <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
             </svg>
@@ -449,6 +491,19 @@ function getDisplayedLaborCost(booking: BookingItem) {
             <option value="5">5 Days Ago</option>
             <option value="7">7 Days Ago</option>
           </select>
+
+          <!-- Sort by dropdown -->
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort:</label>
+            <select
+              v-model="bookingSortBy"
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:focus:border-sky-500"
+            >
+              <option value="latest">Date Latest</option>
+              <option value="oldest">Date Oldest</option>
+              <option value="az">A to Z</option>
+            </select>
+          </div>
 
           <button 
             type="button"
@@ -629,11 +684,17 @@ function getDisplayedLaborCost(booking: BookingItem) {
                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
             </div>
             <div>
-              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="estimatedLaborHours">Estimated Labor Hours <span class="text-red-500">*</span><InfoTooltip text="Used with the service hourly rate to calculate the initial project estimate." /></label>
-              <input id="estimatedLaborHours" v-model="approvalForm.estimatedLaborHours" type="number" min="0.5" step="0.5"
+              <div v-if="selectedBooking" class="mb-3 rounded-xl border border-sky-100 bg-sky-50/70 p-3 text-xs text-sky-800">
+                <span class="font-bold">Service Pricing:</span> {{ formatServicePricing(getServicePricingFor(selectedBooking.projectType)) }}
+              </div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="estimatedLaborHours">
+                Estimated Labor Hours {{ selectedBooking && getServicePricingFor(selectedBooking.projectType).pricing_type === 'fixed' ? '(Optional Duration)' : '*' }}
+                <InfoTooltip text="Used for task scheduling duration and calculating project estimates." />
+              </label>
+              <input id="estimatedLaborHours" v-model="approvalForm.estimatedLaborHours" type="number" min="0" step="0.5"
                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200" />
               <p v-if="selectedBooking" class="mt-2 text-xs text-slate-500">
-                Estimated labor cost: ₱{{ (getLaborPriceFor(selectedBooking.projectType) * (Number(approvalForm.estimatedLaborHours) || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}
+                Estimated labor cost: ₱{{ calculateServiceLabor(getServicePricingFor(selectedBooking.projectType), Number(approvalForm.estimatedLaborHours) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}
               </p>
             </div>
           </div>

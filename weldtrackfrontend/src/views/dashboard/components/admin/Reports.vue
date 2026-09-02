@@ -352,20 +352,24 @@ async function generateStockInReportPDF() {
       <tr>
         <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${formatDateTime(m.rawTimestamp || m.timestamp)}</td>
         <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${m.itemName}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${m.serviceName || (m.bookingId ? 'Welding Service' : 'Warehouse Adjustment')}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${m.teamEmails && m.teamEmails.length ? m.teamEmails.join(', ') : (m.recordedBy || 'Staff Field Team')}</td>
         <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:center;">${m.type}</td>
         <td style="padding:8px;border:1px solid var(--table-border, #ddd);text-align:right;">${m.quantity}</td>
-        <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${m.bookingId ?? m.taskId ?? ''}</td>
+        <td style="padding:8px;border:1px solid var(--table-border, #ddd);">${m.bookingId ?? m.taskId ?? '-'}</td>
       </tr>
     `).join('')
 
     if (movementRows) {
       element.querySelector('div')!.innerHTML += `
         <h3 style="margin-top:25px;border-bottom:1px solid #333;padding-bottom:10px;">Stock Movement Log</h3>
-        <table style="width:100%;border-collapse:collapse;margin-top:15px;">
+        <table style="width:100%;border-collapse:collapse;margin-top:15px;font-size:12px;">
           <thead>
             <tr style="background-color: var(--public-text, #0f172a);color: var(--public-text, #f8fafc);">
               <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Timestamp</th>
               <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Item</th>
+              <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Service</th>
+              <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Team / Staff</th>
               <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:center;">Type</th>
               <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:right;">Qty</th>
               <th style="padding:10px;border:1px solid var(--table-border, #ddd);text-align:left;">Ref</th>

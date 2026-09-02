@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import InfoTooltip from '../../../../components/ui/InfoTooltip.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Check, PhilippinePeso, Plus, Trash2 } from 'lucide-vue-next'
+import { Check, PhilippinePeso, Plus, Trash2, Search } from 'lucide-vue-next'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { fetchStaffDirectoryApi } from '../../../../api/auth'
 import { createPayslip, deletePayslip, fetchPayslips, updatePayslipStatus } from '../../../../api/payroll'
@@ -34,6 +34,41 @@ const form = reactive<PayslipCreatePayload>({
 })
 
 const totalPayroll = computed(() => payslips.value.reduce((sum, item) => sum + Number(item.net_pay), 0))
+
+const payrollSearch = ref('')
+const payrollSortBy = ref<'latest' | 'oldest' | 'az'>('latest')
+
+const filteredPayslips = computed(() => {
+  const query = payrollSearch.value.trim().toLowerCase()
+  let list = payslips.value
+
+  if (query) {
+    list = list.filter((p) => {
+      const email = p.staff_email || ''
+      const periodStr = `${p.period_start} ${p.period_end}`
+      const status = p.status || ''
+      return (
+        email.toLowerCase().includes(query) ||
+        periodStr.toLowerCase().includes(query) ||
+        status.toLowerCase().includes(query)
+      )
+    })
+  }
+
+  return list.sort((a, b) => {
+    if (payrollSortBy.value === 'az') {
+      const nameA = a.staff_email || ''
+      const nameB = b.staff_email || ''
+      return nameA.localeCompare(nameB)
+    }
+    const timeA = a.period_start ? new Date(a.period_start).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0)
+    const timeB = b.period_start ? new Date(b.period_start).getTime() : (b.created_at ? new Date(b.created_at).getTime() : 0)
+    if (timeA && timeB && timeA !== timeB) {
+      return payrollSortBy.value === 'oldest' ? timeA - timeB : timeB - timeA
+    }
+    return payrollSortBy.value === 'oldest' ? String(a.id).localeCompare(String(b.id)) : String(b.id).localeCompare(String(a.id))
+  })
+})
 
 const currency = (value: number | string) => new Intl.NumberFormat('en-PH', {
   style: 'currency', currency: 'PHP', minimumFractionDigits: 2,
@@ -220,21 +255,54 @@ onMounted(() => {
       <div v-else-if="!payslips.length" class="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
         <p class="text-slate-600 dark:text-slate-400">No payslips created yet.</p>
       </div>
-      <div v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[900px] divide-y divide-slate-100 dark:divide-slate-800">
-            <thead class="bg-slate-50 dark:bg-slate-800/80">
-              <tr class="text-left">
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Staff</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Period</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Hours</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Net Pay</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
-                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
-              <tr v-for="item in payslips" :key="item.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group">
+      <div v-else class="space-y-4">
+        <!-- Search and Sort Box Card -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="relative flex-1 max-w-md">
+              <Search class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                v-model="payrollSearch"
+                type="text"
+                placeholder="Search staff, period, or status..."
+                class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-500"
+              />
+            </div>
+
+            <!-- Sort by dropdown -->
+            <div class="flex items-center gap-2 shrink-0">
+              <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Sort by:</label>
+              <select
+                v-model="payrollSortBy"
+                class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:focus:border-sky-500"
+              >
+                <option value="latest">Date Latest</option>
+                <option value="oldest">Date Oldest</option>
+                <option value="az">A to Z</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="filteredPayslips.length === 0" class="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-slate-600 dark:text-slate-400">No payslips match your search criteria.</p>
+        </div>
+
+        <div v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[900px] divide-y divide-slate-100 dark:divide-slate-800">
+              <thead class="bg-slate-50 dark:bg-slate-800/80">
+                <tr class="text-left">
+                  <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Staff</th>
+                  <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Period</th>
+                  <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Hours</th>
+                  <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Net Pay</th>
+                  <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+                  <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right sticky right-0 z-10 bg-slate-50 dark:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
+                <tr v-for="item in filteredPayslips" :key="item.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group">
                 <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ item.staff_email }}</td>
                 <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ period(item) }}</td>
                 <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ item.regular_hours }} + {{ item.overtime_hours }} OT</td>
@@ -275,6 +343,7 @@ onMounted(() => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </template>
 
