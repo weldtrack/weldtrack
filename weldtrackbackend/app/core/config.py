@@ -33,7 +33,10 @@ class Settings(BaseSettings):
     PASSWORD_HASH_ITERATIONS: int = 120_000
     PASSWORD_HASH_PREFIX: str = "pbkdf2_sha256"
 
-    # Email & Integrations
+    # Email & Integrations (Brevo)
+    BREVO_API_KEY: str = ""
+    BREVO_FROM_EMAIL: str = "noreply@weldtrack.shop"
+    BREVO_FROM_NAME: str = "WeldTrack"
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "noreply@weldtrack.shop"
 
