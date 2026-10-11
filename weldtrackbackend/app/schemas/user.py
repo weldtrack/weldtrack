@@ -29,18 +29,52 @@ class LoginRequest(BaseModel):
         return value.strip().lower() if isinstance(value, str) else value
 
 
-class UserRead(UserBase):
+class UserRead(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: str
+    email: str
     role: UserRole
-    created_at: datetime
+    created_at: Optional[datetime] = None
     is_banned: bool = False
     is_online: bool = False
     last_active: Optional[datetime] = None
     profile_image: Optional[str] = None
     mobile_phone: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    @field_validator("id", mode="before")
+    @classmethod
+    def normalize_id(cls, value):
+        return str(value) if value is not None else ""
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value):
+        return str(value).strip().lower() if value else ""
+
+    @field_validator("role", mode="before")
+    @classmethod
+    def normalize_role(cls, value):
+        if isinstance(value, str):
+            val = value.strip().lower()
+            try:
+                return UserRole(val)
+            except ValueError:
+                return UserRole.customer
+        if hasattr(value, "value"):
+            val = str(value.value).strip().lower()
+            try:
+                return UserRole(val)
+            except ValueError:
+                return UserRole.customer
+        return value
+
+    @field_validator("is_banned", "is_online", mode="before")
+    @classmethod
+    def normalize_bool(cls, value):
+        if value is None:
+            return False
+        return bool(value)
 
 
 class UserUpdate(BaseModel):

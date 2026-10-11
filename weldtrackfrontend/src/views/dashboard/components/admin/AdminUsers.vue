@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
-import { Users } from 'lucide-vue-next'
+import { AlertTriangle, Users } from 'lucide-vue-next'
 import api from '../../../../api/api'
 import { useModalStore } from '../../../../stores/modal'
+import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 
 type User = {
   id: string
   email: string
   role: string
-  created_at: string
+  created_at?: string | null
   is_banned: boolean
   is_online?: boolean
   last_active?: string | null
@@ -20,32 +21,43 @@ const view = ref<'all' | 'online'>('all')
 const roleFilter = ref<'all' | 'customers' | 'staff'>('all')
 const search = ref('')
 const loading = ref(false)
+const error = ref('')
 const refreshInterval = ref<number | null>(null)
 const modalStore = useModalStore()
 
-async function fetchUsers() {
-  loading.value = true
+async function fetchUsers(silent = false) {
+  if (!silent) loading.value = true
+  error.value = ''
   try {
     const res = await api.get('/auth/admin/users', { skipGlobalLoading: true } as any)
-    users.value = res.data || []
+    users.value = Array.isArray(res.data) ? res.data : []
+  } catch (err) {
+    if (!silent) {
+      error.value = getUserFriendlyApiError(err, 'Failed to load users.')
+    }
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
-async function fetchOnline() {
-  loading.value = true
+async function fetchOnline(silent = false) {
+  if (!silent) loading.value = true
+  error.value = ''
   try {
     const res = await api.get('/auth/admin/online', { skipGlobalLoading: true } as any)
-    users.value = res.data || []
+    users.value = Array.isArray(res.data) ? res.data : []
+  } catch (err) {
+    if (!silent) {
+      error.value = getUserFriendlyApiError(err, 'Failed to load online users.')
+    }
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
-async function refresh() {
-  if (view.value === 'online') await fetchOnline()
-  else await fetchUsers()
+async function refresh(silent = false) {
+  if (view.value === 'online') await fetchOnline(silent)
+  else await fetchUsers(silent)
 }
 
 function banUser(id: string) {
@@ -61,6 +73,12 @@ function banUser(id: string) {
         await api.post(`/auth/admin/ban/${id}`, {}, { skipGlobalLoading: true } as any)
         await refresh()
       } catch (e) {
+        modalStore.open({
+          title: 'Action Failed',
+          message: getUserFriendlyApiError(e, 'Failed to ban user.'),
+          variant: 'error',
+          confirmLabel: 'OK',
+        })
       } finally {
         loading.value = false
       }
@@ -81,6 +99,12 @@ function unbanUser(id: string) {
         await api.post(`/auth/admin/unban/${id}`, {}, { skipGlobalLoading: true } as any)
         await refresh()
       } catch (e) {
+        modalStore.open({
+          title: 'Action Failed',
+          message: getUserFriendlyApiError(e, 'Failed to unban user.'),
+          variant: 'error',
+          confirmLabel: 'OK',
+        })
       } finally {
         loading.value = false
       }
@@ -92,43 +116,56 @@ function isOnline(user: User) {
   return Boolean(user.is_online)
 }
 
+function formatLastActive(dateStr?: string | null): string {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return isNaN(d.getTime()) ? '-' : d.toLocaleString()
+}
+
 const sortBy = ref<'latest' | 'oldest' | 'az'>('latest')
 
 const filtered = computed(() => {
   const term = search.value.trim().toLowerCase()
-  let list = users.value
-    .filter((u) => u.role.toLowerCase() !== 'admin')
+  const rawList = Array.isArray(users.value) ? users.value : []
+  let list = rawList
+    .filter((u) => u && String(u.role || '').toLowerCase() !== 'admin')
     .filter((u) => {
-      if (roleFilter.value === 'customers') return u.role.toLowerCase() === 'customer'
-      if (roleFilter.value === 'staff') return u.role.toLowerCase() === 'staff'
+      const role = String(u.role || '').toLowerCase()
+      if (roleFilter.value === 'customers') return role === 'customer'
+      if (roleFilter.value === 'staff') return role === 'staff'
       return true
     })
     .filter((u) => {
       if (!term) return true
+      const email = String(u.email || '').toLowerCase()
+      const role = String(u.role || '').toLowerCase()
+      const id = String(u.id || '').toLowerCase()
       return (
-        u.email.toLowerCase().includes(term) ||
-        u.role.toLowerCase().includes(term) ||
-        String(u.id).includes(term)
+        email.includes(term) ||
+        role.includes(term) ||
+        id.includes(term)
       )
     })
 
   return list.sort((a, b) => {
     if (sortBy.value === 'az') {
-      return a.email.localeCompare(b.email)
+      return String(a.email || '').localeCompare(String(b.email || ''))
     }
     const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
     const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
     if (timeA && timeB && timeA !== timeB) {
       return sortBy.value === 'oldest' ? timeA - timeB : timeB - timeA
     }
-    return sortBy.value === 'oldest' ? String(a.id).localeCompare(String(b.id)) : String(b.id).localeCompare(String(a.id))
+    return sortBy.value === 'oldest'
+      ? String(a.id || '').localeCompare(String(b.id || ''))
+      : String(b.id || '').localeCompare(String(a.id || ''))
   })
 })
 
 onMounted(() => {
   refresh()
   refreshInterval.value = window.setInterval(() => {
-    refresh()
+    refresh(true)
   }, 5000)
 })
 
@@ -152,6 +189,20 @@ onBeforeUnmount(() => {
         <p class="text-sm text-slate-600 dark:text-slate-400">Manage customer and staff accounts</p>
       </div>
     </header>
+
+    <div v-if="error" class="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+      <div class="flex items-center gap-2">
+        <AlertTriangle class="h-4 w-4 shrink-0 text-rose-500" />
+        <span>{{ error }}</span>
+      </div>
+      <button
+        type="button"
+        class="rounded-lg bg-rose-100 px-3 py-1 text-xs font-semibold hover:bg-rose-200 dark:bg-rose-900/60 dark:hover:bg-rose-800"
+        @click="refresh(false)"
+      >
+        Retry
+      </button>
+    </div>
 
     <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
       <div class="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
@@ -196,7 +247,7 @@ onBeforeUnmount(() => {
           <button
             class="whitespace-nowrap rounded-xl border px-4 py-2 text-xs font-semibold sm:text-sm transition-all"
             :class="view === 'online' ? 'border-sky-600 bg-sky-600 text-white shadow-xs' : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
-            @click="(view = view === 'online' ? 'all' : 'online'); refresh()"
+            @click="(view = view === 'online' ? 'all' : 'online'); refresh(false)"
           >
             {{ view === 'online' ? 'Online Only' : 'All Users' }}
           </button>
@@ -231,7 +282,7 @@ onBeforeUnmount(() => {
                   </span>
                 </div>
               </td>
-              <td class="px-5 py-4 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-xs">{{ u.last_active ? new Date(u.last_active).toLocaleString() : '-' }}</td>
+              <td class="px-5 py-4 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-xs">{{ formatLastActive(u.last_active) }}</td>
               <td class="px-5 py-4 text-right sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                 <div class="flex items-center justify-end gap-2">
                   <button
@@ -251,7 +302,15 @@ onBeforeUnmount(() => {
                 </div>
               </td>
             </tr>
-            <tr v-if="filtered.length === 0">
+            <tr v-if="loading && users.length === 0">
+              <td colspan="6" class="px-5 py-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
+                <div class="flex items-center justify-center gap-2">
+                  <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600 dark:border-slate-600 dark:border-t-sky-400"></span>
+                  <span>Loading users...</span>
+                </div>
+              </td>
+            </tr>
+            <tr v-else-if="filtered.length === 0">
               <td colspan="6" class="px-5 py-8 text-center text-sm font-medium text-slate-500 dark:text-slate-400">No matching users found</td>
             </tr>
         </tbody>

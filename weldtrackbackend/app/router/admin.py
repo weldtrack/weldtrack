@@ -30,7 +30,10 @@ def is_user_online(user: User) -> bool:
     """User is considered online if last_active is within the last 30 seconds."""
     if user.last_active is None:
         return False
-    return user.last_active >= datetime.now(timezone.utc) - timedelta(seconds=30)
+    last_active = user.last_active
+    if last_active.tzinfo is None:
+        last_active = last_active.replace(tzinfo=timezone.utc)
+    return last_active >= datetime.now(timezone.utc) - timedelta(seconds=30)
 
 
 # ── Staff ─────────────────────────────────────────────────────────────────────
