@@ -34,7 +34,9 @@ def serialize_task(task: StaffTask) -> dict:
         "description": task.description,
         "assignedStaffIds": [a.staff_id for a in task.assignees],
         "assignedStaffEmails": [
-            a.staff.email for a in task.assignees if a.staff and a.staff.email
+            (a.staff.full_name or a.staff.email)
+            for a in task.assignees
+            if a.staff and (a.staff.full_name or a.staff.email)
         ],
         "assignedAt": task.assigned_at,
         "dueDate": task.due_date,
@@ -53,7 +55,9 @@ def serialize_task(task: StaffTask) -> dict:
 def upsert_contribution_snapshot(task: StaffTask, db: Session) -> None:
     contributor_ids = [a.staff_id for a in task.assignees]
     contributor_emails = [
-        a.staff.email for a in task.assignees if a.staff and a.staff.email
+        (a.staff.full_name or a.staff.email)
+        for a in task.assignees
+        if a.staff and (a.staff.full_name or a.staff.email)
     ]
 
     snapshot = db.scalars(

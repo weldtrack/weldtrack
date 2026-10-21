@@ -5,6 +5,7 @@ import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { useCustomerAddressesStore } from '../../../../stores/customerAddresses'
 import { type CustomerAddressItem } from '../../../../types/customerAddresses'
 import { Plus, MapPin, Edit2, Trash2 } from 'lucide-vue-next'
+import { getProvinces, getMunicipalities, getBarangays } from '../../../../data/phLocations'
 
 const addressesStore = useCustomerAddressesStore()
 
@@ -18,12 +19,25 @@ const formData = reactive({
   label: '',
   country: 'PH',
   region: 'Bicol Region (Region V)',
-  province: '',
+  province: 'Sorsogon',
   municipality: '',
   barangay: '',
   house: '',
   isActive: false,
 })
+
+const provinceOptions = computed(() => getProvinces(formData.province))
+const municipalityOptions = computed(() => getMunicipalities(formData.province, formData.municipality))
+const barangayOptions = computed(() => getBarangays(formData.province, formData.municipality, formData.barangay))
+
+function onProvinceChange() {
+  formData.municipality = ''
+  formData.barangay = ''
+}
+
+function onMunicipalityChange() {
+  formData.barangay = ''
+}
 
 const isLoading = ref(true)
 
@@ -41,7 +55,7 @@ function resetForm() {
   formData.label = ''
   formData.country = 'PH'
   formData.region = 'Bicol Region (Region V)'
-  formData.province = ''
+  formData.province = 'Sorsogon'
   formData.municipality = ''
   formData.barangay = ''
   formData.house = ''
@@ -287,26 +301,35 @@ async function removeAddress(id: string) {
                 <input id="address-label" v-model="formData.label" type="text" required placeholder="e.g., Home, Office, Workshop" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
               </div>
               <div>
-                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-house">House / Street <span class="text-rose-500">*</span><InfoTooltip text="Please provide house or street number." /></label>
-                <input id="address-house" v-model="formData.house" type="text" required placeholder="e.g., 123 Main Street" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-province">Province <span class="text-rose-500">*</span><InfoTooltip text="Select your province." /></label>
+                <select id="address-province" v-model="formData.province" required @change="onProvinceChange" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                  <option value="">Select Province</option>
+                  <option v-for="prov in provinceOptions" :key="prov" :value="prov">{{ prov }}</option>
+                </select>
               </div>
               <div>
-                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-barangay">Barangay <span class="text-rose-500">*</span><InfoTooltip text="Please provide the barangay." /></label>
-                <input id="address-barangay" v-model="formData.barangay" type="text" required placeholder="e.g., Barangay San Jose" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-municipality">Municipality / City <span class="text-rose-500">*</span><InfoTooltip text="Select your municipality or city." /></label>
+                <select id="address-municipality" v-model="formData.municipality" required :disabled="!formData.province" @change="onMunicipalityChange" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                  <option value="">Select Municipality / City</option>
+                  <option v-for="mun in municipalityOptions" :key="mun" :value="mun">{{ mun }}</option>
+                </select>
               </div>
               <div>
-                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-municipality">Municipality / City <span class="text-rose-500">*</span><InfoTooltip text="Please provide municipality or city." /></label>
-                <input id="address-municipality" v-model="formData.municipality" type="text" required placeholder="e.g., Naga City" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-barangay">Barangay <span class="text-rose-500">*</span><InfoTooltip text="Select your barangay." /></label>
+                <select id="address-barangay" v-model="formData.barangay" required :disabled="!formData.municipality" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                  <option value="">Select Barangay</option>
+                  <option v-for="brgy in barangayOptions" :key="brgy" :value="brgy">{{ brgy }}</option>
+                </select>
               </div>
-              <div>
-                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-province">Province <span class="text-rose-500">*</span><InfoTooltip text="Please provide the province." /></label>
-                <input id="address-province" v-model="formData.province" type="text" required placeholder="e.g., Camarines Sur" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+              <div class="sm:col-span-2">
+                <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-house">House / Street / Purok <span class="text-rose-500">*</span><InfoTooltip text="Please provide house, street, or purok." /></label>
+                <input id="address-house" v-model="formData.house" type="text" required placeholder="e.g., Purok 2, 123 Main Street" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-sky-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
               </div>
               <div>
                 <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-country">Country<InfoTooltip text="Default country location." /></label>
                 <input id="address-country" v-model="formData.country" type="text" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 outline-none cursor-not-allowed dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400" disabled />
               </div>
-              <div class="sm:col-span-2">
+              <div>
                 <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="address-region">Region<InfoTooltip text="Default region location." /></label>
                 <input id="address-region" v-model="formData.region" type="text" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 outline-none cursor-not-allowed dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400" disabled />
               </div>

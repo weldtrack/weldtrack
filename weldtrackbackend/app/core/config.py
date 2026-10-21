@@ -49,8 +49,8 @@ class Settings(BaseSettings):
     MINIO_SECURE: bool = False
 
     # Initial Admin Seed
-    ADMIN_EMAIL: str = "admin@weldtrack.com"
-    ADMIN_PASSWORD: str = "Admin123!@#$"
+    ADMIN_EMAIL: str = "weldtrack@gmail.com"
+    ADMIN_PASSWORD: str = "weldtrack_admin"
 
     # Labor Rate
     FIXED_LABOR_RATE: float = 150.0

@@ -8,7 +8,7 @@ import { createPayslip, deletePayslip, fetchPayslips, updatePayslipStatus } from
 import type { Payslip, PayslipCreatePayload } from '../../../../types/payroll'
 
 const payslips = ref<Payslip[]>([])
-const staff = ref<{ id: string; email: string }[]>([])
+const staff = ref<{ id: string; email: string; full_name?: string | null }[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -38,17 +38,23 @@ const totalPayroll = computed(() => payslips.value.reduce((sum, item) => sum + N
 const payrollSearch = ref('')
 const payrollSortBy = ref<'latest' | 'oldest' | 'az'>('latest')
 
+function getStaffNameByIdOrEmail(staffId?: string, staffEmail?: string | null) {
+  const match = staff.value.find((s) => s.id === String(staffId || '') || (staffEmail && s.email === staffEmail))
+  if (match?.full_name) return `${match.full_name} (${match.email})`
+  return staffEmail || '-'
+}
+
 const filteredPayslips = computed(() => {
   const query = payrollSearch.value.trim().toLowerCase()
   let list = payslips.value
 
   if (query) {
     list = list.filter((p) => {
-      const email = p.staff_email || ''
+      const label = getStaffNameByIdOrEmail(p.staff_id, p.staff_email)
       const periodStr = `${p.period_start} ${p.period_end}`
       const status = p.status || ''
       return (
-        email.toLowerCase().includes(query) ||
+        label.toLowerCase().includes(query) ||
         periodStr.toLowerCase().includes(query) ||
         status.toLowerCase().includes(query)
       )
@@ -57,8 +63,8 @@ const filteredPayslips = computed(() => {
 
   return list.sort((a, b) => {
     if (payrollSortBy.value === 'az') {
-      const nameA = a.staff_email || ''
-      const nameB = b.staff_email || ''
+      const nameA = getStaffNameByIdOrEmail(a.staff_id, a.staff_email)
+      const nameB = getStaffNameByIdOrEmail(b.staff_id, b.staff_email)
       return nameA.localeCompare(nameB)
     }
     const timeA = a.period_start ? new Date(a.period_start).getTime() : (a.created_at ? new Date(a.created_at).getTime() : 0)
@@ -139,8 +145,10 @@ async function load() {
   try {
     const [payslipData, staffData] = await Promise.all([fetchPayslips(), fetchStaffDirectoryApi()])
     payslips.value = payslipData
-    staff.value = (Array.isArray(staffData) ? staffData : []).map((item: { id?: string; email?: string }) => ({
-      id: String(item.id || ''), email: item.email || '',
+    staff.value = (Array.isArray(staffData) ? staffData : []).map((item: { id?: string; email?: string; full_name?: string | null; name?: string | null }) => ({
+      id: String(item.id || ''),
+      email: item.email || '',
+      full_name: item.full_name || item.name || null,
     }))
   } catch (err) {
     error.value = messageFrom(err)
@@ -175,7 +183,7 @@ async function advance(item: Payslip) {
 }
 
 async function remove(item: Payslip) {
-  if (!window.confirm(`Delete the draft payslip for ${item.staff_email}?`)) return
+  if (!window.confirm(`Delete the draft payslip for ${getStaffNameByIdOrEmail(item.staff_id, item.staff_email)}?`)) return
   try {
     await deletePayslip(item.id)
     await load()
@@ -303,7 +311,7 @@ onMounted(() => {
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
                 <tr v-for="item in filteredPayslips" :key="item.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group">
-                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ item.staff_email }}</td>
+                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ getStaffNameByIdOrEmail(item.staff_id, item.staff_email) }}</td>
                 <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ period(item) }}</td>
                 <td class="px-6 py-4 text-gray-700 whitespace-nowrap">{{ item.regular_hours }} + {{ item.overtime_hours }} OT</td>
                 <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ currency(item.net_pay) }}</td>
@@ -369,7 +377,7 @@ onMounted(() => {
               <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Staff <span class="text-red-500">*</span><InfoTooltip text="Please provide the staff." /></label>
               <select v-model="form.staff_id" required class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
                 <option value="" disabled>Select staff</option>
-                <option v-for="member in staff" :key="member.id" :value="member.id">{{ member.email }}</option>
+                <option v-for="member in staff" :key="member.id" :value="member.id">{{ member.full_name ? `${member.full_name} (${member.email})` : member.email }}</option>
               </select>
             </div>
             <div class="hidden md:block"></div>

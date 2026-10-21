@@ -159,13 +159,39 @@ def verify_code(payload: dict, response: Response, db: Session = Depends(get_db)
                 detail="Password is required to complete signup",
             )
 
+        full_name = (payload.get("full_name") or "").strip() or None
+        address_data = payload.get("address") if isinstance(payload.get("address"), dict) else {}
+        province = (payload.get("province") or address_data.get("province") or "").strip()
+        municipality = (payload.get("municipality") or address_data.get("municipality") or "").strip()
+        barangay = (payload.get("barangay") or address_data.get("barangay") or "").strip()
+        house = (payload.get("house") or address_data.get("house") or "").strip()
+        label = (payload.get("label") or address_data.get("label") or "Home").strip() or "Home"
+
         user = User(
             email=email,
+            full_name=full_name,
             hashed_password=hash_password(password),
             role=UserRole.customer,
         )
         db.add(user)
         db.flush()
+
+        if province and municipality and barangay:
+            from app.models.customer_address import CustomerAddress
+
+            db.add(
+                CustomerAddress(
+                    user_id=user.id,
+                    label=label,
+                    country="PH",
+                    region="Bicol Region (Region V)",
+                    province=province,
+                    municipality=municipality,
+                    barangay=barangay,
+                    house=house or barangay,
+                    is_active=True,
+                )
+            )
 
         db.add(EmailVerification(user_id=user.id, is_verified=True))
         db.delete(verification_record)

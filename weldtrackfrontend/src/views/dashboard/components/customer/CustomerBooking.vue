@@ -10,6 +10,7 @@ import { type BookingItem } from '../../../../types/bookings'
 import { useCustomerAddressesStore } from '../../../../stores/customerAddresses'
 import api from '../../../../api/api'
 import { getServicePriceDisplay, formatServicePricing, getPricingTypeLabel } from '../../../../services/servicePricing'
+import { resolveImageUrl, uploadImage } from '../../../../services/images'
 
 import { useModalStore } from '../../../../stores/modal'
 
@@ -20,7 +21,7 @@ const addressesStore = useCustomerAddressesStore()
 const modalStore = useModalStore()
 
 const userRole = computed(() => auth.role || 'customer')
-const currentUser = computed(() => auth.email || 'User')
+const currentUser = computed(() => auth.user?.full_name || auth.email || 'User')
 const currentEmail = computed(() => auth.email || '')
 
 const isDialogOpen = ref(false)
@@ -35,6 +36,8 @@ const formData = reactive({
   description: '',
   createdDate: '',
 })
+const beforeImageFile = ref<File | null>(null)
+const beforeImagePreview = ref<string>('')
 
 const cancelForm = reactive({
   reason: '',
@@ -60,6 +63,7 @@ const selectedLaborPrice = computed(() => {
   if (!selectedService.value) return 0
   const type = selectedService.value.pricing_type || 'hourly'
   if (type === 'fixed') return selectedService.value.price_fixed || 0
+  if (type === 'hybrid') return (selectedService.value.price_fixed || 0) + (selectedService.value.price_hour || 0)
   return selectedService.value.price_hour || 0
 })
 
@@ -144,6 +148,23 @@ function resetForm() {
   formData.projectType = ''
   formData.description = ''
   formData.createdDate = new Date().toISOString().split('T')[0]
+  beforeImageFile.value = null
+  beforeImagePreview.value = ''
+}
+
+function handleItemImageChange(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0] ?? null
+  beforeImageFile.value = file
+  if (!file) {
+    beforeImagePreview.value = ''
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    beforeImagePreview.value = String(reader.result || '')
+  }
+  reader.readAsDataURL(file)
 }
 
 function closeDialog() {
@@ -203,8 +224,22 @@ async function handleSubmit() {
     return
   }
 
+  if (!beforeImageFile.value && !beforeImagePreview.value) {
+    modalStore.open({
+      title: 'Item Image Required',
+      message: 'Please attach a photo of the specific item or project to be repaired/welded.',
+      variant: 'warning',
+      confirmLabel: 'OK',
+    })
+    return
+  }
+
   isSubmitting.value = true
   try {
+    let uploadedBeforeImage = beforeImagePreview.value
+    if (beforeImageFile.value) {
+      uploadedBeforeImage = await uploadImage(beforeImageFile.value, 'jobs')
+    }
     await bookingsStore.createBooking({
       customerName: formData.customerName,
       email: formData.email,
@@ -214,6 +249,7 @@ async function handleSubmit() {
       status: 'pending',
       createdDate: formData.createdDate,
       preferredDate: formData.createdDate,
+      beforeImages: uploadedBeforeImage ? [uploadedBeforeImage] : [],
     })
     closeDialog()
   } catch (error: any) {
@@ -272,7 +308,14 @@ function getLaborCost(projectType: string) {
   if (!service) return 0
   const type = service.pricing_type || 'hourly'
   if (type === 'fixed') return service.price_fixed || 0
+  if (type === 'hybrid') return (service.price_fixed || 0) + (service.price_hour || 0)
   return service.price_hour || 0
+}
+
+function getLaborLabel(booking: BookingItem) {
+  if (booking.actualLaborCost != null) return 'Actual Labor Cost'
+  if (booking.estimatedCost != null && booking.estimatedCost > 0) return 'Estimated Labor Cost'
+  return 'Service Labor Rate'
 }
 
 function getMaterialCostMessage(booking: BookingItem) {
@@ -450,13 +493,22 @@ function getBookingTimeline(booking: BookingItem) {
               </div>
 
               <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
-                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Labor Cost /hr</p>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">{{ getLaborLabel(booking) }}</p>
                 <p class="mt-1 font-semibold text-slate-900 dark:text-slate-100 truncate">{{ formatCurrency(booking.actualLaborCost ?? getServicePriceDisplay(booking.projectType, booking.estimatedCost || getLaborCost(booking.projectType))) }}</p>
               </div>
 
               <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Material Cost</p>
                 <p class="mt-1 break-words font-semibold leading-relaxed text-slate-900 dark:text-slate-100">{{ getMaterialCostMessage(booking) }}</p>
+              </div>
+
+              <div v-if="booking.beforeImages?.length" class="rounded-xl bg-slate-50 border border-slate-100 p-3 dark:bg-slate-800/60 dark:border-slate-800 min-w-0">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Attached Item Photo</p>
+                <div class="mt-1.5 flex items-center gap-2">
+                  <a v-for="(img, idx) in booking.beforeImages" :key="`b-img-${idx}`" :href="resolveImageUrl(img)" target="_blank" rel="noreferrer">
+                    <img :src="resolveImageUrl(img)" alt="Item to repair" class="h-14 w-20 rounded-lg border border-slate-200 object-cover shadow-2xs hover:opacity-90" />
+                  </a>
+                </div>
               </div>
 
               <!-- Total Cost Highlight -->
@@ -603,11 +655,32 @@ function getBookingTimeline(booking: BookingItem) {
                   </p>
                 </div>
                 <div class="rounded-lg bg-slate-900 p-3 text-white shadow-2xs dark:bg-slate-950 border border-slate-800">
-                  <p class="text-[11px] font-semibold text-slate-300">Initial Base / Flat</p>
+                  <p class="text-[11px] font-semibold text-slate-300">Initial Base / 1-Hr Est.</p>
                   <p class="mt-0.5 text-base font-black">
                     {{ formatCurrency(selectedTotalCost) }}
                   </p>
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="itemImage">
+                Item / Project Photo (Before Image) <span class="text-rose-500">*</span>
+                <InfoTooltip text="Attach a clear photo of the item or welding work needed (e.g., Tricycle Repair). This will also serve as the Before photo for the staff." />
+              </label>
+              <input
+                id="itemImage"
+                type="file"
+                accept="image/*"
+                required
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-sky-700 hover:file:bg-sky-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200"
+                @change="handleItemImageChange"
+              />
+              <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                Attach a photo of the specific item to be repaired or fabricated so the admin can review it before approving and staff can use it as the Before image.
+              </p>
+              <div v-if="beforeImagePreview" class="mt-3">
+                <img :src="resolveImageUrl(beforeImagePreview)" alt="Selected item preview" class="max-h-48 rounded-xl border border-slate-200 object-cover shadow-xs" />
               </div>
             </div>
 

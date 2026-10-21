@@ -80,6 +80,14 @@ SEED_SERVICES = [
         "image_url": "custom_metal_canopy.jpg",
     },
     {
+        "name": "Tricycle Repair",
+        "description": "Complete welding repair, sidecar frame alignment, chassis reinforcement, and bracket fabrication for tricycles.",
+        "pricing_type": "hourly",
+        "price_fixed": 0.0,
+        "price_hour": 500.00,
+        "image_url": "trailer_chassis_repair.jpg",
+    },
+    {
         "name": "Automotive & Trailer Chassis Repair",
         "description": "Frame reinforcement, rust section cutout, and heavy weld repair for utility trailers and commercial truck chassis.",
         "pricing_type": "hourly",

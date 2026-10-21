@@ -59,6 +59,7 @@ def admin_create_staff(
     """Admin-only: create a staff account without requiring email verification."""
     email = payload.get("email")
     password = payload.get("password")
+    full_name = (payload.get("full_name") or payload.get("name") or "").strip() or None
 
     if not email or not password:
         raise HTTPException(
@@ -78,7 +79,10 @@ def admin_create_staff(
         )
 
     user = User(
-        email=email, hashed_password=hash_password(password), role=UserRole.staff
+        email=email,
+        full_name=full_name,
+        hashed_password=hash_password(password),
+        role=UserRole.staff,
     )
     db.add(user)
     db.flush()

@@ -22,6 +22,8 @@ import { resolveImageUrl, uploadImage } from '../../../../services/images'
 interface StaffMember {
   id: string
   email: string
+  full_name?: string | null
+  name?: string | null
 }
 
 const authStore = useAuthStore()
@@ -34,6 +36,38 @@ const isLoading = ref(true)
 const isAdmin = computed(() => authStore.role === 'admin')
 
 const staffList = computed(() => authStore.staffDirectory as StaffMember[])
+
+const busyStaffIds = computed(() => {
+  const busy = new Set<string>()
+  for (const task of staffTasksStore.tasks) {
+    if (task.status !== 'done' && !isTaskBookingCompleted(task.id)) {
+      for (const sid of task.assignedStaffIds || []) {
+        if (sid) busy.add(String(sid))
+      }
+    }
+  }
+  return busy
+})
+
+function getStaffDisplayName(staff: StaffMember) {
+  const fullName = (staff.full_name || staff.name || '').trim()
+  return fullName ? `${fullName} (${staff.email})` : staff.email
+}
+
+function getAvailableStaffForSlot(slotIndex: number) {
+  const selectedInOtherSlots = new Set(
+    newTaskForm.value.assignedStaffIds
+      .filter((id, idx) => idx !== slotIndex && Boolean(id))
+      .map((id) => String(id)),
+  )
+  return staffList.value.filter((staff) => {
+    const id = String(staff.id)
+    if (selectedInOtherSlots.has(id)) return false
+    if (busyStaffIds.value.has(id)) return false
+    return true
+  })
+}
+
 const assignedBookingIds = computed(() => {
   return new Set(
     staffTasksStore.tasks
@@ -83,6 +117,7 @@ const taskToRemove = ref<{ id: string; title: string } | null>(null)
 
 const isRecordModalOpen = ref(false)
 const recordingTask = ref<string | null>(null)
+const customerHasBeforeImage = ref(false)
 const recordForm = reactive({
   bookingId: '',
   lines: [{ itemId: '', quantity: 1 }] as Array<{ itemId: string; quantity: number }>,
@@ -101,6 +136,7 @@ function resetRecordForm() {
   recordForm.beforeImagePreview = ''
   recordForm.afterImagePreview = ''
   recordForm.laborHours = 0
+  customerHasBeforeImage.value = false
 }
 
 function getTaskBookingId(taskId: string) {
@@ -149,8 +185,9 @@ async function openRecordModal(taskId: string) {
       }))
     }
 
-    if (booking.beforeImages?.length) {
-      recordForm.beforeImagePreview = String(booking.beforeImages[0] || '')
+    if (booking.beforeImages?.length && booking.beforeImages[0]) {
+      recordForm.beforeImagePreview = String(booking.beforeImages[0])
+      customerHasBeforeImage.value = true
     }
     if (booking.afterImages?.length) {
       recordForm.afterImagePreview = String(booking.afterImages[0] || '')
@@ -266,11 +303,6 @@ const materialsTotalPrice = computed(() => {
   }, 0)
 })
 
-function getAssignedStaffCount(taskId: string) {
-  const task = staffTasksStore.tasks.find((t) => t.id === taskId)
-  return task?.assignedStaffIds?.length || 0
-}
-
 function getLaborRate(taskId: string) {
   const task = staffTasksStore.tasks.find((t) => t.id === taskId)
   if (!task) return 0
@@ -287,12 +319,11 @@ function getTaskPricing(taskId: string): ServicePricingInfo | null {
 
 function calculateTotalLaborCost(taskId: string) {
   const pricing = getTaskPricing(taskId)
-  const staffCount = getAssignedStaffCount(taskId)
   if (pricing) {
-    return calculateServiceLabor(pricing, recordForm.laborHours, staffCount)
+    return calculateServiceLabor(pricing, recordForm.laborHours, 1)
   }
   const rate = getLaborRate(taskId)
-  return recordForm.laborHours * staffCount * rate
+  return recordForm.laborHours * rate
 }
 
 async function recordMaterialsUsage() {
@@ -315,7 +346,7 @@ async function recordMaterialsUsage() {
   if (!recordForm.beforeImagePreview || !recordForm.afterImagePreview) {
     modalStore.open({
       title: 'Images required',
-      message: 'Please attach both before and after images before submitting.',
+      message: 'Please ensure both Before and After images are attached before submitting.',
       variant: 'warning',
     })
     return
@@ -407,6 +438,14 @@ function getStatusClass(status: TaskStatus) {
 }
 
 function getTeamLabel(task: { assignedStaffIds?: string[]; assignedStaffEmails?: string[] }) {
+  if (task.assignedStaffIds?.length) {
+    const labels = task.assignedStaffIds
+      .map((id) => authStore.getStaffLabel(id))
+      .filter((lbl) => Boolean(lbl) && !lbl.startsWith('Staff #'))
+    if (labels.length === task.assignedStaffIds.length) {
+      return labels.join(', ')
+    }
+  }
   if (task.assignedStaffEmails?.length) return task.assignedStaffEmails.join(', ')
   if (!task.assignedStaffIds?.length) return 'No team assigned'
 
@@ -575,11 +614,14 @@ async function confirmRemoveTask() {
                   class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200 text-sm"
                 >
                   <option value="">Select staff member {{ index + 1 }}</option>
-                  <option v-for="staff in staffList" :key="staff.id" :value="staff.id">
-                    {{ staff.email }}
+                  <option v-for="staff in getAvailableStaffForSlot(index)" :key="staff.id" :value="staff.id">
+                    {{ getStaffDisplayName(staff) }}
                   </option>
                 </select>
               </div>
+              <p class="mt-1.5 text-xs text-slate-500">
+                Staff members already selected in another slot or assigned to an active task are automatically filtered out.
+              </p>
             </div>
 
             <div class="md:col-span-2 pt-2 border-t border-slate-100">
@@ -823,32 +865,42 @@ async function confirmRemoveTask() {
 
             <div class="space-y-4 rounded-2xl border border-sky-200 bg-sky-50 px-6 py-5">
               <div>
-                <label class="flex items-center text-sm font-bold text-sky-900 dark:text-sky-300 mb-1.5">Labor Hours (per member)<InfoTooltip text="Please provide the labor hours per member." /></label>
+                <label class="flex items-center text-sm font-bold text-sky-900 dark:text-sky-300 mb-1.5">Labor Hours<InfoTooltip text="Please provide the total labor hours spent on this project." /></label>
                 <input v-model.number="recordForm.laborHours" type="number" min="0" step="0.5" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition" />
               </div>
               <p v-if="getTaskPricing(recordingTask || '')?.pricing_type === 'fixed'" class="text-xs font-medium text-sky-700 dark:text-sky-300">
                 Fixed Service Pricing: {{ formatServicePricing(getTaskPricing(recordingTask || '')) }}
               </p>
               <p v-else-if="getTaskPricing(recordingTask || '')?.pricing_type === 'hybrid'" class="text-xs font-medium text-sky-700 dark:text-sky-300">
-                Calculation: {{ formatCurrency(getTaskPricing(recordingTask || '')?.price_fixed || 0) }} base + ({{ recordForm.laborHours }} hrs * {{ getAssignedStaffCount(recordingTask || '') }} members * {{ formatCurrency(getTaskPricing(recordingTask || '')?.price_hour || 0) }}/hr)
+                Calculation: {{ formatCurrency(getTaskPricing(recordingTask || '')?.price_fixed || 0) }} base + ({{ recordForm.laborHours }} hrs × {{ formatCurrency(getTaskPricing(recordingTask || '')?.price_hour || 0) }}/hr)
               </p>
               <p v-else class="text-xs font-medium text-sky-700 dark:text-sky-300">
-                Calculation: {{ recordForm.laborHours }} hours * {{ getAssignedStaffCount(recordingTask || '') }} members * {{ formatCurrency(getLaborRate(recordingTask || '')) }}/hr
+                Calculation: {{ recordForm.laborHours }} hours × {{ formatCurrency(getLaborRate(recordingTask || '')) }}/hr
               </p>
               <p class="text-xl font-bold text-sky-900 dark:text-sky-300">Total Labor Cost: {{ formatCurrency(calculateTotalLaborCost(recordingTask || '')) }}</p>
             </div>
 
             <div class="grid gap-6 sm:grid-cols-2">
               <div>
-                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Before Image <span class="text-red-500">*</span><InfoTooltip text="Please provide the before image." /></label>
-                <input type="file" accept="image/*" class="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100" @change="handleBeforeImageChange" />
-                <div v-if="recordForm.beforeImagePreview" class="mt-3">
-                  <img :src="resolveImageUrl(recordForm.beforeImagePreview)" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
+                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">
+                  {{ customerHasBeforeImage ? 'Before Image (Customer Provided)' : 'Before Image' }}
+                  <span v-if="!customerHasBeforeImage" class="text-red-500 ml-1">*</span>
+                  <InfoTooltip text="The customer's attached item photo is automatically used as the Before image." />
+                </label>
+                <div v-if="customerHasBeforeImage && recordForm.beforeImagePreview" class="rounded-xl border border-sky-200 bg-sky-50/50 p-3">
+                  <p class="mb-2 text-xs font-medium text-sky-800">Automatically loaded from customer's booking attachment:</p>
+                  <img :src="resolveImageUrl(recordForm.beforeImagePreview)" alt="Customer Before Image" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
                 </div>
+                <template v-else>
+                  <input type="file" accept="image/*" class="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100" @change="handleBeforeImageChange" />
+                  <div v-if="recordForm.beforeImagePreview" class="mt-3">
+                    <img :src="resolveImageUrl(recordForm.beforeImagePreview)" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />
+                  </div>
+                </template>
               </div>
 
               <div>
-                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">After Image <span class="text-red-500">*</span><InfoTooltip text="Please provide the after image." /></label>
+                <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">After Image <span class="text-red-500">*</span><InfoTooltip text="Please provide the completed after image." /></label>
                 <input type="file" accept="image/*" class="w-full text-sm file:mr-4 file:rounded-full file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-sky-700 hover:file:bg-sky-100" @change="handleAfterImageChange" />
                 <div v-if="recordForm.afterImagePreview" class="mt-3">
                   <img :src="resolveImageUrl(recordForm.afterImagePreview)" class="max-h-48 w-full object-cover rounded-xl border border-slate-200 shadow-sm" />

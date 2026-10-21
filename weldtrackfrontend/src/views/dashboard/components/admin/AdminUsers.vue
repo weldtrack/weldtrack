@@ -9,6 +9,8 @@ import { getUserFriendlyApiError } from '../../../../services/errorMessage'
 type User = {
   id: string
   email: string
+  full_name?: string | null
+  name?: string | null
   role: string
   created_at?: string | null
   is_banned: boolean
@@ -138,10 +140,12 @@ const filtered = computed(() => {
     .filter((u) => {
       if (!term) return true
       const email = String(u.email || '').toLowerCase()
+      const fullName = String(u.full_name || u.name || '').toLowerCase()
       const role = String(u.role || '').toLowerCase()
       const id = String(u.id || '').toLowerCase()
       return (
         email.includes(term) ||
+        fullName.includes(term) ||
         role.includes(term) ||
         id.includes(term)
       )
@@ -149,7 +153,7 @@ const filtered = computed(() => {
 
   return list.sort((a, b) => {
     if (sortBy.value === 'az') {
-      return String(a.email || '').localeCompare(String(b.email || ''))
+      return String(a.full_name || a.email || '').localeCompare(String(b.full_name || b.email || ''))
     }
     const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
     const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
@@ -209,7 +213,7 @@ onBeforeUnmount(() => {
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
           <input 
             v-model="search" 
-            placeholder="Search users by email or ID..." 
+            placeholder="Search users by name, email, or ID..." 
             class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 sm:flex-1" 
           />
 
@@ -259,7 +263,7 @@ onBeforeUnmount(() => {
           <thead class="bg-slate-50 dark:bg-slate-800/80">
             <tr class="text-left">
               <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">ID</th>
-              <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Email</th>
+              <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">User</th>
               <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hidden sm:table-cell">Role</th>
               <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
               <th class="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hidden lg:table-cell">Last Active</th>
@@ -269,7 +273,10 @@ onBeforeUnmount(() => {
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800 bg-transparent">
             <tr v-for="u in filtered" :key="u.id" class="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/50 text-xs sm:text-sm group">
               <td class="px-5 py-4 text-slate-500 dark:text-slate-400 font-mono">{{ u.id }}</td>
-              <td class="px-5 py-4 font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-xs">{{ u.email }}</td>
+              <td class="px-5 py-4 max-w-[200px] sm:max-w-xs">
+                <p class="font-semibold text-slate-900 dark:text-slate-100 truncate">{{ u.full_name || u.name || u.email }}</p>
+                <p v-if="u.full_name || u.name" class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ u.email }}</p>
+              </td>
               <td class="px-5 py-4 text-slate-600 dark:text-slate-300 capitalize hidden sm:table-cell font-medium">{{ u.role }}</td>
               <td class="px-5 py-4">
                 <div class="flex items-center gap-2">

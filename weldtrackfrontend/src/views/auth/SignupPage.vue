@@ -7,13 +7,36 @@ import { getUserFriendlyApiError } from '../../services/errorMessage'
 import ThemeToggle from '../../components/ui/ThemeToggle.vue'
 import { useThemeMode } from '../../composables/useThemeMode'
 import { Eye, EyeOff } from 'lucide-vue-next'
+import { getProvinces, getMunicipalities, getBarangays } from '../../data/phLocations'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const modalStore = useModalStore()
 const { isDarkMode } = useThemeMode()
 
-const form = reactive({ email: '', password: '', confirm: '', code: '' })
+const form = reactive({
+  email: '',
+  password: '',
+  confirm: '',
+  province: 'Sorsogon',
+  municipality: '',
+  barangay: '',
+  house: '',
+  code: '',
+})
+const provinceOptions = computed(() => getProvinces(form.province))
+const municipalityOptions = computed(() => getMunicipalities(form.province, form.municipality))
+const barangayOptions = computed(() => getBarangays(form.province, form.municipality, form.barangay))
+
+function onProvinceChange() {
+  form.municipality = ''
+  form.barangay = ''
+}
+
+function onMunicipalityChange() {
+  form.barangay = ''
+}
+
 const step = ref(1)
 const countdown = ref(60)
 const codeTimer = ref<number | null>(null)
@@ -67,6 +90,10 @@ async function resendCode() {
     const response = await authStore.signup({
       email: form.email,
       password: form.password,
+      province: form.province,
+      municipality: form.municipality,
+      barangay: form.barangay,
+      house: form.house.trim() || form.barangay,
     })
     if (response.success !== true) {
       throw new Error('Request failed.')
@@ -82,6 +109,11 @@ async function resendCode() {
 async function submitSignup() {
   if (!form.email || !form.password || !form.confirm) {
     signupError.value = 'Email, password, and confirmation are required.'
+    return
+  }
+
+  if (!form.province || !form.municipality || !form.barangay) {
+    signupError.value = 'Please select your Province, City/Municipality, and Barangay.'
     return
   }
 
@@ -103,6 +135,10 @@ async function submitSignup() {
     const response = await authStore.signup({
       email: form.email,
       password: form.password,
+      province: form.province,
+      municipality: form.municipality,
+      barangay: form.barangay,
+      house: form.house.trim() || form.barangay,
     })
     if (response.success !== true) {
       throw new Error('Request failed.')
@@ -131,9 +167,14 @@ async function submitCode() {
       email: form.email,
       code: form.code,
       password: form.password,
+      province: form.province,
+      municipality: form.municipality,
+      barangay: form.barangay,
+      house: form.house.trim() || form.barangay,
+      label: 'Home',
       action: 'createaccount',
     })
-    
+
     if (response.user || response.access_token || response.token) {
       authStore.setSession({
         email: response.user?.email || form.email,
@@ -246,72 +287,131 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Right Side: Form -->
-        <div class="auth-form-panel flex items-center justify-center p-8 sm:p-12 xl:p-16">
-          <div class="w-full max-w-sm">
-                <div class="mb-10 text-center xl:text-left">
+        <div class="auth-form-panel flex items-center justify-center p-8 sm:p-10 xl:p-12">
+          <div class="w-full max-w-md">
+                <div class="mb-6 text-center xl:text-left">
                         <RouterLink to="/" class="mb-6 inline-block xl:hidden transition hover:opacity-80">
                           <img src="/weldtrack.png" alt="WeldTrack Logo" class="h-16 w-auto object-contain" />
                         </RouterLink>
                 <h2 class="text-3xl font-black tracking-tight text-white">Create Account</h2>
-                <p class="mt-2 text-slate-400">Create your customer account to book welding services.</p>
+                <p class="mt-2 text-slate-400">Create your customer account and set your default service address.</p>
                 </div>
 
-            <form class="space-y-6" @submit.prevent="handleFormSubmit">
+            <form class="space-y-5" @submit.prevent="handleFormSubmit">
               <div v-if="signupError" class="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400">
                 {{ signupError }}
               </div>
 
-              <div v-if="step === 1" class="space-y-5">
-                <div class="space-y-2">
+              <div v-if="step === 1" class="space-y-4">
+                <div class="space-y-1.5">
                   <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="email">Email Address</label>
                   <input
                     id="email"
                     v-model="form.email"
                     type="email"
                     placeholder="you@example.com"
-                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                    class="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
                   />
                 </div>
 
-                <div class="space-y-2">
-                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="password">Create Password</label>
-                  <div class="group relative">
-                    <input
-                      id="password"
-                      v-model="form.password"
-                      :type="showPassword ? 'text' : 'password'"
-                      placeholder="••••••••"
-                      class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-24 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
-                    />
-                    <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">
-                      <EyeOff v-if="showPassword" class="h-5 w-5" aria-hidden="true" />
-                      <Eye v-else class="h-5 w-5" aria-hidden="true" />
-                    </button>
-                    <div class="absolute inset-y-0 right-12 flex items-center">
-                      <div class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-white/20 bg-white/5 text-[11px] font-black text-slate-300 shadow-sm transition group-hover:border-cyan-400/60 group-hover:text-cyan-200 group-focus-within:border-cyan-400/60 group-focus-within:text-cyan-200">
-                        !
-                        <div class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-left text-[11px] leading-snug text-slate-200 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
-                          Password must be 8+ characters and include 1 uppercase letter and 1 number.
-                        </div>
-                      </div>
+                <!-- Service Address (Province -> City/Municipality -> Barangay) -->
+                <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                  <p class="text-[11px] font-bold uppercase tracking-widest text-cyan-400">Service Address (Bicol Region)</p>
+                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="space-y-1">
+                      <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400" for="signup-province">Province</label>
+                      <select
+                        id="signup-province"
+                        v-model="form.province"
+                        @change="onProvinceChange"
+                        class="h-10 w-full rounded-xl border border-white/10 bg-slate-900 px-3 text-xs font-medium text-white outline-none transition-all focus:border-cyan-500/50"
+                      >
+                        <option value="">Select Province</option>
+                        <option v-for="prov in provinceOptions" :key="prov" :value="prov">{{ prov }}</option>
+                      </select>
+                    </div>
+
+                    <div class="space-y-1">
+                      <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400" for="signup-municipality">City / Municipality</label>
+                      <select
+                        id="signup-municipality"
+                        v-model="form.municipality"
+                        :disabled="!form.province"
+                        @change="onMunicipalityChange"
+                        class="h-10 w-full rounded-xl border border-white/10 bg-slate-900 px-3 text-xs font-medium text-white outline-none transition-all focus:border-cyan-500/50 disabled:opacity-50"
+                      >
+                        <option value="">Select City / Municipality</option>
+                        <option v-for="mun in municipalityOptions" :key="mun" :value="mun">{{ mun }}</option>
+                      </select>
+                    </div>
+
+                    <div class="space-y-1 sm:col-span-2">
+                      <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400" for="signup-barangay">Barangay</label>
+                      <select
+                        id="signup-barangay"
+                        v-model="form.barangay"
+                        :disabled="!form.municipality"
+                        class="h-10 w-full rounded-xl border border-white/10 bg-slate-900 px-3 text-xs font-medium text-white outline-none transition-all focus:border-cyan-500/50 disabled:opacity-50"
+                      >
+                        <option value="">Select Barangay</option>
+                        <option v-for="brgy in barangayOptions" :key="brgy" :value="brgy">{{ brgy }}</option>
+                      </select>
+                    </div>
+
+                    <div class="space-y-1 sm:col-span-2">
+                      <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400" for="signup-house">House No. / Street / Purok (Optional)</label>
+                      <input
+                        id="signup-house"
+                        v-model="form.house"
+                        type="text"
+                        placeholder="e.g., Purok 2, Near Plaza"
+                        class="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white outline-none transition-all focus:border-cyan-500/50"
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div class="space-y-2">
-                  <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="confirm">Confirm Password</label>
-                  <div class="relative">
-                  <input
-                    id="confirm"
-                    v-model="form.confirm"
-                    :type="showConfirmPassword ? 'text' : 'password'"
-                    placeholder="••••••••"
-                    class="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 pr-12 text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
-                  />
-                  <button type="button" class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'" :aria-pressed="showConfirmPassword" @click="showConfirmPassword = !showConfirmPassword">
-                    <EyeOff v-if="showConfirmPassword" class="h-5 w-5" aria-hidden="true" />
-                    <Eye v-else class="h-5 w-5" aria-hidden="true" />
-                  </button>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="password">Create Password</label>
+                    <div class="group relative">
+                      <input
+                        id="password"
+                        v-model="form.password"
+                        :type="showPassword ? 'text' : 'password'"
+                        placeholder="••••••••"
+                        class="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 pr-20 text-sm text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                      />
+                      <button type="button" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showPassword ? 'Hide password' : 'Show password'" :aria-pressed="showPassword" @click="showPassword = !showPassword">
+                        <EyeOff v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
+                        <Eye v-else class="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <div class="absolute inset-y-0 right-10 flex items-center">
+                        <div class="relative flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-white/20 bg-white/5 text-[11px] font-black text-slate-300 shadow-sm transition group-hover:border-cyan-400/60 group-hover:text-cyan-200 group-focus-within:border-cyan-400/60 group-focus-within:text-cyan-200">
+                          !
+                          <div class="pointer-events-none absolute right-0 top-full z-20 mt-2 w-52 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-left text-[11px] leading-snug text-slate-200 opacity-0 shadow-2xl transition group-hover:opacity-100 group-focus-within:opacity-100">
+                            Password must be 8+ characters and include 1 uppercase letter and 1 number.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase tracking-widest text-slate-500" for="confirm">Confirm Password</label>
+                    <div class="relative">
+                    <input
+                      id="confirm"
+                      v-model="form.confirm"
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      placeholder="••••••••"
+                      class="h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3 pr-10 text-sm text-white outline-none transition-all focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10"
+                    />
+                    <button type="button" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-400" :aria-label="showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'" :aria-pressed="showConfirmPassword" @click="showConfirmPassword = !showConfirmPassword">
+                      <EyeOff v-if="showConfirmPassword" class="h-4 w-4" aria-hidden="true" />
+                      <Eye v-else class="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    </div>
                   </div>
                 </div>
 

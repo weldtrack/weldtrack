@@ -17,6 +17,11 @@ class UserBase(BaseModel):
 
 class SignupRequest(UserBase):
     password: str = Field(min_length=8)
+    full_name: Optional[str] = None
+    province: Optional[str] = None
+    municipality: Optional[str] = None
+    barangay: Optional[str] = None
+    house: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -34,6 +39,7 @@ class UserRead(BaseModel):
 
     id: str
     email: str
+    full_name: Optional[str] = None
     role: UserRole
     created_at: Optional[datetime] = None
     is_banned: bool = False
@@ -79,6 +85,7 @@ class UserRead(BaseModel):
 
 class UserUpdate(BaseModel):
     fullname: Optional[str] = None
+    full_name: Optional[str] = None
     mobile_phone: Optional[str] = Field(None, max_length=20)
     profile_image: Optional[str] = None
     email: Optional[EmailStr] = None

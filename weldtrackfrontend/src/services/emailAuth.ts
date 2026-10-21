@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios'
 
-export type VerificationCodePayload = Record<string, string>
+export type VerificationCodePayload = Record<string, string | undefined>
 
 export type VerificationCodeResponse = {
   success?: boolean

@@ -67,6 +67,7 @@ def _apply_booking_update(
     booking: Booking,
     payload: BookingUpdate,
     current_user: User,
+    db: Session | None = None,
 ) -> None:
     changes = payload.model_dump(exclude_unset=True)
     # These values are derived from persisted labor and material records. They
@@ -101,21 +102,34 @@ def _apply_booking_update(
             detail="Only administrators may update bookings",
         )
 
+    if changes.get("status") == BookingStatus.completed and db is not None:
+        assigned_staff_exists = db.scalar(
+            select(StaffTaskAssignee.staff_id)
+            .join(StaffTask, StaffTask.id == StaffTaskAssignee.task_id)
+            .where(StaffTask.booking_id == booking.id)
+            .limit(1)
+        )
+        if assigned_staff_exists is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot mark booking as completed until a staff member is assigned.",
+            )
+
     for key, value in changes.items():
         if hasattr(booking, key):
             setattr(booking, key, value)
 
 
 def _recalculate_booking_totals(booking: Booking) -> None:
-    booking.material_cost = sum(
-        float(line.subtotal or 0) for line in (booking.materials or [])
+    booking.material_cost = round(
+        sum(float(line.subtotal or 0) for line in (booking.materials or [])), 2
     )
     labor_cost = (
         float(booking.actual_labor_cost)
         if booking.actual_labor_cost is not None
         else float(booking.estimated_cost or 0)
     )
-    booking.total_price = labor_cost + float(booking.material_cost or 0)
+    booking.total_price = round(labor_cost + float(booking.material_cost or 0), 2)
 
 
 def _calculate_service_labor_cost(
@@ -127,14 +141,14 @@ def _calculate_service_labor_cost(
     pricing_type = getattr(service, "pricing_type", "hourly") or "hourly"
     fixed_price = float(service.price_fixed or 0.0)
     hourly_rate = float(service.price_hour or 0.0)
-    hours = float(labor_hours or 0.0)
+    hours = max(0.0, float(labor_hours or 0.0))
 
     if pricing_type == "fixed":
-        return fixed_price
+        return round(fixed_price, 2)
     elif pricing_type == "hybrid":
-        return fixed_price + (hours * hourly_rate)
+        return round(fixed_price + (hours * hourly_rate), 2)
     else:  # "hourly"
-        return hours * hourly_rate
+        return round(hours * hourly_rate, 2)
 
 
 def _recalculate_booking_estimate(booking: Booking, db: Session) -> None:
@@ -143,13 +157,14 @@ def _recalculate_booking_estimate(booking: Booking, db: Session) -> None:
         return
     pricing_type = getattr(service, "pricing_type", "hourly") or "hourly"
     if pricing_type == "fixed":
-        booking.estimated_cost = float(service.price_fixed or 0.0)
+        booking.estimated_cost = round(float(service.price_fixed or 0.0), 2)
     else:
-        if booking.estimated_labor_hours is None:
-            return
-        booking.estimated_cost = _calculate_service_labor_cost(
-            service, booking.estimated_labor_hours
+        hours = (
+            float(booking.estimated_labor_hours)
+            if booking.estimated_labor_hours is not None
+            else 1.0
         )
+        booking.estimated_cost = _calculate_service_labor_cost(service, hours)
 
 
 @router.get("", response_model=list[BookingResponse])
@@ -291,7 +306,7 @@ def update_booking(
 ):
     """Update a booking"""
     booking = _get_visible_booking(booking_id, current_user, db)
-    _apply_booking_update(booking, payload, current_user)
+    _apply_booking_update(booking, payload, current_user, db)
     _recalculate_booking_estimate(booking, db)
     if booking.status == BookingStatus.completed:
         _recalculate_booking_totals(booking)
@@ -310,7 +325,7 @@ def partial_update_booking(
 ):
     """Partially update a booking"""
     booking = _get_visible_booking(booking_id, current_user, db)
-    _apply_booking_update(booking, payload, current_user)
+    _apply_booking_update(booking, payload, current_user, db)
     _recalculate_booking_estimate(booking, db)
     if booking.status == BookingStatus.completed:
         _recalculate_booking_totals(booking)
@@ -389,26 +404,34 @@ def add_booking_materials(
 
     for material in list(booking.materials or []):
         db.delete(material)
+    db.flush()
 
     created: list[StockMovement] = []
-    
+    customer_before_image = (
+        booking.before_images[0]
+        if isinstance(booking.before_images, list) and len(booking.before_images) > 0
+        else None
+    )
+    resolved_before_image = payload.beforeImage or customer_before_image
+
     # Create TaskMaterialUsage record
     material_usage = TaskMaterialUsage(
         task_id=payload.taskId,
         booking_id=booking_id,
         submitted_by_staff_id=current_user.id,
-        before_image_url=payload.beforeImage,
+        before_image_url=resolved_before_image,
         after_image_url=payload.afterImage,
         labor_hours=payload.laborHours,
     )
     db.add(material_usage)
-    
+
     # Calculate and update labor cost
     service = db.scalar(select(Service).where(Service.name == booking.project_type))
     booking.actual_labor_cost = _calculate_service_labor_cost(
         service, payload.laborHours
     )
-    
+
+    new_materials: list[RecordMaterial] = []
     for line in payload.lines:
         item = db.get(InventoryItem, line.itemId)
         if not item:
@@ -437,7 +460,7 @@ def add_booking_materials(
                 ),
             )
         unit_price = float(item.unit_price or 0)
-        subtotal = qty * unit_price
+        subtotal = round(qty * unit_price, 2)
 
         material_record = RecordMaterial(
             booking_id=booking_id,
@@ -449,6 +472,7 @@ def add_booking_materials(
             is_temp=0,
         )
         db.add(material_record)
+        new_materials.append(material_record)
 
         movement = StockMovement(
             item_id=item.id,
@@ -464,10 +488,12 @@ def add_booking_materials(
         db.add(item)
         created.append(movement)
 
-    if payload.beforeImage:
-        booking.before_images = [payload.beforeImage]
+    if resolved_before_image:
+        booking.before_images = [resolved_before_image]
     if payload.afterImage:
         booking.after_images = [payload.afterImage]
+    booking.materials = new_materials
+    _recalculate_booking_totals(booking)
     db.add(booking)
 
     db.commit()

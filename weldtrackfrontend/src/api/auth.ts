@@ -37,6 +37,11 @@ export async function signupApi(payload: SignupPayload): Promise<SignupResponse>
     password: payload.password,
   }
   if (payload.role) body.role = payload.role
+  if (payload.full_name) body.full_name = payload.full_name
+  if (payload.province) body.province = payload.province
+  if (payload.municipality) body.municipality = payload.municipality
+  if (payload.barangay) body.barangay = payload.barangay
+  if (payload.house) body.house = payload.house
 
   const { data } = await api.post<SignupResponse>('/auth/signup', body)
   return data

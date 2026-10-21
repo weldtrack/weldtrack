@@ -22,6 +22,10 @@ def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if profile_update.full_name is not None:
+        current_user.full_name = profile_update.full_name.strip() or None
+    elif profile_update.fullname is not None:
+        current_user.full_name = profile_update.fullname.strip() or None
     if profile_update.mobile_phone is not None:
         current_user.mobile_phone = profile_update.mobile_phone
     if profile_update.profile_image is not None:

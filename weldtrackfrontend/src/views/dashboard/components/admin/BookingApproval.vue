@@ -5,9 +5,11 @@ import { CalendarCheck } from 'lucide-vue-next'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { type BookingItem, type BookingStatus } from '../../../../types/bookings'
 import { useInventoryStore } from '../../../../stores/inventory'
+import { useStaffTasksStore } from '../../../../stores/staffTasks'
 import { useModalStore } from '../../../../stores/modal'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
 import { getUserFriendlyApiError } from '../../../../services/errorMessage'
+import { resolveImageUrl } from '../../../../services/images'
 import api from '../../../../api/api'
 import {
   extractServicePricingInfo,
@@ -18,6 +20,7 @@ import {
 
 const bookingsStore = useBookingsStore()
 const inventoryStore = useInventoryStore()
+const staffTasksStore = useStaffTasksStore()
 const modalStore = useModalStore()
 const bookings = computed(() => bookingsStore.bookings)
 
@@ -144,6 +147,7 @@ function getServicePricingFor(projectType: string): ServicePricingInfo {
 function getLaborPriceFor(projectType: string) {
   const info = getServicePricingFor(projectType)
   if (info.pricing_type === 'fixed') return info.price_fixed
+  if (info.pricing_type === 'hybrid') return info.price_fixed + info.price_hour
   return info.price_hour
 }
 
@@ -180,11 +184,21 @@ const isLoading = ref(true)
 onMounted(async () => {
   isLoading.value = true
   try {
-    await Promise.all([bookingsStore.fetchBookings(), loadServicePrices()])
+    await Promise.all([
+      bookingsStore.fetchBookings(),
+      staffTasksStore.fetchTasks(),
+      loadServicePrices(),
+    ])
   } finally {
     isLoading.value = false
   }
 })
+
+function hasAssignedStaff(bookingId: string) {
+  return staffTasksStore.tasks.some(
+    (task) => String(task.bookingId) === String(bookingId) && Array.isArray(task.assignedStaffIds) && task.assignedStaffIds.length > 0,
+  )
+}
 
 function getStatusLabel(status: BookingStatus) {
   switch (status) {
@@ -240,6 +254,14 @@ async function openApprovalModal(booking: BookingItem) {
 }
 
 function openCompleteModal(booking: BookingItem) {
+  if (!hasAssignedStaff(booking.id)) {
+    modalStore.open({
+      title: 'Staff Assignment Required',
+      message: 'Please assign a staff team to this booking in the Staff Tasks tab before marking it as completed.',
+      variant: 'warning',
+    })
+    return
+  }
   selectedBooking.value = booking
   completionForm.materialCost = booking.materialCost ? String(booking.materialCost) : ''
   isCompleteModalOpen.value = true
@@ -532,50 +554,69 @@ function getDisplayedLaborCost(booking: BookingItem) {
                 <td colspan="5" class="px-5 py-12 text-center text-sm text-slate-500 dark:text-slate-400">No active bookings match the selected filters.</td>
               </tr>
               <tr v-for="booking in filteredBookings" :key="booking.id" class="align-top transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-800/40 group">
-                <td class="px-5 py-5">
+                <td class="px-5 py-4">
                   <p class="break-all text-sm font-semibold text-slate-900 dark:text-slate-100">{{ booking.email }}</p>
                   <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ booking.phone || 'No phone provided' }}</p>
                   <p class="mt-2 break-all text-[11px] text-slate-400">#{{ booking.id }}</p>
                 </td>
-                <td class="px-5 py-5">
+                <td class="px-5 py-4">
                   <p class="break-words text-sm font-semibold text-slate-800 dark:text-slate-200">{{ booking.projectType }}</p>
                   <p class="mt-1 line-clamp-2 break-words text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ booking.description || 'No project description.' }}</p>
+                  <div v-if="booking.beforeImages?.length" class="mt-2 flex items-center gap-2">
+                    <a
+                      v-for="(img, idx) in booking.beforeImages"
+                      :key="`row-img-${idx}`"
+                      :href="resolveImageUrl(img)"
+                      target="_blank"
+                      rel="noreferrer"
+                      class="group/img relative inline-block"
+                      title="Click to view full customer item photo"
+                    >
+                      <img :src="resolveImageUrl(img)" alt="Customer item photo" class="h-11 w-16 rounded-lg border border-slate-200 object-cover shadow-2xs transition hover:opacity-90" />
+                    </a>
+                  </div>
                   <p class="mt-2 text-[11px] text-slate-400">Booked {{ formatDate(booking.createdDate ?? '') }}</p>
                 </td>
-                <td class="px-5 py-5">
+                <td class="px-5 py-4">
                   <p class="text-sm font-medium text-slate-800 dark:text-slate-200">{{ booking.scheduleDate ? formatDate(booking.scheduleDate) : 'Waiting for approval' }}</p>
                   <p class="mt-1 text-xs text-slate-400">{{ booking.scheduleDate ? 'Approved schedule' : 'Schedule pending' }}</p>
                 </td>
-                <td class="px-5 py-5">
+                <td class="px-5 py-4">
                   <div class="space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                     <div class="flex justify-between gap-3"><span>Labor</span><span class="font-medium text-slate-800 dark:text-slate-200">₱{{ getDisplayedLaborCost(booking).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span></div>
                     <div class="flex justify-between gap-3"><span>Materials</span><span class="text-right font-medium text-slate-800 dark:text-slate-200">{{ booking.materialCost != null ? `₱${booking.materialCost.toLocaleString('en-PH', { minimumFractionDigits: 2 })}` : 'Pending' }}</span></div>
                     <div class="flex justify-between gap-3 border-t border-slate-100 pt-1.5 dark:border-slate-800"><span class="font-semibold">Total</span><span class="font-semibold text-slate-900 dark:text-slate-100">₱{{ (getDisplayedLaborCost(booking) + (booking.materialCost ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) }}</span></div>
-                    <p v-if="(booking.status === 'confirmed' || booking.status === 'in-progress') && !hasStaffMaterialSubmission(booking.id)"
+                    <p v-if="(booking.status === 'confirmed' || booking.status === 'in-progress') && !hasAssignedStaff(booking.id)"
+                      class="pt-1 text-[11px] font-semibold leading-snug text-rose-600 dark:text-rose-400">
+                      Assign staff first
+                    </p>
+                    <p v-else-if="(booking.status === 'confirmed' || booking.status === 'in-progress') && !hasStaffMaterialSubmission(booking.id)"
                       class="pt-1 text-[11px] font-medium leading-snug text-amber-700 dark:text-amber-400">
                       Awaiting staff materials
                     </p>
                   </div>
                 </td>
-                <td class="px-5 py-5 text-right sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
+                <td class="px-5 py-4 text-right sticky right-0 z-10 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800 shadow-[-12px_0_15px_-4px_rgba(0,0,0,0.05)]">
                   <span
-                    class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset"
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset"
                     :class="getStatusClass(booking.status)">
                     {{ getStatusLabel(booking.status) }}
                   </span>
-                  <div class="mt-3 flex flex-col items-stretch gap-2">
+                  <div class="mt-2 flex flex-wrap items-center justify-end gap-1.5">
                     <button v-if="booking.status === 'pending'" type="button"
-                      class="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-sky-700"
+                      class="rounded-md bg-sky-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-sky-700"
                       @click="openApprovalModal(booking)">
                       Approve
                     </button>
                     <button v-if="booking.status === 'confirmed' || booking.status === 'in-progress'" type="button"
-                      class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
+                      :disabled="!hasAssignedStaff(booking.id)"
+                      :title="!hasAssignedStaff(booking.id) ? 'Assign a staff team in Staff Tasks before completing this booking' : 'Mark booking completed'"
+                      class="rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-45"
                       @click="openCompleteModal(booking)">
                       Complete
                     </button>
                     <button v-if="booking.status !== 'cancelled'" type="button"
-                      class="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900/60 dark:hover:bg-rose-950/40"
+                      class="rounded-md border border-rose-200 px-2.5 py-1 text-[11px] font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-900/60 dark:hover:bg-rose-950/40"
                       @click="openCancelModal(booking)">
                       Cancel
                     </button>
@@ -597,13 +638,21 @@ function getDisplayedLaborCost(booking: BookingItem) {
                 <p class="break-words text-base font-semibold text-slate-900 dark:text-slate-100">{{ booking.projectType }}</p>
                 <p class="mt-1 break-all text-xs text-slate-500 dark:text-slate-400">{{ booking.email }}</p>
               </div>
-              <span class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset" :class="getStatusClass(booking.status)">{{ getStatusLabel(booking.status) }}</span>
+              <span class="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset" :class="getStatusClass(booking.status)">{{ getStatusLabel(booking.status) }}</span>
             </div>
 
             <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div><dt class="text-xs text-slate-400">Contact</dt><dd class="mt-1 break-words font-medium text-slate-700 dark:text-slate-300">{{ booking.phone || 'Not provided' }}</dd></div>
               <div><dt class="text-xs text-slate-400">Booked on</dt><dd class="mt-1 font-medium text-slate-700 dark:text-slate-300">{{ formatDate(booking.createdDate ?? '') }}</dd></div>
               <div class="col-span-2"><dt class="text-xs text-slate-400">Schedule</dt><dd class="mt-1 font-medium text-slate-700 dark:text-slate-300">{{ booking.scheduleDate ? formatDate(booking.scheduleDate) : 'Waiting for approval' }}</dd></div>
+              <div v-if="booking.beforeImages?.length" class="col-span-2">
+                <dt class="text-xs text-slate-400">Customer Item Photo</dt>
+                <dd class="mt-1.5 flex flex-wrap gap-2">
+                  <a v-for="(img, idx) in booking.beforeImages" :key="`m-img-${idx}`" :href="resolveImageUrl(img)" target="_blank" rel="noreferrer">
+                    <img :src="resolveImageUrl(img)" alt="Customer item photo" class="h-16 w-24 rounded-lg border border-slate-200 object-cover shadow-2xs" />
+                  </a>
+                </dd>
+              </div>
             </dl>
 
             <div class="mt-4 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800/60">
@@ -612,10 +661,19 @@ function getDisplayedLaborCost(booking: BookingItem) {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-2 border-t border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
-            <button v-if="booking.status === 'pending'" type="button" class="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700" @click="openApprovalModal(booking)">Approve</button>
-            <button v-if="booking.status === 'confirmed' || booking.status === 'in-progress'" type="button" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700" @click="openCompleteModal(booking)">Complete</button>
-            <button type="button" class="rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-900 dark:hover:bg-rose-950/40" @click="openCancelModal(booking)">Cancel</button>
+          <div class="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/60">
+            <button v-if="booking.status === 'pending'" type="button" class="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-700" @click="openApprovalModal(booking)">Approve</button>
+            <button
+              v-if="booking.status === 'confirmed' || booking.status === 'in-progress'"
+              type="button"
+              :disabled="!hasAssignedStaff(booking.id)"
+              :title="!hasAssignedStaff(booking.id) ? 'Assign staff first before completing' : 'Complete booking'"
+              class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-45"
+              @click="openCompleteModal(booking)"
+            >
+              Complete
+            </button>
+            <button type="button" class="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-900 dark:hover:bg-rose-950/40" @click="openCancelModal(booking)">Cancel</button>
           </div>
         </article>
       </div>
@@ -627,7 +685,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
         <div class="border-b border-slate-100 px-6 py-5 flex items-center justify-between bg-transparent">
           <div>
             <h3 class="text-xl font-bold text-slate-900">Approve Booking</h3>
-            <p class="text-sm text-slate-500 mt-1">Review booking details</p>
+            <p class="text-sm text-slate-500 mt-1">Review customer item image and booking details before approving</p>
           </div>
           <button 
             @click="closeApprovalModal" 
@@ -642,6 +700,7 @@ function getDisplayedLaborCost(booking: BookingItem) {
             <p class="mb-2"><span class="font-semibold text-slate-900">Email:</span> {{ selectedBooking.email }}</p>
             <p class="mb-2"><span class="font-semibold text-slate-900">Service:</span> {{ selectedBooking.projectType }}</p>
             <p class="mb-2"><span class="font-semibold text-slate-900">Contact:</span> {{ selectedBooking.phone }}</p>
+            <p v-if="selectedBooking.description" class="mb-2"><span class="font-semibold text-slate-900">Description:</span> {{ selectedBooking.description }}</p>
             <div
               v-if="selectedBooking.location && (selectedBooking.location.province || selectedBooking.location.municipality || selectedBooking.location.barangay || selectedBooking.location.house)"
               class="mt-4 pt-4 border-t border-slate-200">
@@ -651,27 +710,23 @@ function getDisplayedLaborCost(booking: BookingItem) {
                   selectedBooking.location.municipality ? selectedBooking.location.municipality + ', ' : '' }}{{
                   selectedBooking.location.province ? selectedBooking.location.province : '' }}</p>
             </div>
-            <div v-if="selectedBooking.beforeImages?.length || selectedBooking.afterImages?.length" class="mt-4 pt-4 border-t border-slate-200">
-              <p class="font-semibold text-slate-900">Field Images</p>
-              <div class="mt-3 grid grid-cols-2 gap-4">
-                <div v-if="selectedBooking.beforeImages?.length">
-                  <p class="text-xs text-slate-600 mb-2 font-medium">Before</p>
-                  <div class="flex flex-wrap gap-2">
-                    <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`before-${idx}`" :href="img" target="_blank"
-                      rel="noreferrer">
-                      <img :src="img" class="h-24 w-32 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
-                    </a>
-                  </div>
-                </div>
+            <div class="mt-4 pt-4 border-t border-slate-200">
+              <p class="font-semibold text-slate-900">Customer Attached Item Photo (Before Image)</p>
+              <div v-if="selectedBooking.beforeImages?.length" class="mt-3 flex flex-wrap gap-3">
+                <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`before-${idx}`" :href="resolveImageUrl(img)" target="_blank"
+                  rel="noreferrer">
+                  <img :src="resolveImageUrl(img)" alt="Customer attached item photo" class="h-36 w-48 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
+                </a>
+              </div>
+              <p v-else class="mt-2 text-xs italic text-slate-500">No item photo attached by customer for this booking.</p>
 
-                <div v-if="selectedBooking.afterImages?.length">
-                  <p class="text-xs text-slate-600 mb-2 font-medium">After</p>
-                  <div class="flex flex-wrap gap-2">
-                    <a v-for="(img, idx) in selectedBooking.afterImages" :key="`after-${idx}`" :href="img" target="_blank"
-                      rel="noreferrer">
-                      <img :src="img" class="h-24 w-32 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
-                    </a>
-                  </div>
+              <div v-if="selectedBooking.afterImages?.length" class="mt-4">
+                <p class="text-xs text-slate-600 mb-2 font-medium">After</p>
+                <div class="flex flex-wrap gap-2">
+                  <a v-for="(img, idx) in selectedBooking.afterImages" :key="`after-${idx}`" :href="resolveImageUrl(img)" target="_blank"
+                    rel="noreferrer">
+                    <img :src="resolveImageUrl(img)" class="h-24 w-32 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -745,18 +800,18 @@ function getDisplayedLaborCost(booking: BookingItem) {
               <div v-if="selectedBooking.beforeImages?.length">
                 <p class="text-xs text-slate-600 mb-2 font-medium">Before</p>
                 <div class="flex flex-wrap gap-2">
-                  <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`c-before-${idx}`" :href="img" target="_blank"
+                  <a v-for="(img, idx) in selectedBooking.beforeImages" :key="`c-before-${idx}`" :href="resolveImageUrl(img)" target="_blank"
                     rel="noreferrer">
-                    <img :src="img" class="h-24 w-32 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
+                    <img :src="resolveImageUrl(img)" class="h-24 w-32 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
                   </a>
                 </div>
               </div>
               <div v-if="selectedBooking.afterImages?.length">
                 <p class="text-xs text-slate-600 mb-2 font-medium">After</p>
                 <div class="flex flex-wrap gap-2">
-                  <a v-for="(img, idx) in selectedBooking.afterImages" :key="`c-after-${idx}`" :href="img" target="_blank"
+                  <a v-for="(img, idx) in selectedBooking.afterImages" :key="`c-after-${idx}`" :href="resolveImageUrl(img)" target="_blank"
                     rel="noreferrer">
-                    <img :src="img" class="h-24 w-32 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
+                    <img :src="resolveImageUrl(img)" class="h-24 w-32 rounded-xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-105" />
                   </a>
                 </div>
               </div>

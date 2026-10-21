@@ -18,8 +18,27 @@ from app.models.user import User
 from app.schemas.user import AuthResponse, UserRead
 
 
+DEFAULT_STAFF_NAMES = {
+    "staff1@weldtrack.com": "Juan Dela Cruz",
+    "staff2@weldtrack.com": "Marco Santos",
+    "staff3@weldtrack.com": "Ramon Reyes",
+    "staff4@weldtrack.com": "Carlo Mendoza",
+    "ramon.reyes@weldtrack.com": "Ramon Reyes",
+    "carlo.mendoza@weldtrack.com": "Carlo Mendoza",
+}
+
+
 def get_user_response(user: User) -> UserRead:
-    return UserRead.model_validate(user)
+    data = UserRead.model_validate(user)
+    if not data.full_name and data.email:
+        email_lower = data.email.lower()
+        if email_lower in DEFAULT_STAFF_NAMES:
+            data.full_name = DEFAULT_STAFF_NAMES[email_lower]
+        elif str(getattr(data.role, "value", data.role)) == "staff":
+            local_part = email_lower.split("@")[0].replace(".", " ").replace("_", " ").replace("-", " ").strip()
+            if local_part:
+                data.full_name = " ".join(w.capitalize() for w in local_part.split())
+    return data
 
 
 def build_auth_response(user: User) -> AuthResponse:

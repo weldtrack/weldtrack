@@ -11,13 +11,15 @@ import { resolveImageUrl } from '../../../../services/images'
 interface StaffMember {
   id: string
   email: string
+  full_name?: string | null
+  name?: string | null
   role: string
   created_at: string
   mobile_phone: string | null
   profile_image: string | null
 }
 
-const createStaffForm = reactive({ email: '', password: '', confirmPassword: '', confirm: false })
+const createStaffForm = reactive({ fullName: '', email: '', password: '', confirmPassword: '', confirm: false })
 const creatingStaff = ref(false)
 const createStaffError = ref('')
 const createStaffSuccess = ref('')
@@ -44,8 +46,8 @@ async function submitCreateStaff() {
   createStaffError.value = ''
   createStaffSuccess.value = ''
 
-  if (!createStaffForm.email || !createStaffForm.password || !createStaffForm.confirmPassword || !createStaffForm.confirm) {
-    createStaffError.value = 'Email, password, confirmation, and acknowledgement are required.'
+  if (!createStaffForm.fullName.trim() || !createStaffForm.email || !createStaffForm.password || !createStaffForm.confirmPassword || !createStaffForm.confirm) {
+    createStaffError.value = 'Full name, email, password, confirmation, and acknowledgement are required.'
     return
   }
 
@@ -62,12 +64,14 @@ async function submitCreateStaff() {
   creatingStaff.value = true
   try {
     const { data } = await api.post('/auth/admin/create-staff', {
+      full_name: createStaffForm.fullName.trim(),
       email: createStaffForm.email,
       password: createStaffForm.password,
     })
 
     if (data && data.success) {
       createStaffSuccess.value = 'Staff account created successfully.'
+      createStaffForm.fullName = ''
       createStaffForm.email = ''
       createStaffForm.password = ''
       createStaffForm.confirmPassword = ''
@@ -158,19 +162,36 @@ onMounted(async () => {
         </div>
 
         <form @submit.prevent="submitCreateStaff" class="space-y-5 max-w-4xl">
-          <div>
-            <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="create-staff-email">
-              Email Address <span class="text-red-500 ml-1">*</span>
-              <InfoTooltip text="Enter the official work email address for the staff member." />
-            </label>
-            <input
-              id="create-staff-email"
-              v-model="createStaffForm.email"
-              type="email"
-              required
-              placeholder="staff@example.com"
-              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-            />
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="create-staff-name">
+                Full Name <span class="text-red-500 ml-1">*</span>
+                <InfoTooltip text="Enter the staff member's full name." />
+              </label>
+              <input
+                id="create-staff-name"
+                v-model="createStaffForm.fullName"
+                type="text"
+                required
+                placeholder="Juan Dela Cruz"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              />
+            </div>
+
+            <div>
+              <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5" for="create-staff-email">
+                Email Address <span class="text-red-500 ml-1">*</span>
+                <InfoTooltip text="Enter the official work email address for the staff member." />
+              </label>
+              <input
+                id="create-staff-email"
+                v-model="createStaffForm.email"
+                type="email"
+                required
+                placeholder="staff@example.com"
+                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+              />
+            </div>
           </div>
 
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -274,14 +295,15 @@ onMounted(async () => {
           <div class="relative flex flex-1 flex-col px-5 pb-5">
             <div class="-mt-10 mb-4">
               <div class="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-linear-to-br from-sky-50 to-slate-100 shadow-lg dark:border-slate-900 dark:from-slate-700 dark:to-slate-800">
-                <img v-if="staff.profile_image" :src="getImageUrl(staff.profile_image)" :alt="staff.email" class="h-full w-full object-cover" />
-                <span v-else class="text-2xl font-black text-sky-700 dark:text-sky-300">{{ staff.email.slice(0, 1).toUpperCase() }}</span>
+                <img v-if="staff.profile_image" :src="getImageUrl(staff.profile_image)" :alt="staff.full_name || staff.email" class="h-full w-full object-cover" />
+                <span v-else class="text-2xl font-black text-sky-700 dark:text-sky-300">{{ (staff.full_name || staff.email).slice(0, 1).toUpperCase() }}</span>
               </div>
             </div>
 
             <div class="min-w-0">
               <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-600 dark:text-sky-400">WeldTrack team member</p>
-              <h4 class="mt-1 truncate text-base font-bold text-slate-900 dark:text-white" :title="staff.email">{{ staff.email }}</h4>
+              <h4 class="mt-1 truncate text-base font-bold text-slate-900 dark:text-white" :title="staff.full_name || staff.email">{{ staff.full_name || staff.name || staff.email }}</h4>
+              <p v-if="staff.full_name || staff.name" class="truncate text-xs text-slate-500 dark:text-slate-400">{{ staff.email }}</p>
             </div>
 
             <div class="mt-5 space-y-2.5 rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-800/50">

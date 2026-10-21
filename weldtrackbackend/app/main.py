@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -7,15 +8,31 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from sqlalchemy import text
 
 from app.api import router
 from app.core.config import settings
+from app.db import engine
+from app.scripts.create_initial_admin import seed_admin
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(255)"))
+        seed_admin()
+    except Exception as exc:
+        print(f"[startup] DB sync skipped or deferred: {exc}")
+    yield
+
 
 app = FastAPI(
     title="Weldtrack",
     docs_url=None if settings.is_prod else "/docs",
     redoc_url=None if settings.is_prod else "/redoc",
     openapi_url=None if settings.is_prod else "/openapi.json",
+    lifespan=lifespan,
 )
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["50/minute"])

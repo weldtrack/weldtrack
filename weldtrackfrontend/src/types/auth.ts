@@ -1,6 +1,7 @@
 export interface UserRead {
   id: string
   email: string
+  full_name?: string
   role: string
   created_at: string
   is_banned: boolean
@@ -12,6 +13,7 @@ export interface UserRead {
 
 export interface UserUpdate {
   fullname?: string
+  full_name?: string
   mobile_phone?: string
   profile_image?: string
   email?: string
@@ -21,6 +23,8 @@ export interface UserUpdate {
 export interface StaffDirectoryEntry {
   id: string
   email: string
+  full_name?: string
+  name?: string
 }
 
 export interface LoginPayload {
@@ -38,6 +42,11 @@ export interface SignupPayload {
   email: string
   password: string
   role?: string
+  full_name?: string
+  province?: string
+  municipality?: string
+  barangay?: string
+  house?: string
 }
 
 export interface SignupResponse {
@@ -48,6 +57,12 @@ export type ConfirmVerificationPayload = {
   email: string
   code: string
   password?: string
+  full_name?: string
+  province?: string
+  municipality?: string
+  barangay?: string
+  house?: string
+  label?: string
   action: 'changepassword' | 'createaccount'
 }
 

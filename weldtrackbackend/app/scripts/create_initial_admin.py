@@ -77,7 +77,20 @@ def seed_admin() -> None:
         ).fetchone()
 
         if result:
-            print(f"Admin already exists: {result.email}")
+            db.execute(
+                text("""
+                    UPDATE users
+                    SET email = :email, hashed_password = :hashed_password
+                    WHERE id = :id
+                """),
+                {
+                    "id": result.id,
+                    "email": admin_email,
+                    "hashed_password": hash_password(admin_password),
+                },
+            )
+            db.commit()
+            print(f"Synced existing admin account to: {admin_email}")
             return
 
         print("No existing admin found. Creating initial administrator account...")

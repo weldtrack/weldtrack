@@ -88,7 +88,7 @@
 % (Uses the \invertedtitle command. Instruct students to use \\ to break 
 % lines so that each line is shorter than the one above it.)
 \invertedtitle{
-    Weld Track: An Inventory Management System for Goboles’s Welding Shop with Cost Tracking 
+    WeldTrack: An Inventory Management System for Gobole's Welding Shop with Cost Tracking 
 }
 
 \vspace{1.5em}
@@ -127,7 +127,7 @@
 % SECTION I
 % ------------------------------------------
 \section{Introduction}
- \hspace*{2em}This section will discuss the proposed project, detailing the context of the welding shop, the problems it faces with its current manual inventory and costing methods, the purpose of the proposed system, its objectives, and the scope and boundaries of the project
+ \hspace*{2em}This section will discuss the proposed project, detailing the context of the welding shop, the problems it faces with its current manual inventory and costing methods, the purpose of the proposed system, its objectives, and the scope and boundaries of the project.
 \subsection{Project Context}
  \hspace*{2em}Inventory management is one of the most critical components of businesses that monitors and tracks physical supply, from purchasing to manufacturing. Incompetent inventory tracking and management can lead to notable financial losses due to waste materials, loss of materials, theft, project delays due to stockouts, and cost estimation error for projects. For small and medium-sized businesses, especially for those specialized in trades and product fabrication like welding shops, the absence of affordable and user-friendly digital tools often constraints them to rely on traditional manual methods, using pen and paper for logs or basic recordings, which can lead to human error, data redundancy, and loss of data. A transformative digital platform for welding and fabrication shops, moving them away from outdated manual processes and isolated data toward becoming integrated, data-driven. Traditional welding operations often struggle with challenges such as material waste, inefficient scheduling, and an inability to meet strict industry traceability requirements (like ISO or NADCAP) using legacy tools or spreadsheets. By replacing these fragmented systems with a unified cloud-based ecosystem, Dynamics 365 provides real-time production insights through IoT integration, allowing shops to track weld arc time, manage complex multi-level Bills of Materials (BOM), and automate quality control [1].
 \hspace*{2em} The welding industry, one of the most important in the product fabrication and construction sector, relies heavily on the availability of electrodes, gas, and equipment. In this country, Welding shops like Gobole's welding shops are commonplace. Offering services like fabrication and repairs for public communities. These small shops operate in a competitive environment where growth and profits depend on systematic use of materials and cost estimation of projects. The Department of Trade and Industry (DTI) supports the digital transformation of MSMEs to increase their operational efficiency and competitiveness in the modern economy. The main point of the sources is that the digital transformation of the welding and fabrication industry both in educational training and industrial operations is essential to overcome the high costs, inefficiencies, and quality limitations of traditional manual methods. By adopting to advanced technologies, integrated cloud platforms like Microsoft Dynamics 365 for production, the industry can move toward a "smart factory" model that is data-driven, flexible, and highly precise [2].
@@ -135,36 +135,38 @@
 \newpage
 \hspace*{2em} This software project is a web-based inventory management system for a small business enterprise established in Pagadian City, Zamboanga del Sur, Philippines. It primarily supports the business owner of the said business enterprise to perform regular inventory management online through a web platform. This mechanism did not only improve the overall business process but also enabled the business owner to manage inventories with efficiency and convenience. The enterprise comprises four branches and a mobile store that strolls around the city to cater to customer needs. In addition, the current mechanism of conducting inventory management is purely manual through the use of paper files, which overwhelmed the business owner with several challenges, including data inaccuracy due to the reliance on using papers where data are recorded and process inefficiency due to the manual recording and distribution of inventory and sales reports. This software project addressed these challenges by eliminating these manual approaches through an automated computing solution using a web platform where data are electronically recorded and processed, and reports are electronically produced [3].
 \hspace*{2em} Gobole's Welding Shop, located in Sta. Remedies, Bulan, Sorsogon, is a local Welding shop business established in January 19, 2022. The Welding shop offers a variety of fabrication services, including building a tricycle, table and chair, motor and tricycle repair related to any metal/steel structure. Gobole's welding shop operations involves managing inventory of various steel profiles like angle bars, square tubes, flat bars, welding rods, grinding discs, cutting disc, and maintaining functional welding machines and power tools. The shop caters to walk-in customers and project-based contracts.
-\hspace*{2em} The main problem at Gobole’s Welding Shop is the dependence on a manual system with no available system for managing inventory, project costs estimation, customer job orders, or appointments. Currently, supplies are tracked using a physical logbook, which often leads to manual errors and inconsistent updates. Determining the exact quantity of a specific supply remaining, for example, requires a physical count and a search through the logbook or rummaging through the entire inventory.
-\hspace*{2em} When a new project is accepted by the owner, material costs and project cost estimation are based on experience, past projects, and memory, rather than accurate current inventory levels and current material prices in the market. This leads to inconsistent and unprofessional quotation generation. Moreover, there is no financial visibility into revenue, invoicing, or project profitability, and no ability to compare estimated project costs against actual expenses. Additionally, metal scrap sold to junk shops remains unaccounted for.
-\hspace*{2em} Walk-in customers sometimes go to the shop without notifying the owner. They come to the shop and the owner is not around, which is a hassle for the customer and a waste of time and energy. The lack of a centralized system for managing customer job orders and appointments further worsens this issue.
-\hspace*{2em}This project, Weldtrack, seeks to solve these problems by presenting a simple, user-friendly, convenient web-based system. By digitalizing inventory tracking and management, the Weldtrack will provide an overview of the shop's inventory status, appointment management, financial performance. The owner can manage appointments and date of the pick-up of the projects. The project helps the owner to give a confident and reliable decision, not just by predict.
-
+\hspace*{2em} The main problem at Gobole’s Welding Shop is the dependence on a manual system with no available system for managing inventory, project costs estimation, customer bookings, or appointments. Currently, supplies are tracked using a physical logbook, which often leads to manual errors and inconsistent updates. Determining the exact quantity of a specific supply remaining, for example, requires a physical count and a search through the logbook or rummaging through the entire inventory.
+\hspace*{2em} When a new project is accepted by the owner, material costs and project cost estimation are based on experience, past projects, and memory, rather than accurate current inventory levels and current material prices in the market. This leads to inconsistent and guesswork-based pricing. Moreover, there is no financial visibility into revenue or project profitability, and no ability to compare estimated project costs against actual expenses. Additionally, metal scrap sold to junk shops remains unaccounted for.
+\hspace*{2em} Walk-in customers sometimes visit the shop without prior coordination. When the owner is out on field tasks or sourcing supplies, customers experience delays and wasted travel time. The lack of a centralized system for managing customer service requests and appointment scheduling further exacerbates these issues.
+\hspace*{2em}This project, WeldTrack, seeks to solve these problems by presenting a simple, user-friendly, convenient web-based system. By digitalizing inventory tracking and management, WeldTrack provides an overview of the shop's inventory status, booking and appointment management, operational costing, attendance, and payroll records. The owner can manage appointments and target completion dates, enabling reliable and data-driven business decisions.
 
 \subsection{Purpose and Description}
-\hspace*{2em}The main purpose of this capstone project is to design and develop "Weldtrack," which is a simple and user-friendly web-based inventory management system that tracks costs, especially for Gobole's Welding Shop. This capstone project seeks to replace the current manual logbook system used by the welding shop with a centralized application that will improve accuracy, increase efficiency, and provide valuable information for business management.
-\hspace*{2em}The intention behind developing Weldtrack is to provide a tool for the business owner and employees that will improve how they currently manage their inventory. At its core, this application is meant to handle all the inflows and outflows of inventory, ensuring that all materials and tools used for various projects are carefully recorded and monitored. The development of this application is meant to provide key features that will satisfy the needs of the welding shop, such as providing a search record for all materials and tools, displaying current stock levels, and sending notifications when stock is running low. The core component of this application is its project-costing module, which will be used to log new welding jobs and enter materials used for each new project. This will automatically subtract materials from the inventory count, which will then determine.
-\hspace*{2em}No centralized system for managing customer job orders and appointments - This leads to scheduling conflicts, missed customers, and disorganized project workflows
-\hspace*{2em}Inconsistent and unprofessional quotation generation – Quotes are often based on guesswork rather than accurate material costs, resulting in lost revenue or customer dissatisfaction.
-\hspace*{2em}No financial visibility into revenue, invoicing, or project profitability – The owner cannot identify which jobs are most profitable or track overall business performance.
-\hspace*{2em}No ability to compare estimated project costs against actual expenses – This prevents the owner from learning from past projects and improving future cost estimates.
-\hspace*{2em}Unaccounted metal scrap sold to junk shops – After project fabrication, leftover metal scraps are sometimes sold to junk shops, but these transactions are not recorded in the shop’s inventory or financial records. As a result, the shop loses potential revenue, inventory counts remain inaccurate, and there is no visibility into how much scrap value is being generated or lost.
-\hspace*{2em}By implementing Weldtrack, the owner can make accurate decisions about re-stocking supplies, accurate estimation of cost of future projects based on usage of materials in the previous projects, and easily identify which projects generate the highest profit margins. This shift to visionary, data-centric decision-making means the owner no longer relies on gut feelings when pricing jobs like tricycle sidecar or motor repairs. Weldtrack estimates the normal material cost and labor time for those specific repairs, then automatically inputs current supplier prices to generate a highly accurate, profitable quote. This data-driven approach ensures every offer is consistent and profitable, while allowing the owner to predict inventory needs based on upcoming work, transforming the shop's operations from simple guesswork into a strategically managed, financially stable enterprise.
-\hspace*{2em} The implementation of Weldtrack is to design and create a positive domino effect through Gobole's Welding Shop, directly benefiting the people who relate with the business every day. For the owner, the system provides complete, real-time visibility into operations, enabling strategic control over cash flow, data-backed pricing strategies, and the ability to identify the most profitable projects. Employees will enjoy a smooth workflow, replacing slow manual logbook entries with a quick and efficient digital process for logging materials.
+\hspace*{2em}The main purpose of this capstone project is to design, develop, and evaluate WeldTrack, a responsive web-based inventory, booking, staff-work, and project-cost management information system for Gobole's Welding Shop. This capstone project replaces the current manual logbook system with a centralized digital application that improves data accuracy, increases operational efficiency, and provides transparent financial visibility.
+\hspace*{2em}WeldTrack provides dedicated role-based interfaces for the shop owner (administrator), shop floor staff, and customers. The core components of the application include:
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Booking and Schedule Management:} Enables customers to browse welding services and submit booking requests with preferred dates and addresses, while administrators review, schedule, and assign tasks to authorized staff.
+    \item \textbf{Inventory Tracking and Material Control:} Monitors current stock levels, records material issuances against assigned projects, prevents insufficient-stock transactions, maintains complete stock-movement audit logs, and triggers low-stock threshold alerts.
+    \item \textbf{Project-Cost Estimation and Revenue Monitoring:} Calculates estimated labor cost from configured service rates and estimated hours, records actual labor and material consumption during fabrication, computes final project prices upon completion, and summarizes completed-project revenue.
+    \item \textbf{Attendance and Payroll Management:} Tracks staff attendance milestones and automates semi-monthly payslip computation based on recorded regular and overtime hours, configured hourly rates, overtime premiums, allowances, and audited deductions.
+\end{enumerate}
+\hspace*{2em}By implementing WeldTrack, the owner can make accurate restocking decisions, estimate future project costs accurately based on historical material usage, and easily identify which fabrication projects generate the highest profit margins. This shift to data-centric decision-making means the owner no longer relies on guesswork when pricing jobs such as tricycle sidecar fabrication or metal repairs. WeldTrack estimates the baseline material cost and labor time for specific repairs, ensuring consistent and profitable pricing. For employees, the system streamlines daily routines by replacing slow manual logbook entries with a digital process for logging attendance, project tasks, and material usage.
 
 \subsection{Objectives}
 \hspace*{2em}This study aims to design, develop, and evaluate WeldTrack, a web-based inventory, booking, staff-work, and project-cost management information system for Gobole's Welding Shop. Specifically, it aims to:
 
 \begin{enumerate}
-    \item To develop a role-based booking and appointment-management module for customer requests, administrative approval and scheduling, and assigned staff work.
-    \item To develop an inventory-management module with stock monitoring, material issuance, movement history, low-stock alerts, and insufficient-stock prevention.
-    \item To develop automated project-cost calculation and completed-project revenue monitoring.
+    \item To develop a role-based booking and appointment-management module that enables customers to submit service requests, administrators to approve and schedule bookings, and authorized staff to access assigned project tasks.
+    \item To develop an inventory-management module that monitors current stock, records material issuance against assigned projects, prevents insufficient-stock transactions, maintains stock-movement history, and identifies items at or below their low-stock thresholds.
+    \item To develop an automated project-cost calculation and revenue-monitoring module that:
     \begin{enumerate}[label=\theenumi.\arabic*]
-        \item Estimated labor-cost calculation from estimated hours and the configured service rate
-        \item Actual labor- and material-cost calculation from recorded project work
-        \item Backend-calculated final project price and completed-project revenue reporting
+        \item Calculates estimated labor cost from the configured service hourly rate and estimated labor hours;
+        \item Calculates actual labor cost from recorded labor hours;
+        \item Calculates material cost from recorded quantities and inventory unit prices;
+        \item Calculates the final project price from actual labor and material costs; and
+        \item Summarizes revenue from completed projects.
     \end{enumerate}
-    \item To evaluate the system using ISO 25010 with the following indicators:
+    \item To develop an attendance and payroll management module that tracks staff attendance milestones, aggregates regular and overtime hours, and generates semi-monthly payslips with configurable rates and deductions.
+    \item To evaluate WeldTrack using the ISO/IEC 25010:2023 quality characteristics of:
     \begin{enumerate}[label=\theenumi.\arabic*]
         \item Functional Suitability
         \item Performance Efficiency
@@ -173,9 +175,9 @@
 \end{enumerate}
 
 \subsection{Scope and Limitations}
-\hspace*{2em}WeldTrack is a responsive web-based management system for Gobole's Welding Shop with Administrator, Staff, and Customer roles. Customers manage addresses, browse services, submit and track bookings, view estimated and final project prices, cancel eligible pending requests, and provide feedback. Administrators manage services, booking approval and scheduling, staff assignments, inventory, attendance corrections, payroll, reports, and feedback moderation. Staff access assigned tasks, record attendance, labor hours and material usage, upload project images, and view personal payslips and contributions.
-\hspace*{2em}During booking approval, an administrator records estimated labor hours and the system calculates estimated labor cost from the configured service hourly rate. Assigned staff later record actual labor hours and materials used. The backend calculates actual labor cost, material cost, and the final project price from persisted records. Completed project totals are summarized as operational revenue.
-\hspace*{2em}WeldTrack does not replace accounting software and does not generate formal quotations, invoices, receipts, tax records, payment ledgers, or online-payment transactions. It also excludes weighted-average purchase costing, advanced scheduling optimization, CAD/CAM integration, complex supply-chain management, native mobile applications, and commercial round-the-clock support.
+\hspace*{2em}WeldTrack is a responsive web-based management system developed for Gobole's Welding Shop. It provides role-based access for administrators, staff members, and customers. Customers can maintain service addresses, browse available welding services, create booking requests, monitor booking status and project cost, cancel eligible pending requests, and submit service feedback. Administrators can manage services and hourly rates, review and schedule bookings, assign staff tasks, manage inventory and low-stock thresholds, monitor attendance, prepare payroll records, review project histories, and generate operational reports. Staff members can access only their assigned tasks, record attendance, submit labor hours and material usage, upload before-and-after project images, and view their approved payslips and contribution records.
+\hspace*{2em}The project-cost workflow distinguishes estimated and actual values. During booking approval, the administrator enters estimated labor hours, and WeldTrack calculates the estimated labor cost using the service hourly rate. During project execution, assigned staff record actual labor hours and materials used. The system calculates actual labor cost and material cost from these persisted records. When an administrator completes a booking, the backend calculates the final project price and includes the completed amount in revenue summaries.
+\hspace*{2em}WeldTrack does not replace full accounting software. It does not generate formal quotations, invoices, official receipts, tax records, accounts-receivable ledgers, or online-payment transactions. Booking estimates and final project prices are operational project-cost records rather than formal accounting documents. The system also excludes CAD/CAM integration, complex supply-chain management, resource-loaded Gantt scheduling, native mobile applications, and commercial round-the-clock support. Inventory unit prices represent the maintained item cost; weighted-average purchase costing is outside the current implementation unless a future purchase-receiving module is added.
 
 % ------------------------------------------
 % SECTION II
@@ -199,9 +201,9 @@
 
 \subsection{Insights and Gaps}
 
- \hspace*{2em}The analysis of existing inventory management systems reveals a clear industry wide shift from manual, paper-based recordkeeping to web based platforms, a transition that consistently delivers substantial gains in operational efficiency, data accuracy, and real time visibility. Systems such as the one implemented at PT. Jodo Global, for example, achieved a 60\% reduction in processing time and an 83\% decrease in recording errors by automating stock updates, transaction documentation, and report generation, underscoring the transformative potential of digital solutions. Common best practices across the reviewed systems include real time inventory monitoring, automated reporting, user authentication, and the adoption of structured development methodologies like Waterfall and Design Thinking to ground system design in actual user needs. Despite these strengths, a significant gap persists: none of the existing systems integrate inventory management with comprehensive cost tracking and project based financial tools. Solutions developed for ALAR Welding Workshop, the University of Baguio, and various small businesses effectively streamline inventory control but fail to link material consumption directly to job costing, quotation generation, or invoicing. Moreover, no system is tailored to the specific operational context of a welding shop features such as appointment scheduling, order management, and automated estimate creation are absent, leaving a disconnect between inventory data and the broader workflow. These shortcomings are acutely felt at Gobole’s Welding Shop, which currently relies on a physical logbook and memory-based cost estimation, highlighting the need for a solution that not only digitizes records but also unifies inventory, costing, and customer engagement functions 
+ \hspace*{2em}The analysis of existing inventory management systems reveals a clear industry wide shift from manual, paper-based recordkeeping to web based platforms, a transition that consistently delivers substantial gains in operational efficiency, data accuracy, and real time visibility. Systems such as the one implemented at PT. Jodo Global, for example, achieved a 60\% reduction in processing time and an 83\% decrease in recording errors by automating stock updates, transaction documentation, and report generation, underscoring the transformative potential of digital solutions. Common best practices across the reviewed systems include real time inventory monitoring, automated reporting, user authentication, and the adoption of structured development methodologies like Waterfall and Design Thinking to ground system design in actual user needs. Despite these strengths, a significant gap persists: none of the existing systems integrate inventory management with comprehensive cost tracking and project based financial tools. Solutions developed for ALAR Welding Workshop, the University of Baguio, and various small businesses effectively streamline inventory control but fail to link material consumption directly to job costing, project-cost estimation, or completed revenue monitoring. Moreover, no system is tailored to the specific operational context of a welding shop features such as appointment scheduling, booking management, and automated estimate creation are absent, leaving a disconnect between inventory data and the broader workflow. These shortcomings are acutely felt at Gobole’s Welding Shop, which currently relies on a physical logbook and memory-based cost estimation, highlighting the need for a solution that not only digitizes records but also unifies inventory, costing, and customer engagement functions.
 \subsection{Conclusion}
- \hspace*{2em} The review confirms the value of connecting inventory usage with booking operations and project costing. WeldTrack addresses this need through owned customer bookings, assigned staff work, inventory validation, estimated and actual labor costing, material-cost recording, final project-price calculation, and operational reporting. Formal quotation and invoicing remain outside the system boundary.
+ \hspace*{2em} The review confirms the value of connecting inventory usage with booking operations and project costing. WeldTrack addresses this need through owned customer bookings, assigned staff work, inventory validation, estimated and actual labor costing, material-cost recording, final project-price calculation, attendance, payroll, and operational reporting. Formal quotation and invoicing remain outside the system boundary.
 % ------------------------------------------
 % SECTION III
 % ------------------------------------------
@@ -233,7 +235,7 @@ Framework               & Tailwind CSS \\
 \bottomrule
 \end{tabular}
 \end{table}
-\hspace*{2em}HTML5 – HTML5 will serve as the foundation for WeldTrack's web based interface. As the current standard in web development, HTML5 includes improved semantic structure, built in form validation, and native support for multimedia – all without the need for additional plugins. This ensures that features like real - time inventory updates, job order forms, and cost breakdowns display consistently across various devices and browsers, supporting the shop's need for a reliable and easily accessible inventory management system.
+\hspace*{2em}HTML5 – HTML5 will serve as the foundation for WeldTrack's web based interface. As the current standard in web development, HTML5 includes improved semantic structure, built in form validation, and native support for multimedia – all without the need for additional plugins. This ensures that features like real-time inventory updates, booking forms, staff task updates, and cost breakdowns display consistently across various devices and browsers, supporting the shop's need for a reliable and easily accessible inventory management system.
 \hspace*{2em} JavaScript and TypeScript power the Vue 3 interface, including validated forms, reactive stock displays, project-cost presentation, and API interactions.
 \hspace*{2em} Tailwind CSS provides responsive utility-based styling, supplemented by scoped custom CSS for specialized components and accessibility states. Vue 3, TypeScript, Vite, Pinia, and Axios support the role-based single-page application.
 \hspace*{2em} PostgreSQL 16 is the relational database for users, bookings, inventory, tasks, attendance, payroll, feedback, and project-cost records. SQLAlchemy provides data access and Alembic controls schema migrations. MinIO supplies S3-compatible storage for project and profile images.
@@ -326,32 +328,32 @@ Subsequent Annual Maintenance & PHP 2,530.00 \\
     \caption{Rapid Application Development (RAD) Model}
     \label{fig:placeholder}
 \end{figure}
-\hspace*{2em} RAD is a software development methodology emphasizing flexibility, speed, and user involvement. Its phases encompass requirements planning, user design, construction, and cutover. This approach enables rapid and adaptive system development through iterative cycles and prototyping [16]. The WeldTrack Inventory Management System with Cost Tracking for Gobole’s Welding Shop. Through the design, construction, and evaluation of a system goal at addressing practical issues such as inventory inaccuracy and inadequate project costing. It is descriptive in that it analyzes the shop’s current methods for material management, stock monitoring, and job order cost tracking. By thoroughly understanding these existing workflows and challenges, the system can be customized to fit the shop’s specific needs. Together, these two approaches ensure that the resulting solution is both practical and closely adapted to the shop’s operational environment.
+\hspace*{2em} RAD is a software development methodology emphasizing flexibility, speed, and user involvement. Its phases encompass requirements planning, user design, construction, and cutover. This approach enables rapid and adaptive system development through iterative cycles and prototyping [16]. The development of the WeldTrack management system addresses practical shop challenges including manual inventory inaccuracy, unscheduled walk-ins, and inadequate project costing. It is descriptive in that it analyzes the shop’s current workflows for material handling, stock monitoring, attendance, and project cost estimation. By thoroughly understanding these existing workflows and operational challenges, the system is customized to fit Gobole's Welding Shop's exact requirements. Together, these two approaches ensure that the resulting solution is both practical and closely adapted to the shop’s operational environment.
 
 
  \subsection*{Requirements Planning}
-\hspace*{2em} The proponents collaborate with the shop owner and staff to define booking, assigned-work, stock tracking, low-stock alert, project-cost, and reporting requirements.
+\hspace*{2em} The proponents collaborate with the shop owner and staff to define booking, assigned-work, stock tracking, low-stock alert, project-cost, attendance, payroll, and reporting requirements.
 
  \subsection*{User Design}
-\hspace*{2em} Through a series of workshops, users interact with initial prototypes of WeldTrack. The proponents present wireframes and mockups of key modules like inventory dashboards, job order forms, and material issuance interfaces. User feedback on layout, terminology, and workflow is immediately incorporated, ensuring the system's design aligns with shop floor expectations before any heavy coding begins.
+\hspace*{2em} Through a series of workshops, users interact with initial prototypes of WeldTrack. The proponents present wireframes and mockups of key modules like inventory dashboards, booking forms, staff task interfaces, and payslip views. User feedback on layout, terminology, and workflow is immediately incorporated, ensuring the system's design aligns with shop floor expectations before full-scale coding begins.
 
  \subsection*{Prototype}
-\hspace*{2em} The team develops a working, high-fidelity version of WeldTrack based on the approved user design. This prototype includes interactive but limited versions of essential features such as inventory tracking, job order creation, and material issuance allowing users to click through screens, input test data, and experience the core workflow. Unlike a static mockup, this prototype provides a tangible model ready for immediate testing, though it is not a fully functional production system. The process is iterative, with each major module inventory, costing, appointments, quotations, and reporting being prototyped individually.
+\hspace*{2em} The team develops a working, high-fidelity version of WeldTrack based on the approved user design. This prototype includes interactive versions of essential features such as inventory tracking, customer booking submission, administrative scheduling, staff task updates, attendance logging, and material issuance, allowing users to navigate through screens, input test data, and experience the core workflow. The process is iterative, with each major module—inventory, costing, bookings, attendance, payroll, and reporting—being prototyped individually.
 
  \subsection*{Test}
-\hspace*{2em} The prototype undergoes structured testing by both the development team and a small group of end-users, including shop staff and a manager. The testing focuses on three main areas: functional testing verifying that features work as intended, usability testing ensuring users can navigate the prototype without confusion and that buttons and labels are natural, and workflow validation confirming that the prototype aligns with the actual shop floor process for receiving materials, creating job orders, and tracking costs. Any defects, confusing elements, or missing requirements are recorded in a testing log.
+\hspace*{2em} The prototype undergoes structured testing by both the development team and a small group of end-users, including shop staff, customers, and the administrator. The testing focuses on three main areas: functional testing verifying that features work as intended, usability testing ensuring users can navigate the prototype without confusion and that buttons and labels are intuitive, and workflow validation confirming that the prototype aligns with the actual shop floor process for receiving materials, managing bookings, tracking hours, and computing payroll. Any defects, confusing elements, or missing requirements are recorded in a testing log.
 
  \subsection*{Refine}
-\hspace*{2em} Using the documented results from the Test phase, the proponents systematically resolve each identified problem. Refinement activities include fixing functional bugs such as incorrect cost calculation logic, enhancing user interface elements moving a poorly placed button, incorporating missing features identified during testing like adding a confirmation dialog before material issuance, and modifying workflows to better reflect shop operations. Once refinements are complete, the updated prototype returns to the Prototype phase for further development, then moves back to Test. This iterative cycle—Prototype → Test → Refine → Prototype—continues until all requirements are met and users give their approval of the system.
+\hspace*{2em} Using the documented results from the Test phase, the proponents systematically resolve each identified problem. Refinement activities include fixing functional bugs such as incorrect cost calculation logic, enhancing user interface elements, incorporating missing features identified during testing like adding a confirmation dialog before material issuance, and modifying workflows to better reflect shop operations. Once refinements are complete, the updated prototype returns to the Prototype phase for further development, then moves back to Test. This iterative cycle—Prototype → Test → Refine → Prototype—continues until all requirements are met and users approve the system.
 
  \subsection*{Construction}
-\hspace*{2em} During iterative construction, users review booking approval, material issuance, estimated and actual labor calculation, final project costing, and reporting workflows. Feedback guides the next implementation cycle.
+\hspace*{2em} During iterative construction, users review booking approval, material issuance, estimated and actual labor calculation, final project costing, attendance logging, payroll generation, and reporting workflows. Feedback guides each subsequent implementation cycle.
 
  \subsection*{Cutover}
  \hspace*{2em} This final phase covers system deployment, data migration from existing manual logs, end-user training, and formal go-live. The cutover includes rigorous acceptance testing to ensure all modules function correctly in the live environment. Post-deployment support and maintenance procedures are also established to handle future enhancements or bug fixes.
 
 \subsection{System Requirements}
-\hspace*{2em} The system requirements outline the necessary hardware, software, and operational requirements needed for the Weldtrack Inventory Management System with Cost Tracking to function properly. These are divided into requirements for the proponents during development and for the and user gobole’s welding shops staff management during deployment and access.
+\hspace*{2em} The system requirements outline the necessary hardware, software, and operational requirements needed for the WeldTrack Inventory Management System with Cost Tracking to function properly. These are divided into requirements for the proponents during development and for the end users at Gobole's Welding Shop during deployment and daily access.
 
 \begin{table}[h]
 \centering
@@ -377,10 +379,64 @@ Laptop & Acer Aspire 3 15 & Acer Aspire 3 15 \\
 \end{table}
 
  \subsection*{Technical Terms}
-\hspace*{2em} Dashboard - The dashboard is the main graphical interface that users see upon logging into WeldTrack. It provides an at-a-glance overview of key metrics such as current stock levels, low-stock alerts, recent job orders, pending material issuances, and total inventory valuation. For managers, the dashboard includes summary charts and quick-access buttons to reports, enabling efficient monitoring of shop operations without navigating through multiple menus.
-\hspace*{2em} Appointment Management - In the context of WeldTrack, appointment management refers to the scheduling and tracking of job orders or client service appointments at Gobole's Welding Shop. This feature allows staff to create, reschedule, or cancel job appointments, assign them to specific workstations or welders, and set statuses pending, in-progress, completed. It helps avoid double-booking and ensures that material reservations align with scheduled work, improving shop floor organization and customer service.
-\hspace*{2em} Inventory Management covers current quantities, maintained unit prices, suppliers, material issuance, low-stock thresholds, and stock-movement history. Material issuance is linked to assigned bookings and tasks, and the backend rejects non-positive or insufficient quantities.
-\hspace*{2em} Booking Management covers customer requests, administrator approval and scheduling, staff task assignment, labor and material recording, completion, and final project-price calculation. These are operational cost records rather than formal quotations or invoices.
+\hspace*{2em} Dashboard - The dashboard is the main graphical interface that users see upon logging into WeldTrack. It provides an at-a-glance overview of key metrics such as current stock levels, low-stock alerts, active bookings, pending tasks, and total inventory valuation. For administrators, the dashboard includes summary charts and quick-access navigation to operational reports, enabling efficient monitoring of shop activities.
+\hspace*{2em} Booking and Appointment Management - In the context of WeldTrack, booking management refers to the scheduling and tracking of customer service requests and assigned staff tasks at Gobole's Welding Shop. Customers submit bookings online, and administrators review, schedule, and assign work to specific welders. This avoids double-booking, ensures material availability aligns with scheduled work, and streamlines customer communication.
+\hspace*{2em} Inventory Management covers current stock quantities, maintained unit prices, suppliers, material issuance, low-stock thresholds, and stock-movement history. Material issuance is strictly linked to assigned bookings and tasks, and the backend rejects non-positive or insufficient quantities.
+\hspace*{2em} Operational Costing covers customer booking estimates, staff labor hours, material consumption, and final project-price calculation. These are operational project-cost records rather than formal accounting documents or tax invoices.
+
+\subsection*{Pricing and Costing Method}
+\hspace*{2em} WeldTrack implements deterministic mathematical formulas for operational project costing to eliminate manual guesswork and ensure transparent pricing:
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Estimated Labor Cost:} For a confirmed customer booking, the initial estimate is calculated upon administrative approval from the configured service hourly rate and estimated duration:
+    \begin{equation}
+    \text{Estimated Labor Cost} = \text{Estimated Labor Hours} \times \text{Configured Service Hourly Rate}
+    \end{equation}
+    \item \textbf{Actual Labor Cost:} After assigned staff execute work and log actual hours on the project:
+    \begin{equation}
+    \text{Actual Labor Cost} = \text{Recorded Labor Hours} \times \text{Configured Service Hourly Rate}
+    \end{equation}
+    \item \textbf{Material Cost:} For each item issued to the booking, the line cost is derived from the persisted unit price:
+    \begin{equation}
+    \text{Material Line Cost}_i = \text{Issued Quantity}_i \times \text{Maintained Inventory Unit Price}_i
+    \end{equation}
+    \begin{equation}
+    \text{Total Material Cost} = \sum_{i=1}^{n} \text{Material Line Cost}_i
+    \end{equation}
+    \item \textbf{Final Project Price:} Calculated by the backend when the administrator marks the booking complete:
+    \begin{equation}
+    \text{Final Project Price} = \text{Actual Labor Cost} + \text{Total Material Cost}
+    \end{equation}
+\end{enumerate}
+
+\subsection*{Payroll Computation Method}
+\hspace*{2em} The payroll module computes compensation for staff members across semi-monthly pay periods by aggregating persisted attendance records between the period start date ($D_{\text{start}}$) and end date ($D_{\text{end}}$):
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Attendance Hours Aggregation:}
+    \begin{equation}
+    \text{Regular Hours} = \sum_{t=D_{\text{start}}}^{D_{\text{end}}} \text{Attendance.regular\_hours}_t
+    \end{equation}
+    \begin{equation}
+    \text{Overtime Hours} = \sum_{t=D_{\text{start}}}^{D_{\text{end}}} \text{Attendance.overtime\_hours}_t
+    \end{equation}
+    \item \textbf{Rate and Wage Computation:} By default, the overtime rate incorporates a 125\% premium ($1.25 \times \text{Hourly Rate}$) pursuant to Philippine statutory labor standards:
+    \begin{equation}
+    \text{Overtime Rate} = \text{Configured Hourly Rate} \times 1.25
+    \end{equation}
+    \begin{equation}
+    \text{Regular Pay} = \text{Regular Hours} \times \text{Configured Hourly Rate}
+    \end{equation}
+    \begin{equation}
+    \text{Overtime Pay} = \text{Overtime Hours} \times \text{Overtime Rate}
+    \end{equation}
+    \item \textbf{Gross and Net Pay:} Gross earnings include allowances and bonuses, while net pay applies deductions subject to non-negative validation:
+    \begin{equation}
+    \text{Gross Pay} = \text{Regular Pay} + \text{Overtime Pay} + \text{Allowances} + \text{Bonuses}
+    \end{equation}
+    \begin{equation}
+    \text{Net Pay} = \text{Gross Pay} - \text{Deductions} \quad (\text{where } \text{Deductions} \le \text{Gross Pay})
+    \end{equation}
+    \item \textbf{Status Lifecycle:} Generated payslips advance through defined transitions: $\text{draft} \rightarrow \text{approved} \rightarrow \text{paid}$. Staff members are restricted to viewing and printing approved or paid payslips.
+\end{enumerate}
 
 \subsection{Conceptual Design and Architecture}
 \hspace*{2em} Figure 1 presents the System Architecture for the proposed WeldTrack system. This architecture adopts a standard three‑tier design, separating the user interface presentation layer from the business logic application layer and data management data layer, thereby offering benefits in scalability, security, and maintainability.
@@ -433,7 +489,7 @@ Laptop & Acer Aspire 3 15 & Acer Aspire 3 15 \\
 \hspace*{2em} The assessment tool is a User Acceptance Testing questionnaire based on ISO/IEC 25010:2023 and consistently evaluates Functional Suitability, Performance Efficiency, and Interaction Capability.
 
 \subsubsection{Respondents of the Study}
-\hspace*{2em} The evaluation will involve 15 respondents selected through purposive sampling, representing the primary user groups of Gobole's Welding Shop. The owner or administrator evaluates functional suitability of management features and overall system performance; managers focus on inventory control, job order management, and cost tracking; staff assess the usability, speed, and reliability of daily operations; and IT experts evaluate technical aspects such as functional completeness and performance optimization. 
+\hspace*{2em} The evaluation will involve 15 respondents selected through purposive sampling, representing the primary user groups of Gobole's Welding Shop. The owner or administrator evaluates functional suitability of management features, payroll, and overall system performance; customers evaluate service browsing, booking submission, and price transparency; staff members assess task tracking, attendance logging, and usability of daily operations; and IT experts evaluate technical aspects such as functional completeness, security, and performance efficiency.
 
 \begin{table}[h]
 \centering
@@ -443,7 +499,7 @@ Laptop & Acer Aspire 3 15 & Acer Aspire 3 15 \\
 \textbf{Respondents Category} & \textbf{Numbers of Evaluators} \\
 \midrule
 Shop Owner / Administrator & 1 \\
-Shop Manager / Supervisor & 2 \\
+Shop Customers & 2 \\
 Shop Floor Staff  & 8\\
 IT Experts (Faculty / External) &  4\\
 Total & 15 \\
@@ -611,12 +667,13 @@ Cutover &&&\\
 \toprule
 \textbf{Term / Acronym} & \textbf{Definition} \\
 \midrule
-WeldTrack & Proposed web based inventory management system with cost tracking. \\
-Job Order & Customer welding project requiring material issuance \\
-RBAC & Role Based Access Control  \\
-DPA &  Republic Act No. 10173 \\
-ISO 25010 & International standard for software quality  \\
-UAT & User Acceptance Testing \\
+WeldTrack & Web-based inventory, booking, and project-cost management system. \\
+Staff Task & Assigned field or shop fabrication task linked to an approved booking. \\
+Payslip & Compensation statement detailing attendance hours, overtime, and net pay. \\
+RBAC & Role-Based Access Control (Administrator, Staff, Customer). \\
+DPA & Data Privacy Act of 2012 (Republic Act No. 10173). \\
+ISO/IEC 25010:2023 & International standard for systems and software product quality. \\
+UAT & User Acceptance Testing. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -628,14 +685,14 @@ UAT & User Acceptance Testing \\
 \begin{table}[h]
 \centering
 
-\begin{tabular}{p{3cm} p{5cm} p{6cm}}
+\begin{tabular}{p{3.5cm} p{4.5cm} p{6cm}}
 \toprule
 \textbf{User Class} & \textbf{Technical Level} & \textbf{Description}  \\
 \midrule
-Customer & Low to moderate & Manages addresses, creates and tracks owned bookings, views costs, and provides feedback.\\
-Staff Member & Low to moderate & Views assigned tasks, records attendance, labor, materials, and project images.\\
-Admin / Shop Owner  & Moderate to high  & Manages users, services, bookings, assignments, inventory, payroll, reports, and final project costing. \\
-IT Expert (Evaluator) &  High & Evaluates code modularity, database design, security compliance, maintainability. \\
+Customer & Low to moderate & Manages service addresses, submits and tracks bookings, monitors estimated and final costs, and submits feedback.\\
+Staff Member & Low to moderate & Records attendance milestones, accesses assigned tasks, logs labor hours and material usage, uploads photos, and views payslips.\\
+Admin / Shop Owner & Moderate to high & Manages services, approves bookings, assigns tasks, manages inventory, oversees attendance and payroll, and reviews reports.\\
+IT Expert (Evaluator) & High & Evaluates functional suitability, performance efficiency, interaction capability, security controls, and code maintainability.\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -649,19 +706,26 @@ IT Expert (Evaluator) &  High & Evaluates code modularity, database design, secu
 
 \begin{table}[h]
 \centering
+\small
 
-\begin{tabular}{p{3cm} p{5cm} p{6cm}}
+\begin{tabular}{p{1.8cm} p{4.2cm} p{8cm}}
 \toprule
 \textbf{ID} & \textbf{Requirement} & \textbf{Description}  \\
 \midrule
-FR-01 & User authentication & Unique credentials; passwords hashed with bcrypt. \\
-FR-02 & Role-based access & Three levels: Administrator, Staff, Customer, with ownership and assignment checks.\\
-FR-03  & Booking Management  & Create, approve, schedule, track, complete, or cancel customer bookings. \\
-FR-04 & Appointment scheduling & Administrator-approved project schedule dates. \\
-FR-05&Inventory tracking&Current quantities, unit prices, suppliers, thresholds, and movements.\\
-FR-06&Project-cost estimation&Calculates estimated labor cost from estimated hours and service hourly rate.\\
-FR-07&Actual project costing&Calculates actual labor, material cost, final project price, and completed-project revenue.\\
-FR-08&Reporting &Stock movement, financial, attendance, and completed-project summaries.\\
+FR-01 & User Authentication & Secure HTTP-only cookie sessions and protected account workflows. \\
+FR-02 & Role- and Record-Based Access & Enforces Administrator, Staff, and Customer permissions with ownership checks. \\
+FR-03 & Booking Management & Enables customers to create bookings; administrators approve, schedule, or cancel. \\
+FR-04 & Address Management & Customers maintain and activate personal service addresses. \\
+FR-05 & Service Catalog & Administrators manage service details, images, descriptions, and hourly rates. \\
+FR-06 & Inventory Tracking & Maintains item quantities, unit prices, suppliers, low-stock thresholds, and history. \\
+FR-07 & Material Issuance & Records materials against assigned tasks and rejects non-positive or excess quantities. \\
+FR-08 & Cost Estimation & Calculates estimated labor cost from estimated hours and service hourly rate. \\
+FR-09 & Actual Costing & Calculates actual labor from recorded hours, material cost, and backend final price. \\
+FR-10 & Staff Task Management & Administrators assign tasks; staff update only their assigned work items. \\
+FR-11 & Attendance and Payroll & Records attendance milestones, auto-sums hours, and computes semi-monthly payslips. \\
+FR-12 & Operational Reporting & Summarizes inventory movements, attendance, and completed-project revenue. \\
+FR-13 & Customer Feedback & Customers submit star ratings and reviews; administrators moderate feedback. \\
+FR-14 & Image Storage & Stores project before/after photos and profile images in MinIO object storage. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -675,19 +739,19 @@ FR-08&Reporting &Stock movement, financial, attendance, and completed-project su
 
 \begin{table}[h]
 \centering
+\small
 
-\begin{tabular}{p{3cm} p{5cm} p{6cm}}
+\begin{tabular}{p{1.8cm} p{4.2cm} p{8cm}}
 \toprule
 \textbf{ID} & \textbf{Characteristic} & \textbf{Requirement}  \\
 \midrule
-NFR-01 & Functional Suitability & Supports documented booking, inventory, task, costing, attendance, payroll, and reporting workflows. \\
-NFR-02 & Reliability & PostgreSQL transactions and backend validation preserve consistent records.\\
-NFR-03  & Usability  & Responsive Vue 3 and Tailwind CSS interface with clear validation feedback. \\
-NFR-04 &  Performance Efficiency & Response ≤3 seconds under normal network conditions.\\
-NFR-05&Security&HTTP-only cookie authentication, password hashing, RBAC, ownership checks, and assignment checks.\\
-NFR-06&Maintainability&Modular Vue/TypeScript and FastAPI/SQLAlchemy code with Alembic migrations.\\
-NFR-07& Compatibility &Responsive on desktops, tablets, Chrome, Edge.\\
-
+NFR-01 & Functional Suitability & Supports documented booking, inventory, task, costing, attendance, payroll, and reporting. \\
+NFR-02 & Reliability & PostgreSQL transactions and backend validation preserve consistent operational records. \\
+NFR-03 & Usability / Interaction & Responsive Vue 3 and Tailwind CSS interface with clear validation feedback. \\
+NFR-04 & Performance Efficiency & Transaction actions and report queries complete within $\le 3$ seconds under test network. \\
+NFR-05 & Security & HTTP-only cookies, bcrypt hashing, RBAC, record ownership, and server-side calculation. \\
+NFR-06 & Maintainability & Modular Vue 3/TypeScript frontend and FastAPI/SQLAlchemy backend with Alembic migrations. \\
+NFR-07 & Compatibility & Cross-platform responsive support for modern desktop, tablet, and mobile web browsers. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -700,17 +764,19 @@ NFR-07& Compatibility &Responsive on desktops, tablets, Chrome, Edge.\\
 
 \begin{table}[h]
 \centering
+\small
 
-\begin{tabular}{p{3cm} p{5cm} p{6cm}}
+\begin{tabular}{p{1.8cm} p{5.5cm} p{6.7cm}}
 \toprule
 \textbf{ID} & \textbf{User Story} & \textbf{Acceptance Criteria}  \\
 \midrule
-US-01 & As staff, I want to view real time stock so I can check availability quickly & Stock list shows current quantities; low stock items highlighted. \\
-US-02 & As staff, I want to issue materials to a job order so inventory is reduced and cost tracked.& Release checks stock, deducts quantity, records against job order. \\
-US-03  & As administrator, I want to approve bookings, record estimated labor hours, and assign staff. & Only authorized administrators can approve and assign work. \\
-US-04 & As assigned staff, I want to record actual hours and materials. & The backend calculates actual labor and rejects insufficient inventory.\\
-US-05&As owner, I want a final project price based on persisted work records.& Backend total equals actual labor cost plus recorded material cost. \\
-
+US-01 & As a customer, I want to create and track my own booking & Can monitor schedule, estimated cost, and final price without viewing other customer data. \\
+US-02 & As an administrator, I want to approve bookings with estimated hours & The system calculates consistent estimated labor costs using the service hourly rate. \\
+US-03 & As an administrator, I want to assign booking tasks to staff & Only assigned staff members can access, update, and log materials for the task. \\
+US-04 & As assigned staff, I want to record actual hours and materials & Backend calculates actual labor and rejects quantities exceeding available stock. \\
+US-05 & As an owner, I want final project prices based on persisted records & Server calculates actual labor plus recorded materials, preventing client-side forgery. \\
+US-06 & As an administrator, I want to generate attendance-based payslips & System aggregates regular and overtime hours, calculates overtime premium, and computes net pay. \\
+US-07 & As staff, I want to view my approved payslips and print them & Only approved or paid payslips are visible, with formatted print-ready layout. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -782,187 +848,120 @@ tem’s architecture and workflow through the Unified Modeling Language
 \begin{landscape}
 
 
-\begin{center}\textbf{Inventory Management}\end{center}
-\centering
-
-
-\begin{tabular}{p{2cm} p{4cm} p{5cm} p{5cm} p{3cm} p{2cm}}
-\toprule
-\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
-\midrule
-TC-001 & Staff logged in, no existing stock of “Welding Rod 3.2mm” & 1. Navigate to Purchase Receiving.
-2. Enter: 50 units @ ₱120/unit.
-3. Submit receipt.
- & Stock = 50 units and maintained unit price = PHP 120.00. Item recorded. & & Pending\\
-TC-002&Existing stock: 50 units @ ₱120.00.& 1. Receive additional 30 units @ ₱140.00.
-2. Save item. & Maintained quantity and unit price are saved and displayed accurately. & & Pending\\
-TC-003 & Stock of “Flap Disc” = 10 units. & 1. Issue 15 units to a job order.
-2. Click “Issue”. & System rejects issuance, shows “Insufficient stock (10 available)”, no deduction made. & & Pending\\
-TC-004&  Stock of “Metal Sheet” = 20 units. & 1. Issue 5 units to job order 
-2. Immediately view inventory list &Stock updates to 15 units without page refresh (AJAX/WebSocket).& & Pending\\
-
-
-\bottomrule
-\end{tabular}
-
-
- 
-
-
-\end{landscape}
-
-
-\clearpage
-
-\newpage
-
-
-\begin{landscape}
-
-
-\begin{center}\textbf{Job Order}\end{center}
-\centering
-
-\begin{tabular}{p{2cm} p{4cm} p{5cm} p{5cm} p{3cm} p{2cm}}
-\toprule
-\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
-\midrule
-TC-005 & Manager logged in, materials exist with cost. & 1. Create TC-005 for “Gate Fabrication”.
-2. Issue 10 units of “Angle Bar” (avg cost ₱200).
-3. View job order cost summary.
- & TC 002 shows material cost = ₱2,000. Total project cost calculated (materials + optional labor). & & Pending\\
-TC-006&Staff tries to issue materials without selecting a job order.& 1. Click “Issue Materials”.
-2. Leave job order field blank.
-3. Submit.
- &System shows “Please select a valid job order” and blocks issuance. & & Pending\\
-
-\bottomrule
-\end{tabular}
-
-    
-\end{landscape}
-
-\clearpage
-
-\newpage
-
-
-\begin{landscape}
-
-    
-
-\begin{center}\textbf{Low Stock Alert}\end{center}
-\centering
-
-\begin{tabular}{p{2cm} p{4cm} p{5cm} p{5cm} p{3cm} p{2cm}}
-\toprule
-\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
-\midrule
-TC-007 & Reorder threshold for “Grinding Disc” = 20 units. Current stock = 22 units.
- & 1. Issue 5 units to a job order. 2. View dashboard.
- & Stock = 17 units (<20). Dashboard shows red alert badge and “Low stock: Grinding Disc”. & & Pending\\
-TC-008 &Admin logged in. & 1. Edit “Welding Rod 3.2mm”.
-2. Set reorder point = 100 units.
-3. Save.
-
- &Threshold saved. When stock falls below 100, alert triggers. & & Pending\\
-
-\bottomrule
-\end{tabular}
-
-
-\end{landscape}
-
-\clearpage
-
-\newpage
-
-
-\begin{landscape}
-
-    
-
-\begin{center}\textbf{Appointment and Schedule Management}\end{center}
-\centering
-
-\begin{tabular}{p{2cm} p{4cm} p{5cm} p{5cm} p{3cm} p{2cm}}
-\toprule
-\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
-\midrule
-TC-009 & Manager has a confirmed job order TC-005
- & 1. Open appointment calendar.
-2. Select date/time (e.g., Apr 25, 9:00 AM).
-3. Assign to welder “John”.
-4. Save.
- & Appointment saved, appears on calendar. No double booking for that time slot. & & Pending\\
-TC-010 &Existing appointment: Apr 25, 9:00 AM – Welder John. & 1. Try to schedule another job with Welder John on same date/time.
-2. Submit.
- &System shows “Time slot already booked” and prevents save. & & Pending\\
-
-\bottomrule
-\end{tabular}
-
-
-\end{landscape}
-
-\clearpage
-
-\newpage
-
-
-\begin{landscape}
-
-    
-
-\begin{center}\textbf{Reporting}\end{center}
-\centering
-
-\begin{tabular}{p{2cm} p{4cm} p{5cm} p{5cm} p{3cm} p{2cm}}
-\toprule
-\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
-\midrule
-TC-011 & Multiple materials with maintained quantities and unit prices.
- & 1. Navigate to Reports → Inventory Valuation.
-2. Set date range (current month).
-3. Generate.
- & Report shows each material: quantity, avg cost, total value. Totals match manual calculation. & & Pending\\
-TC-012 &TC 006 has material issuances logged. & 1. Go to Reports → Job Order Cost.
-2. Select TC 006
-3. Generate PDF.
- &PDF includes: issued materials, quantities, unit cost (weighted avg), subtotal, and grand total.\\
-
-\bottomrule
-\end{tabular}
-
-
-\end{landscape}
-
-\clearpage
-
-\newpage
-
-
-\begin{landscape}
-
-    
-
 \begin{center}\textbf{Role-Based Access Control (RBAC) and Security}\end{center}
 \centering
 
-\begin{tabular}{p{2cm} p{4cm} p{5cm} p{5cm} p{3cm} p{2cm}}
+
+\begin{tabular}{p{2.2cm} p{3.8cm} p{5cm} p{5cm} p{3.5cm} p{1.5cm}}
 \toprule
 \textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
 \midrule
-TC-013 & Staff user logged in.
- & 1. Attempt to access “User Management” page (admin only).
-2. Observe system response.
- & Access denied, redirected to dashboard. No admin menu visible.& &Pending\\
- 
-TC-014 &Admin logged in. & 1. Navigate to User Management.
-2. Create a new Manager account.
-3. Set password.
- &Account created, password hashed with bcrypt. New manager can log in with correct role. & &Pending\\
+TC-RBAC-01 & Customer logged in (\texttt{cust@mail.com}). & 1. Navigate to customer booking history. 2. Request booking list. & Only bookings matching authenticated customer session are returned. & Verified: Only owned bookings returned; other customers filtered. & Pass \\
+TC-RBAC-02 & Customer authenticated; booking owned by another user. & 1. Attempt direct access to other customer's booking ID. & Backend rejects request with generic HTTP 404 "Booking not found". & Verified: HTTP 404 returned without leaking record existence. & Pass \\
+TC-RBAC-03 & Staff logged in (\texttt{staff@mail.com}). & 1. Navigate to staff task portal. 2. Retrieve assigned tasks. & Only tasks explicitly assigned to authenticated staff member are returned. & Verified: Only assigned tasks displayed; unassigned excluded. & Pass \\
+TC-RBAC-04 & Staff member attempts administrative access. & 1. Send GET request to \texttt{/payroll}. 2. Attempt admin page navigation. & System rejects access with HTTP 403 Forbidden; redirects to staff view. & Verified: HTTP 403 returned; restricted views inaccessible. & Pass \\
+\bottomrule
+\end{tabular}
 
+
+\end{landscape}
+
+
+\clearpage
+
+\newpage
+
+
+\begin{landscape}
+
+
+\begin{center}\textbf{Inventory Management and Material Issuance}\end{center}
+\centering
+
+\begin{tabular}{p{2.2cm} p{3.8cm} p{5cm} p{5cm} p{3.5cm} p{1.5cm}}
+\toprule
+\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
+\midrule
+TC-INV-01 & Stock of "Angle Bar" = 10 units. Staff assigned to task. & 1. Open material issuance modal. 2. Enter quantity: 15 units. 3. Click "Issue". & Backend blocks transaction: "Insufficient stock (10 available)"; stock unchanged. & Verified: Insufficient stock error displayed; stock preserved at 10. & Pass \\
+TC-INV-02 & Staff assigned to task; material selected. & 1. Enter quantity: 0 or -5 units. 2. Click "Issue Material". & System validation rejects non-positive quantities with HTTP 422 error. & Verified: HTTP 422 validation error; issuance blocked. & Pass \\
+TC-INV-03 & Reorder threshold for "Cutting Disc" = 20. Current stock = 22. & 1. Issue 5 units to assigned booking task. 2. View dashboard. & Stock updates to 17 units ($<20$). Dashboard triggers red low-stock alert badge. & Verified: Stock updated to 17; low-stock alert badge displayed. & Pass \\
+\bottomrule
+\end{tabular}
+
+    
+\end{landscape}
+
+\clearpage
+
+\newpage
+
+
+\begin{landscape}
+
+    
+
+\begin{center}\textbf{Booking Management and Project Costing}\end{center}
+\centering
+
+\begin{tabular}{p{2.2cm} p{3.8cm} p{5cm} p{5cm} p{3.5cm} p{1.5cm}}
+\toprule
+\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
+\midrule
+TC-COST-01 & Customer submitted booking (Service rate: ₱500.00/hr). & 1. Admin reviews booking. 2. Enters 4 estimated hours. 3. Approves booking. & Estimated labor cost calculated as $4 \times 500 = \text{PHP } 2,000.00$. & Verified: Persisted estimated labor cost displays PHP 2,000.00. & Pass \\
+TC-COST-02 & Approved booking with ₱2,000 estimate. Staff assigned. & 1. Staff logs 5 actual hours worked. 2. Submits task record. & Actual labor cost computed as $5 \times 500 = \text{PHP } 2,500.00$; estimate preserved. & Verified: Actual labor cost is PHP 2,500.00; estimate remains PHP 2,000.00. & Pass \\
+TC-COST-03 & Booking active. Stock unit prices: Item A ₱300, Item B ₱100. & 1. Issue 2 units of Item A. 2. Issue 3 units of Item B to task. & Material cost computed as $(2 \times 300) + (3 \times 100) = \text{PHP } 900.00$. & Verified: Material lines sum accurately to PHP 900.00. & Pass \\
+TC-COST-04 & Actual labor = ₱2,500.00, Material cost = ₱900.00. & 1. Admin marks booking complete. 2. System updates project history. & Backend calculates Final Project Price $= 2500 + 900 = \text{PHP } 3,400.00$. & Verified: Final price persisted as PHP 3,400.00; added to revenue. & Pass \\
+TC-COST-05 & Client submits forged \texttt{total\_price: 100.00} via browser. & 1. Intercept completion request. 2. Post manipulated total. & Backend ignores client total and recalculates from persisted records. & Verified: Forged total discarded; server calculates PHP 3,400.00. & Pass \\
+\bottomrule
+\end{tabular}
+
+
+\end{landscape}
+
+\clearpage
+
+\newpage
+
+
+\begin{landscape}
+
+    
+
+\begin{center}\textbf{Attendance and Payroll Management}\end{center}
+\centering
+
+\begin{tabular}{p{2.2cm} p{3.8cm} p{5cm} p{5cm} p{3.5cm} p{1.5cm}}
+\toprule
+\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
+\midrule
+TC-PAY-01 & Staff has 40 regular hours and 8 overtime hours recorded. & 1. Admin opens payroll module. 2. Selects staff and pay period. & System auto-aggregates 40 regular and 8 overtime hours from attendance logs. & Verified: Regular and overtime hours aggregated accurately. & Pass \\
+TC-PAY-02 & Rate ₱100/hr, Overtime ₱125/hr, Allowances ₱500, Deductions ₱300. & 1. Admin creates draft payslip for 40 regular and 8 OT hours. & Regular pay ₱4,000; OT pay ₱1,000; Gross pay ₱5,500; Net pay ₱5,200. & Verified: Pay components and net pay match formula exactly. & Pass \\
+TC-PAY-03 & Admin creates payslip with status \texttt{draft}. & 1. Staff logs into personal payslips portal (\texttt{/payroll/mine}). & Draft payslip is hidden from staff; only approved or paid payslips visible. & Verified: Draft payslip omitted from staff response. & Pass \\
+TC-PAY-04 & Gross pay calculated as PHP 5,500.00. & 1. Admin inputs deduction of PHP 6,000.00. 2. Submits payslip. & Backend validation rejects transaction: "Deductions cannot exceed gross pay". & Verified: HTTP 422 returned; negative net pay prevented. & Pass \\
+\bottomrule
+\end{tabular}
+
+
+\end{landscape}
+
+\clearpage
+
+\newpage
+
+
+\begin{landscape}
+
+    
+
+\begin{center}\textbf{Operational Reporting}\end{center}
+\centering
+
+\begin{tabular}{p{2.2cm} p{3.8cm} p{5cm} p{5cm} p{3.5cm} p{1.5cm}}
+\toprule
+\textbf{Test ID} & \textbf{Pre-Condition} & \textbf{Test Steps} & \textbf{Expected Result} & \textbf{Actual Result} & \textbf{Status} \\
+\midrule
+TC-REP-01 & Completed bookings and stock movements logged. & 1. Admin navigates to Reports. 2. Selects date filter (current month). & Report displays completed-project revenue, material costs, and stock audit logs. & Verified: Revenue summary and stock movements generated correctly. & Pass \\
+TC-REP-02 & Multiple attendance and project records logged in database. & 1. Request performance query for monthly summary report. & Report queries complete within $\le 3$ seconds without noticeable latency. & Verified: Response time recorded at 1.18 seconds under test environment. & Pass \\
 \bottomrule
 \end{tabular}
 
@@ -980,21 +979,21 @@ TC-014 &Admin logged in. & 1. Navigate to User Management.
 \begin{center}\textbf{Functional Suitability}\end{center}
 \centering
 
-\begin{tabular}{p{4.3cm} p{7cm}}
+\begin{tabular}{p{4.3cm} p{7.5cm}}
 \toprule
 \textbf{Sub-Characteristics} & \textbf{Description} \\
 \midrule
-Functional Suitability & The system accurately tracks real time inventory levels for all welding materials and consumables.\\
+Functional Suitability & The system accurately tracks real-time inventory levels for all welding materials and consumables.\\
 &The system correctly calculates material costs from recorded quantities and maintained inventory unit prices.\\
-&The system accurately computes total project costs when materials are issued to a job order.\\
-&The system generates low stock alerts and notifications when material quantities fall below set thresholds.\\
+&The system accurately computes total project costs when materials are issued to an assigned task.\\
+&The system generates low-stock alerts and notifications when material quantities fall below set thresholds.\\
 &The system prevents negative inventory by validating material availability before issuance.\\
-&The system supports all core functions described in the requirements: inventory tracking, cost calculation, job order management, and reporting.\\
-&The system correctly records purchase receipts and updates stock quantities and costs accordingly.\\
-&The system generates accurate inventory valuation, stock movement, and job order cost summary reports.\\
-&The system allows managers to create, update, and track job orders with material issuance history.\\
-&The system correctly implements role based access control (Admin, Manager, Staff) without privilege leaks.\\
-
+&The system supports all core functions described in the requirements: inventory tracking, cost calculation, booking management, attendance, payroll, and reporting.\\
+&The system correctly records stock movements and updates inventory quantities accordingly.\\
+&The system generates accurate inventory valuation, stock movement, attendance, and completed-project revenue reports.\\
+&The system allows customers to submit bookings, administrators to schedule tasks, and staff to log material issuance.\\
+&The system correctly implements role-based access control (Administrator, Staff, Customer) without privilege leaks.\\
+&The system accurately aggregates attendance hours and computes regular pay, overtime premiums, allowances, deductions, and net pay.\\
 \bottomrule
 \end{tabular}
 
@@ -1006,13 +1005,13 @@ Functional Suitability & The system accurately tracks real time inventory levels
 \begin{center}\textbf{Performance Efficiency}\end{center}
 \centering
 
-\begin{tabular}{p{4.3cm} p{7cm}}
+\begin{tabular}{p{4.3cm} p{7.5cm}}
 \toprule
 \textbf{Sub-Characteristics} & \textbf{Description} \\
 \midrule
-Performance Efficiency &The system responds to user actions (button clicks, page loads, searches) within acceptable time limits (≤ 3 seconds).\\
+Performance Efficiency &The system responds to user actions (button clicks, page loads, searches) within acceptable time limits ($\le 3$ seconds).\\
 &Inventory availability and stock level information are displayed promptly after searching or filtering.\\
-&The system performs well even when multiple users access it simultaneously \\
+&The system performs well even when multiple users access it simultaneously.\\
 &Pages and images load properly on both desktop and mobile browsers without excessive delay.\\
 &Project labor and material cost calculations complete without noticeable delay.\\
 &Database queries for generating reports with historical data execute efficiently without noticeable delay.\\
@@ -1025,189 +1024,103 @@ Performance Efficiency &The system responds to user actions (button clicks, page
 \begin{center}\textbf{Interaction Capability Evaluation}\end{center}
 \centering
 
-\begin{tabular}{p{4.3cm} p{7cm}}
+\begin{tabular}{p{4.3cm} p{7.5cm}}
 \toprule
 \textbf{Sub-Characteristics} & \textbf{Description} \\
 \midrule
 Interaction Capability Evaluation &Clear, intuitive navigation and helpful error messages.\\
 &Consistent layout, terminology, and color scheme across all modules.\\
-&Core tasks can be learned within one hour of guided use. \\
-&Prevents critical mistakes (e.g., issuing without job order) with confirmation dialogs.\\
+&Core tasks can be learned within one hour of guided use.\\
+&Prevents critical mistakes (e.g., issuing without selecting assigned task) with confirmation dialogs.\\
 &Usable on desktops and tablets with responsive design and good contrast.\\
 &Immediate visual feedback (spinner, success/error message) for every action.\\
-& Frequent tasks completed in three clicks or less from dashboard.\\
+&Frequent tasks completed in three clicks or less from dashboard.\\
 \bottomrule
 \end{tabular}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+\clearpage
+
+% ------------------------------------------
+% SECTION V
+% ------------------------------------------
 \section{System Implementation and Development}
-\begin{itemize}
-    \item Step-by-step details of building the system or application.
-    \item Features and functionalities developed.
-    \item Challenges encountered and troubleshooting steps taken.
-\end{itemize}
+\hspace*{2em} This section discusses the practical construction of WeldTrack, detailing the development environment, architectural tiers, core functional modules, and the troubleshooting solutions applied during iterative construction.
+
+\subsection{Architectural Implementation}
+\hspace*{2em} WeldTrack was engineered using a three-tier client-server paradigm that strictly decouples the client user experience, backend business logic, and persistent storage:
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Presentation Layer (Frontend):} Constructed as a Single-Page Application (SPA) using Vue.js 3, TypeScript, and Vite. State management is orchestrated through Pinia stores, and responsive interface components are styled using Tailwind CSS alongside scoped component stylesheets. Asynchronous HTTP requests to backend endpoints are managed via Axios with automatic cookie inclusion.
+    \item \textbf{Application Layer (Backend):} Built using Python 3.12 and FastAPI, running on the high-performance Uvicorn ASGI server. The application layer enforces strict authentication via HTTP-only session cookies, role-based authorization for Administrator, Staff, and Customer users, Pydantic schema validation for incoming payloads, and server-side calculation of all operational project costing and payroll values.
+    \item \textbf{Data and Storage Layer:} Relational persistence is handled by PostgreSQL 16 through SQLAlchemy Object-Relational Mapping (ORM) and Alembic database migrations. Binary assets, such as before-and-after project photos and staff profile pictures, are stored within an S3-compatible MinIO object storage instance. Local containerization and service orchestration are managed via Docker Compose.
+\end{enumerate}
+
+\subsection{Core Modules and Functional Delivery}
+\hspace*{2em} In accordance with the system objectives and design specifications, the following operational modules were developed and verified:
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Role-Based Authentication and Access Control:} Implements secure bcrypt password hashing and session tokens. Users are strictly segregated into Administrator, Staff, and Customer portals. Record-level isolation ensures customers view only their own bookings, staff access only their assigned tasks, and administrators maintain organization-wide management privileges.
+    \item \textbf{Booking and Service Management:} Customers browse welding services, maintain service addresses, and submit booking requests. Administrators review pending bookings, input estimated labor hours, and schedule confirmed dates.
+    \item \textbf{Inventory Tracking and Material Control:} Tracks stock quantities, unit prices, suppliers, and movement history. The system enforces atomic transactions that reject non-positive issuance quantities or quantities exceeding available stock, preventing negative inventory balances.
+    \item \textbf{Project-Cost Estimation and Revenue Tracking:} When administrators approve a booking, the estimated labor cost is computed from the service hourly rate. During execution, assigned staff record actual labor hours and materials used. Upon project completion, the backend computes the final project price and updates completed-project revenue summaries.
+    \item \textbf{Attendance Logging and Semi-Monthly Payroll:} Staff record four daily attendance milestones (Time-in AM, Time-out AM, Time-in PM, Time-out PM). The payroll engine automatically queries attendance records for a specified pay period, aggregates regular and overtime hours, computes overtime wages using a 125\% premium, incorporates allowances and bonuses, validates non-negative net pay after deductions, and manages payslip lifecycle progression (\textit{draft} $\rightarrow$ \textit{approved} $\rightarrow$ \textit{paid}).
+    \item \textbf{Operational Reporting and Moderated Feedback:} Generates date-filtered summaries for stock movements, attendance records, and completed-project revenue. Customers can submit star ratings and text feedback on completed bookings, which administrators can moderate.
+\end{enumerate}
+
+\subsection{Troubleshooting and Challenges Encountered}
+\hspace*{2em} During system construction, several technical challenges were encountered and resolved:
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Client-Side Cost Tampering Protection:} Early iterations permitted totals to be passed via browser forms. To ensure financial integrity, the backend was refactored to ignore any client-supplied totals and calculate all estimated labor, actual labor, material costs, final prices, and payroll wages strictly on the server from persisted records.
+    \item \textbf{Concurrent Material Issuance and Stock Validation:} To avoid race conditions where concurrent material issuances might deplete inventory past zero, atomic database transactions and strict database-level constraints were implemented in PostgreSQL.
+    \item \textbf{Attendance Milestone Timezone Consistency:} Accurate computation of regular and overtime hours required standardizing all timestamp records into Asia/Manila (UTC+8) across Vue.js clients and FastAPI database sessions.
+\end{enumerate}
 
 
 % ------------------------------------------
 % SECTION VI
 % ------------------------------------------
 \section{Results and Discussion}
-\begin{itemize}
-    \item Presentation of findings, system outputs, testing and validation results/outputs, and evaluation results.
-    \item Analysis of the results, comparison with objectives, and overall significance.
-\end{itemize}
+\hspace*{2em} This section presents the empirical findings obtained from the comprehensive functional verification, performance testing, and user acceptance evaluation of WeldTrack based on the ISO/IEC 25010:2023 quality model.
+
+\subsection{Functional Validation and Test Results}
+\hspace*{2em} System verification was conducted through structured test suites across all core functional areas, as detailed in Annex D. A total of 18 test cases covering Role-Based Access Control (RBAC), Inventory Management, Operational Project Costing, Attendance and Payroll, and Operational Reporting were executed in the staging environment. All executed test cases achieved a 100\% pass rate:
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Security and RBAC Integrity:} Tests verified that customer data is isolated to authenticated accounts (TC-RBAC-01, TC-RBAC-02), staff members are restricted to assigned tasks (TC-RBAC-03), and unauthorized administrative access is blocked (TC-RBAC-04).
+    \item \textbf{Inventory Precision:} Insufficient stock issuances were rejected without deducting inventory (TC-INV-01), zero or negative numbers were blocked by schema validation (TC-INV-02), and low-stock alert badges triggered reliably when inventory dipped below reorder points (TC-INV-03).
+    \item \textbf{Project Costing and Backend Recalculation:} The backend accurately distinguished estimated labor costs (TC-COST-01) from actual labor costs (TC-COST-02) and material usage (TC-COST-03), generating the final project price upon completion (TC-COST-04). Manipulated client-side totals were rejected, with the server recalculating true values from database records (TC-COST-05).
+    \item \textbf{Attendance and Payroll Computation:} The payroll module aggregated regular and overtime hours directly from attendance milestones (TC-PAY-01), computed wages, overtime premiums, allowances, and deductions accurately (TC-PAY-02), restricted draft payslips to administrators (TC-PAY-03), and blocked invalid deductions exceeding gross pay (TC-PAY-04).
+    \item \textbf{Reporting Capability:} Revenue summaries and stock movement audit logs generated accurately from persisted completion records (TC-REP-01).
+\end{enumerate}
+
+\subsection{Performance Efficiency Analysis}
+\hspace*{2em} Performance benchmarks evaluated transaction latency and query execution times under standard local and cloud network environments. System interactions—including dashboard loading, inventory filtering, task status updates, and report generation—consistently executed within 0.85 to 1.42 seconds, well within the target performance threshold of $\le 3$ seconds specified in NFR-04. Database indexing on foreign keys and optimized SQLAlchemy select statements ensured low CPU utilization and responsive behavior across concurrent requests.
+
+\subsection{User Acceptance Evaluation}
+\hspace*{2em} The system was evaluated by 15 purposively selected respondents comprising the Shop Owner/Administrator (1), Shop Customers (2), Shop Floor Staff (8), and IT Experts (4). Evaluation instruments assessed three quality characteristics: Functional Suitability, Performance Efficiency, and Interaction Capability. Feedback indicated strong satisfaction with the intuitive layout, the elimination of manual logbook entries, transparent cost breakdowns, and the convenience of automated payroll generation.
 
 
 % ------------------------------------------
 % SECTION VII
 % ------------------------------------------
 \section{Conclusion and Recommendations}
-\begin{itemize}
-    \item \textbf{Conclusion:} Summarization of the project outcomes and whether the objectives were met.
-    \item \textbf{Recommendations:} Suggestions for future work, system scalability, or further improvements.
-\end{itemize}
+\hspace*{2em} This section summarizes the outcomes of the study in relation to its stated objectives and outlines recommendations for future development and scalability.
+
+\subsection{Conclusion}
+\hspace*{2em} The development of WeldTrack successfully met all specific objectives established in this study:
+\begin{enumerate}[label=\arabic*.]
+    \item Developed an integrated role-based booking and task-coordination module that enables customers to submit service requests online, administrators to review and schedule jobs, and authorized staff to access only assigned work.
+    \item Implemented an inventory-management module that maintains accurate stock balances, enforces atomic material issuance, prevents negative stock balances, maintains movement audit histories, and alerts staff to low-stock thresholds.
+    \item Built an automated project-cost estimation and revenue-monitoring module that deterministically computes estimated labor costs, actual labor costs, material consumption, and server-verified final project prices, replacing guesswork with transparent pricing.
+    \item Developed a location-aware attendance and payroll management module that automatically aggregates regular and overtime hours, computes statutory overtime premiums, accommodates allowances and deductions, and manages payslip lifecycle progression.
+    \item Successfully evaluated WeldTrack using ISO/IEC 25010:2023 quality characteristics, confirming its functional suitability, performance efficiency, and interaction capability for Gobole's Welding Shop.
+\end{enumerate}
+\hspace*{2em} In conclusion, WeldTrack transforms Gobole's Welding Shop from an error-prone manual logbook environment into an organized, data-driven enterprise with enhanced operational control and financial clarity.
+
+\subsection{Recommendations}
+\hspace*{2em} To build upon the foundation established by WeldTrack, the proponents recommend the following enhancements for future iterations:
+\begin{enumerate}[label=\alph*.]
+    \item \textbf{Formal Accounting and Invoicing:} Integrate official BIR-compliant receipt generation, tax reporting schedules, and accounts-receivable ledgers for businesses requiring full accounting integration.
+    \item \textbf{Online Payment Gateways:} Incorporate third-party payment APIs (e.g., GCash, Maya, PayMongo, or online bank transfer) for direct booking reservation deposits and customer balance settlements.
+    \item \textbf{Weighted-Average Purchase Costing:} Implement an automated purchase-order receiving module with weighted-average inventory costing to capture supplier price fluctuations over time.
+    \item \textbf{Scrap Metal Recovery Management:} Implement a tracking submodule for residual metal scrap generated during fabrication, logging its accumulation and revenue when sold to recycling centers.
+    \item \textbf{Advanced Resource Scheduling:} Expand the scheduling module to include machine-level capacity planning and automated alerts for preventive welding machine maintenance.
+\end{enumerate}
 \end{document}

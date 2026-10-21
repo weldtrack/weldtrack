@@ -109,22 +109,67 @@ export const useAuthStore = defineStore('auth', {
       return await sendVerificationCodeApi(email)
     },
 
-    async signup(payload: { email: string; password: string; role?: string }) {
+    async signup(payload: {
+      email: string
+      password: string
+      role?: string
+      full_name?: string
+      province?: string
+      municipality?: string
+      barangay?: string
+      house?: string
+    }) {
       return await signupApi(payload)
     },
 
-    async confirmVerificationCode(payload: { email: string; code: string; password?: string; action: 'changepassword' | 'createaccount' }) {
+    async confirmVerificationCode(payload: {
+      email: string
+      code: string
+      password?: string
+      full_name?: string
+      province?: string
+      municipality?: string
+      barangay?: string
+      house?: string
+      label?: string
+      action: 'changepassword' | 'createaccount'
+    }) {
       return await confirmVerificationCodeApi(payload)
     },
 
     async fetchStaffDirectory() {
+      const defaultStaffNames: Record<string, string> = {
+        'staff1@weldtrack.com': 'Juan Dela Cruz',
+        'staff2@weldtrack.com': 'Marco Santos',
+        'staff3@weldtrack.com': 'Ramon Reyes',
+        'staff4@weldtrack.com': 'Carlo Mendoza',
+        'ramon.reyes@weldtrack.com': 'Ramon Reyes',
+        'carlo.mendoza@weldtrack.com': 'Carlo Mendoza',
+      }
+      const deriveName = (email?: string, fullName?: string) => {
+        if (fullName && fullName.trim()) return fullName.trim()
+        const lower = (email || '').trim().toLowerCase()
+        if (defaultStaffNames[lower]) return defaultStaffNames[lower]
+        const local = lower.split('@')[0]?.replace(/[._-]+/g, ' ').trim() || ''
+        if (!local) return email || 'Staff Member'
+        return local
+          .split(/\s+/)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' ')
+      }
+
       try {
         const data = await fetchStaffDirectoryApi()
         this.staffDirectory = Array.isArray(data)
-          ? data.map((user: { id?: string; email?: string }) => ({
-              id: String(user.id ?? ''),
-              email: user.email || '',
-            }))
+          ? data.map((user: { id?: string; email?: string; full_name?: string }) => {
+              const name = deriveName(user.email, user.full_name)
+              return {
+                id: String(user.id ?? ''),
+                email: user.email || '',
+                full_name: name,
+                name,
+              }
+            })
           : []
       } catch (error) {
         this.staffDirectory = []
@@ -135,10 +180,29 @@ export const useAuthStore = defineStore('auth', {
       return this.staffDirectory
     },
 
-    getStaffLabel(staffId: string, fallback = '') {
-      const staff = this.staffDirectory.find((entry) => entry.id === String(staffId))
+    getStaffLabel(staffIdOrEmail: string, fallback = '') {
+      const key = String(staffIdOrEmail || '').trim()
+      const lower = key.toLowerCase()
+      const staff = this.staffDirectory.find(
+        (entry) => entry.id === key || entry.email.toLowerCase() === lower,
+      )
+      if (staff?.full_name) return staff.full_name
+      if (staff?.name) return staff.name
       if (staff?.email) return staff.email
-      if (fallback) return fallback
+      const defaultStaffNames: Record<string, string> = {
+        'staff1@weldtrack.com': 'Juan Dela Cruz',
+        'staff2@weldtrack.com': 'Marco Santos',
+        'staff3@weldtrack.com': 'Ramon Reyes',
+        'staff4@weldtrack.com': 'Carlo Mendoza',
+        'ramon.reyes@weldtrack.com': 'Ramon Reyes',
+        'carlo.mendoza@weldtrack.com': 'Carlo Mendoza',
+      }
+      if (defaultStaffNames[lower]) return defaultStaffNames[lower]
+      if (fallback) {
+        const fbLower = fallback.trim().toLowerCase()
+        if (defaultStaffNames[fbLower]) return defaultStaffNames[fbLower]
+        return fallback
+      }
       return ''
     },
 

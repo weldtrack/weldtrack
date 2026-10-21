@@ -48,6 +48,7 @@ class BookingBase(BaseModel):
 
 class BookingCreate(BookingBase):
     status: BookingStatus = BookingStatus.pending
+    before_images: Optional[list[str]] = None
 
 
 class BookingUpdate(BaseModel):

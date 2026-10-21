@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import LocalLoader from '../../../../components/ui/LocalLoader.vue'
-import { LayoutDashboard, CheckCircle2, Clock, DollarSign, Users, UserPlus } from 'lucide-vue-next'
+import { LayoutDashboard, CheckCircle2, Clock, PhilippinePeso, Users, UserPlus } from 'lucide-vue-next'
 import { useBookingsStore } from '../../../../stores/bookings'
 import { getServicePriceDisplay } from '../../../../services/servicePricing'
 import api from '../../../../api/api'
@@ -225,7 +225,7 @@ const pieStyle = computed(() => {
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Total Value</span>
           <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
-            <DollarSign class="h-4 w-4" />
+            <PhilippinePeso class="h-4 w-4" />
           </div>
         </div>
         <p class="mt-3 text-2xl font-black text-slate-900 dark:text-slate-100 truncate" :title="formatCurrency(totalProjectValue)">

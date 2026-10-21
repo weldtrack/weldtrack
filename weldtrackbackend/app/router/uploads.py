@@ -34,11 +34,11 @@ async def store_image(file: UploadFile, folder: str) -> str:
             detail="Image must be non-empty and no larger than 5MB.",
         )
     object_name = f"{folder}/{uuid4().hex}.{extension}"
-    object_storage.upload(object_name, content, file.content_type or "application/octet-stream")
-    return object_storage.public_url(object_name)
+    stored_key = object_storage.upload(object_name, content, file.content_type or "application/octet-stream")
+    return object_storage.public_url(stored_key)
 
 
-@router.post("/image")
+@router.post("/image", status_code=201)
 async def upload_image(
     file: UploadFile = File(...),
     folder: str = Query("jobs"),
@@ -48,14 +48,18 @@ async def upload_image(
         raise HTTPException(status_code=400, detail="Invalid image folder")
     if folder == "services" and current_user.role != UserRole.admin:
         raise HTTPException(status_code=403, detail="Only admins can upload service images")
-    if folder == "jobs" and current_user.role not in {UserRole.admin, UserRole.staff}:
-        raise HTTPException(status_code=403, detail="Only staff and admins can upload job images")
+    if folder == "jobs" and current_user.role not in {UserRole.admin, UserRole.staff, UserRole.customer}:
+        raise HTTPException(status_code=403, detail="Authentication required to upload job images")
     return {"url": await store_image(file, folder)}
 
 
 @router.get("/{object_path:path}")
 def get_image(object_path: str):
+    from fastapi.responses import FileResponse
     clean_path = str(PurePosixPath(object_path))
     if clean_path.startswith("../") or clean_path == ".":
         raise HTTPException(status_code=400, detail="Invalid object path")
+    local_file = object_storage.LOCAL_UPLOADS_DIR / clean_path.lstrip("/")
+    if local_file.is_file():
+        return FileResponse(local_file)
     return RedirectResponse(object_storage.public_url(clean_path))
