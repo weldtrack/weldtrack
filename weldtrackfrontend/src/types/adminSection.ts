@@ -15,3 +15,4 @@ export type AdminSection =
   | 'staff-contributions'
   | 'staff-feedback'
   | 'staff-create'
+  | 'audit-logs'

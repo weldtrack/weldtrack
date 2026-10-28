@@ -7,6 +7,7 @@ import {
   Folder,
   LayoutDashboard,
   ReceiptText,
+  Shield,
   Star,
   Users,
 } from 'lucide-vue-next'
@@ -30,6 +31,7 @@ const adminNavigation: SidebarEntry[] = [
   { kind: 'item', id: 'admin-staff', label: 'Staff', icon: Users, routeName: 'admin-staff-attendance' },
   { kind: 'item', id: 'admin-payroll', label: 'Payroll', icon: ReceiptText },
   { kind: 'item', id: 'admin-reports', label: 'Reports', icon: BarChart2 },
+  { kind: 'item', id: 'admin-audit-logs', label: 'Audit Logs', icon: Shield, routeName: 'admin-audit-logs' },
   { kind: 'item', id: 'admin-projects', label: 'Project History', icon: Folder },
   { kind: 'item', id: 'admin-feedback', label: 'Customer Feedback', icon: Star },
 ]

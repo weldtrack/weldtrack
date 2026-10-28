@@ -193,6 +193,11 @@ export function createRouter() {
             props: { isAdmin: true },
           },
           {
+            path: 'audit-logs',
+            name: 'admin-audit-logs',
+            component: () => import('../views/dashboard/components/admin/AdminAuditLogs.vue'),
+          },
+          {
             path: 'profile',
             name: 'admin-profile',
             component: () => import('../views/dashboard/ProfilePage.vue'),

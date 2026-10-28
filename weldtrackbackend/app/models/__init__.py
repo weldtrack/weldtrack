@@ -12,5 +12,6 @@ from .service import *
 from .staffcontribution import *
 from .stafftask import *
 from .payroll import *
+from .audit_log import AuditLog
 
-__all__ = ["User", "EmailVerificationCode", "EmailVerification"]
+__all__ = ["User", "EmailVerificationCode", "EmailVerification", "AuditLog"]

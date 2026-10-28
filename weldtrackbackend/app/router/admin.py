@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User, UserRole
 from app.models.verification_code import EmailVerification
 from app.schemas.user import UserRead
+from app.services.audit_service import log_action
 from app.services.auth_service import get_user_by_email, get_user_response
 
 router = APIRouter(prefix="/auth", tags=["admin"])
@@ -53,6 +54,7 @@ def list_staff_users(
 @router.post("/admin/create-staff")
 def admin_create_staff(
     payload: dict,
+    request: Request,
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -91,12 +93,27 @@ def admin_create_staff(
     db.commit()
     db.refresh(user)
 
+    try:
+        log_action(
+            db,
+            action="USER_CREATE_STAFF",
+            description=f"Admin {admin.full_name or admin.email} created staff account: {user.full_name or user.email}",
+            user=admin,
+            auditable_type="User",
+            auditable_id=user.id,
+            properties={"staff_email": user.email, "staff_name": user.full_name},
+            request=request,
+        )
+    except Exception:
+        pass
+
     return {"success": True, "user": get_user_response(user)}
 
 
 @router.delete("/staff/{staff_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_staff(
     staff_id: str,
+    request: Request,
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -112,8 +129,22 @@ def delete_staff(
             detail="Can only delete staff members",
         )
 
+    deleted_email = staff_user.email
     db.delete(staff_user)
     db.commit()
+
+    try:
+        log_action(
+            db,
+            action="USER_DELETE_STAFF",
+            description=f"Admin {admin.full_name or admin.email} deleted staff account: {deleted_email}",
+            user=admin,
+            auditable_type="User",
+            auditable_id=staff_id,
+            request=request,
+        )
+    except Exception:
+        pass
 
 
 # ── Users ─────────────────────────────────────────────────────────────────────
@@ -165,6 +196,7 @@ def admin_get_online_users(
 @router.post("/admin/ban/{user_id}")
 def admin_ban_user(
     user_id: str,
+    request: Request,
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, bool | str]:
@@ -191,6 +223,16 @@ def admin_ban_user(
         db.add(user)
         db.commit()
         db.refresh(user)
+
+        log_action(
+            db,
+            action="USER_BAN",
+            description=f"Admin {admin.full_name or admin.email} banned user {user.full_name or user.email}",
+            user=admin,
+            auditable_type="User",
+            auditable_id=user.id,
+            request=request,
+        )
     except Exception:
         db.rollback()
         raise HTTPException(
@@ -204,6 +246,7 @@ def admin_ban_user(
 @router.post("/admin/unban/{user_id}")
 def admin_unban_user(
     user_id: str,
+    request: Request,
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> dict[str, bool | str]:
@@ -224,6 +267,16 @@ def admin_unban_user(
         db.add(user)
         db.commit()
         db.refresh(user)
+
+        log_action(
+            db,
+            action="USER_UNBAN",
+            description=f"Admin {admin.full_name or admin.email} unbanned user {user.full_name or user.email}",
+            user=admin,
+            auditable_type="User",
+            auditable_id=user.id,
+            request=request,
+        )
     except Exception:
         db.rollback()
         raise HTTPException(
