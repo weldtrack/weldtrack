@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DATABASE_URL: str = "postgresql+psycopg://weldtrack:weldtrack_123@localhost:5432/weldtrack_db"
-    CORS_ORIGINS: str = "http://localhost:8080,http://localhost:5173,http://127.0.0.1:5173"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,http://localhost:5173,http://127.0.0.1:5173"
 
     # JWT & Auth
     JWT_SECRET_KEY: str = "weldtrack-secret-key"

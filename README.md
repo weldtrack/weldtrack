@@ -8,7 +8,7 @@ WeldTrack is a centralized management system for welding and fabrication busines
 
 ### WeldTrack application
 
-- **Application:** [http://localhost:8080](http://localhost:8080)
+- **Application:** [http://localhost:3000](http://localhost:3000)
 - **Backend API:** [http://localhost:8000](http://localhost:8000)
 - **API documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
@@ -188,7 +188,7 @@ Press `Ctrl+C` to stop following the logs; the containers continue running in th
 
 ### 5. Open the system
 
-1. Open [http://localhost:8080](http://localhost:8080).
+1. Open [http://localhost:3000](http://localhost:3000).
 2. Sign in with any WeldTrack account listed at the top of this README.
 3. Use [MinIO](http://localhost:9001) to inspect uploaded images.
 4. Use [pgAdmin](http://localhost:5050) to inspect the PostgreSQL database.
@@ -202,7 +202,7 @@ cd ~/projects/weldtrack
 docker compose up -d
 ```
 
-Then open [http://localhost:8080](http://localhost:8080) in the normal Windows browser.
+Then open [http://localhost:3000](http://localhost:3000) in the normal Windows browser.
 
 ## Common Docker Commands
 
