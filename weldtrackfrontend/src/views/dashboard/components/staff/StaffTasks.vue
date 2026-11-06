@@ -117,6 +117,8 @@ const taskToRemove = ref<{ id: string; title: string } | null>(null)
 
 const isRecordModalOpen = ref(false)
 const recordingTask = ref<string | null>(null)
+const isOpeningRecordModal = ref(false)
+const isSubmittingRecord = ref(false)
 const customerHasBeforeImage = ref(false)
 const recordForm = reactive({
   bookingId: '',
@@ -158,43 +160,55 @@ function isTaskBookingCompleted(taskId: string) {
 }
 
 async function openRecordModal(taskId: string) {
-  recordingTask.value = taskId
-  resetRecordForm()
+  try {
+    isOpeningRecordModal.value = true
+    recordingTask.value = taskId
+    resetRecordForm()
 
-  await inventoryStore.fetchMovements()
+    await inventoryStore.fetchMovements()
 
-  const bookingId = getTaskBookingId(taskId)
-  if (bookingId != null) {
-    recordForm.bookingId = String(bookingId)
+    const bookingId = getTaskBookingId(taskId)
+    if (bookingId != null) {
+      recordForm.bookingId = String(bookingId)
 
-    const booking = await bookingsStore.getBooking(bookingId)
-    if (booking.status === 'completed') {
-      modalStore.open({
-        title: 'Booking already completed',
-        message: 'Recorded materials can no longer be updated after admin completes the booking.',
-        variant: 'warning',
-      })
-      closeRecordModal()
-      return
+      const booking = await bookingsStore.getBooking(bookingId)
+      if (booking.status === 'completed') {
+        modalStore.open({
+          title: 'Booking already completed',
+          message: 'Recorded materials can no longer be updated after admin completes the booking.',
+          variant: 'warning',
+        })
+        closeRecordModal()
+        return
+      }
+
+      if (Array.isArray(booking.materials) && booking.materials.length > 0) {
+        recordForm.lines = booking.materials.map((line) => ({
+          itemId: String(line.itemId),
+          quantity: Number(line.qty) || 1,
+        }))
+      }
+
+      if (booking.beforeImages?.length && booking.beforeImages[0]) {
+        recordForm.beforeImagePreview = String(booking.beforeImages[0])
+        customerHasBeforeImage.value = true
+      }
+      if (booking.afterImages?.length) {
+        recordForm.afterImagePreview = String(booking.afterImages[0] || '')
+      }
     }
 
-    if (Array.isArray(booking.materials) && booking.materials.length > 0) {
-      recordForm.lines = booking.materials.map((line) => ({
-        itemId: String(line.itemId),
-        quantity: Number(line.qty) || 1,
-      }))
-    }
-
-    if (booking.beforeImages?.length && booking.beforeImages[0]) {
-      recordForm.beforeImagePreview = String(booking.beforeImages[0])
-      customerHasBeforeImage.value = true
-    }
-    if (booking.afterImages?.length) {
-      recordForm.afterImagePreview = String(booking.afterImages[0] || '')
-    }
+    isRecordModalOpen.value = true
+  } catch (err: any) {
+    const errorMsg = err?.response?.data?.detail || err?.message || 'Failed to open record materials form.'
+    modalStore.open({
+      title: 'Unable to open form',
+      message: errorMsg,
+      variant: 'error',
+    })
+  } finally {
+    isOpeningRecordModal.value = false
   }
-
-  isRecordModalOpen.value = true
 }
 
 function selectConfirmedBooking(bookingId: string) {
@@ -338,8 +352,44 @@ async function recordMaterialsUsage() {
     return
   }
 
+  if (inventoryStore.items.length === 0) {
+    modalStore.open({
+      title: 'No inventory items',
+      message: 'There are no materials available in inventory. Please ask the administrator to register materials first.',
+      variant: 'warning',
+    })
+    return
+  }
+
+  const hasEmptyItem = recordForm.lines.some((line) => !line.itemId)
+  if (hasEmptyItem) {
+    modalStore.open({
+      title: 'Material required',
+      message: 'Please select a valid material for each item row.',
+      variant: 'warning',
+    })
+    return
+  }
+
+  const hasInvalidQty = recordForm.lines.some((line) => !line.quantity || line.quantity <= 0)
+  if (hasInvalidQty) {
+    modalStore.open({
+      title: 'Invalid quantity',
+      message: 'Please ensure every material item has a quantity greater than 0.',
+      variant: 'warning',
+    })
+    return
+  }
+
   const validLines = recordForm.lines.filter((line) => line.itemId && line.quantity > 0)
-  if (validLines.length === 0) return
+  if (validLines.length === 0) {
+    modalStore.open({
+      title: 'Materials required',
+      message: 'Please add at least one valid material before submitting.',
+      variant: 'warning',
+    })
+    return
+  }
 
   const taskId = recordingTask.value
 
@@ -352,29 +402,47 @@ async function recordMaterialsUsage() {
     return
   }
 
-  const [beforeImage, afterImage] = await Promise.all([
-    recordForm.beforeImageFile ? uploadImage(recordForm.beforeImageFile, 'jobs') : Promise.resolve(recordForm.beforeImagePreview),
-    recordForm.afterImageFile ? uploadImage(recordForm.afterImageFile, 'jobs') : Promise.resolve(recordForm.afterImagePreview),
-  ])
+  try {
+    isSubmittingRecord.value = true
 
-  const payload = {
-    submittedBy: currentUserId.value || undefined,
-    taskId,
-    movementType: 'stock_out',
-    lines: validLines.map((l) => ({ itemId: l.itemId, quantity: l.quantity })),
-    laborHours: recordForm.laborHours,
-    beforeImage: beforeImage || undefined,
-    afterImage: afterImage || undefined,
+    const [beforeImage, afterImage] = await Promise.all([
+      recordForm.beforeImageFile ? uploadImage(recordForm.beforeImageFile, 'jobs') : Promise.resolve(recordForm.beforeImagePreview),
+      recordForm.afterImageFile ? uploadImage(recordForm.afterImageFile, 'jobs') : Promise.resolve(recordForm.afterImagePreview),
+    ])
+
+    const payload = {
+      submittedBy: currentUserId.value || undefined,
+      taskId,
+      movementType: 'stock_out',
+      lines: validLines.map((l) => ({ itemId: l.itemId, quantity: l.quantity })),
+      laborHours: recordForm.laborHours,
+      beforeImage: beforeImage || undefined,
+      afterImage: afterImage || undefined,
+    }
+    await api.post(`/bookings/${bookingId}/materials`, payload)
+    await inventoryStore.fetchInventory()
+    await inventoryStore.fetchMovements()
+
+    await staffTasksStore.updateTaskStatus(recordingTask.value, 'done')
+
+    await bookingsStore.getBooking(bookingId)
+
+    closeRecordModal()
+    modalStore.open({
+      title: 'Materials recorded',
+      message: 'Materials and labor have been recorded successfully.',
+      variant: 'success',
+    })
+  } catch (err: any) {
+    const errorMsg = err?.response?.data?.detail || err?.message || 'Failed to record materials usage. Please check your network and try again.'
+    modalStore.open({
+      title: 'Submission failed',
+      message: errorMsg,
+      variant: 'error',
+    })
+  } finally {
+    isSubmittingRecord.value = false
   }
-  await api.post(`/bookings/${bookingId}/materials`, payload)
-  await inventoryStore.fetchInventory()
-  await inventoryStore.fetchMovements()
-
-  await staffTasksStore.updateTaskStatus(recordingTask.value, 'done')
-
-  await bookingsStore.getBooking(bookingId)
-
-  closeRecordModal()
 }
 
 const hasDuplicateAssignees = computed(() => {
@@ -728,10 +796,11 @@ async function confirmRemoveTask() {
                 <button
                   v-if="!isTaskBookingCompleted(task.id)"
                   type="button"
-                  class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition-colors"
+                  :disabled="isOpeningRecordModal"
+                  class="rounded-lg bg-sky-50 border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   @click="openRecordModal(task.id)"
                 >
-                  {{ hasRecordedMaterialsForTask(task.id) ? 'Update Materials' : 'Record Materials' }}
+                  {{ isOpeningRecordModal && recordingTask === task.id ? 'Loading...' : (hasRecordedMaterialsForTask(task.id) ? 'Update Materials' : 'Record Materials') }}
                 </button>
                 <button
                   type="button"
@@ -790,10 +859,11 @@ async function confirmRemoveTask() {
                 <button
                   v-if="!isTaskBookingCompleted(task.id)"
                   type="button"
-                  class="rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:from-sky-700 hover:to-sky-800 transition-all"
+                  :disabled="isOpeningRecordModal"
+                  class="rounded-xl bg-linear-to-r from-sky-600 to-sky-700 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:from-sky-700 hover:to-sky-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   @click="openRecordModal(task.id)"
                 >
-                  {{ hasRecordedMaterialsForTask(task.id) ? 'Update Submitted Materials' : 'Record & Submit Materials' }}
+                  {{ isOpeningRecordModal && recordingTask === task.id ? 'Loading...' : (hasRecordedMaterialsForTask(task.id) ? 'Update Submitted Materials' : 'Record & Submit Materials') }}
                 </button>
               </div>
             </div>
@@ -837,6 +907,7 @@ async function confirmRemoveTask() {
                   <div>
                     <label class="flex items-center text-sm font-semibold text-gray-700 mb-1.5">Item<InfoTooltip text="Please provide the item." /></label>
                     <select v-model="line.itemId" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200 transition">
+                      <option value="" disabled>Select material item</option>
                       <option v-for="it in inventoryStore.items" :key="it.id" :value="it.id">{{ it.name }} — {{ formatCurrency(it.unitPrice) }} — {{ getItemQuantity(it.id) }} left</option>
                     </select>
                   </div>
@@ -856,6 +927,10 @@ async function confirmRemoveTask() {
               <button type="button" class="w-full rounded-xl border border-dashed border-sky-300 bg-transparent px-4 py-3 text-sm font-semibold text-sky-700 hover:bg-sky-50 hover:border-sky-400 transition-colors" @click="addMaterialLine">
                 + Add Another Material
               </button>
+
+              <div v-if="inventoryStore.items.length === 0" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs font-medium text-amber-800">
+                ⚠ No inventory items available. Please ask an administrator to register materials in the inventory catalog first.
+              </div>
             </div>
 
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-5">
@@ -917,8 +992,15 @@ async function confirmRemoveTask() {
           </div>
 
           <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-            <button type="button" class="rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors" @click="closeRecordModal">Cancel</button>
-            <button type="button" class="rounded-xl bg-linear-to-r from-emerald-600 to-green-600 px-8 py-2.5 font-semibold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-green-700 transition-all" @click="recordMaterialsUsage">{{ hasRecordedMaterialsForTask(recordingTask || '') ? 'Update Record' : 'Record Materials' }}</button>
+            <button type="button" :disabled="isSubmittingRecord" class="rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 transition-colors" @click="closeRecordModal">Cancel</button>
+            <button
+              type="button"
+              :disabled="isSubmittingRecord"
+              class="rounded-xl bg-linear-to-r from-emerald-600 to-green-600 px-8 py-2.5 font-semibold text-white shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              @click="recordMaterialsUsage"
+            >
+              {{ isSubmittingRecord ? 'Submitting...' : (hasRecordedMaterialsForTask(recordingTask || '') ? 'Update Record' : 'Record Materials') }}
+            </button>
           </div>
         </div>
       </div>
