@@ -49,7 +49,7 @@ class TaskMaterialsCreate(BaseModel):
     submittedBy: str | None = None
     taskId: str
     movementType: Literal["stock_out"]
-    lines: list[MaterialLineIn] = Field(min_length=1)
+    lines: list[MaterialLineIn] = Field(default_factory=list)
     laborHours: float = Field(default=0, ge=0)
     beforeImage: str | None = None
     afterImage: str | None = None

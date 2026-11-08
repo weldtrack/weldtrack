@@ -120,16 +120,30 @@ def _apply_booking_update(
             setattr(booking, key, value)
 
 
-def _recalculate_booking_totals(booking: Booking) -> None:
+def _recalculate_booking_totals(booking: Booking, db: Session | None = None) -> None:
     booking.material_cost = round(
         sum(float(line.subtotal or 0) for line in (booking.materials or [])), 2
     )
-    labor_cost = (
-        float(booking.actual_labor_cost)
-        if booking.actual_labor_cost is not None
-        else float(booking.estimated_cost or 0)
-    )
-    booking.total_price = round(labor_cost + float(booking.material_cost or 0), 2)
+
+    pricing_type = "hourly"
+    fixed_price = 0.0
+    if db is not None:
+        service = db.scalar(select(Service).where(Service.name == booking.project_type))
+        if service:
+            pricing_type = getattr(service, "pricing_type", "hourly") or "hourly"
+            fixed_price = float(service.price_fixed or 0.0)
+
+    if pricing_type == "fixed":
+        # For fixed price services, labor and materials are all-inclusive
+        booking.actual_labor_cost = fixed_price
+        booking.total_price = fixed_price
+    else:
+        labor_cost = (
+            float(booking.actual_labor_cost)
+            if booking.actual_labor_cost is not None
+            else float(booking.estimated_cost or 0)
+        )
+        booking.total_price = round(labor_cost + float(booking.material_cost or 0), 2)
 
 
 def _calculate_service_labor_cost(
@@ -258,26 +272,55 @@ def create_booking(
         booking_data.pop(derived_field, None)
 
     if current_user.role == UserRole.customer:
-        active_address = db.scalar(
-            select(CustomerAddress).where(
-                CustomerAddress.user_id == current_user.id,
-                CustomerAddress.is_active.is_(True),
-            )
+        # Check if customer provided a specific address payload, otherwise use their active address
+        customer_address = None
+        has_payload_location = any(
+            payload.model_dump().get(k)
+            for k in ("province", "municipality", "barangay", "house")
         )
-        if active_address is None:
+
+        if has_payload_location:
+            customer_address = db.scalar(
+                select(CustomerAddress).where(
+                    CustomerAddress.user_id == current_user.id,
+                    CustomerAddress.province == payload.province,
+                    CustomerAddress.municipality == payload.municipality,
+                    CustomerAddress.barangay == payload.barangay,
+                    CustomerAddress.house == payload.house,
+                )
+            )
+
+        if customer_address is None:
+            customer_address = db.scalar(
+                select(CustomerAddress).where(
+                    CustomerAddress.user_id == current_user.id,
+                    CustomerAddress.is_active.is_(True),
+                )
+            )
+
+        if customer_address is None:
+            # Fall back to any saved address of the customer
+            customer_address = db.scalar(
+                select(CustomerAddress).where(
+                    CustomerAddress.user_id == current_user.id,
+                ).order_by(CustomerAddress.id.desc())
+            )
+
+        if customer_address is None and not has_payload_location:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Please add and activate an address before creating a booking",
+                detail="Please add an address before creating a booking",
             )
 
         booking_data["email"] = current_user.email
         booking_data["status"] = BookingStatus.pending
-        booking_data["country"] = active_address.country
-        booking_data["region"] = active_address.region
-        booking_data["province"] = active_address.province
-        booking_data["municipality"] = active_address.municipality
-        booking_data["barangay"] = active_address.barangay
-        booking_data["house"] = active_address.house
+        if customer_address is not None:
+            booking_data["country"] = customer_address.country
+            booking_data["region"] = customer_address.region
+            booking_data["province"] = customer_address.province
+            booking_data["municipality"] = customer_address.municipality
+            booking_data["barangay"] = customer_address.barangay
+            booking_data["house"] = customer_address.house
         booking_data.setdefault("customer_name", current_user.email)
 
     booking = Booking(**booking_data)
@@ -309,7 +352,7 @@ def update_booking(
     _apply_booking_update(booking, payload, current_user, db)
     _recalculate_booking_estimate(booking, db)
     if booking.status == BookingStatus.completed:
-        _recalculate_booking_totals(booking)
+        _recalculate_booking_totals(booking, db)
 
     db.commit()
     db.refresh(booking)
@@ -328,7 +371,7 @@ def partial_update_booking(
     _apply_booking_update(booking, payload, current_user, db)
     _recalculate_booking_estimate(booking, db)
     if booking.status == BookingStatus.completed:
-        _recalculate_booking_totals(booking)
+        _recalculate_booking_totals(booking, db)
 
     db.commit()
     db.refresh(booking)
@@ -493,7 +536,7 @@ def add_booking_materials(
     if payload.afterImage:
         booking.after_images = [payload.afterImage]
     booking.materials = new_materials
-    _recalculate_booking_totals(booking)
+    _recalculate_booking_totals(booking, db)
     db.add(booking)
 
     db.commit()

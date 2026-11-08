@@ -21,6 +21,7 @@
   /* make overlay fully transparent to avoid white flicker */
   background: transparent;
   color: #0f172a;
+  pointer-events: none;
 }
 
 .local-loader__card {

@@ -28,6 +28,17 @@ const isDialogOpen = ref(false)
 const isCancelModalOpen = ref(false)
 const selectedBooking = ref<BookingItem | null>(null)
 
+const selectedAddressId = ref<string>('')
+const availableAddresses = computed(() => addressesStore.addresses)
+
+const effectiveAddress = computed(() => {
+  if (selectedAddressId.value) {
+    const found = availableAddresses.value.find((a) => a.id === selectedAddressId.value)
+    if (found) return found
+  }
+  return activeAddress.value || availableAddresses.value[0] || null
+})
+
 const formData = reactive({
   customerName: '',
   email: '',
@@ -150,6 +161,7 @@ function resetForm() {
   formData.createdDate = new Date().toISOString().split('T')[0]
   beforeImageFile.value = null
   beforeImagePreview.value = ''
+  selectedAddressId.value = activeAddress.value?.id || availableAddresses.value[0]?.id || ''
 }
 
 function handleItemImageChange(ev: Event) {
@@ -192,7 +204,7 @@ function openDialogForService(serviceName: string, description = '') {
 }
 
 async function handleSubmit() {
-  if (userRole.value === 'customer' && !activeAddress.value) {
+  if (userRole.value === 'customer' && !effectiveAddress.value) {
     return
   }
   
@@ -240,7 +252,7 @@ async function handleSubmit() {
     if (beforeImageFile.value) {
       uploadedBeforeImage = await uploadImage(beforeImageFile.value, 'jobs')
     }
-    await bookingsStore.createBooking({
+    const bookingPayload: any = {
       customerName: formData.customerName,
       email: formData.email,
       phone: `+63${cleanPhone}`,
@@ -250,7 +262,20 @@ async function handleSubmit() {
       createdDate: formData.createdDate,
       preferredDate: formData.createdDate,
       beforeImages: uploadedBeforeImage ? [uploadedBeforeImage] : [],
-    })
+    }
+
+    if (effectiveAddress.value) {
+      bookingPayload.location = {
+        country: effectiveAddress.value.country,
+        region: effectiveAddress.value.region,
+        province: effectiveAddress.value.province,
+        municipality: effectiveAddress.value.municipality,
+        barangay: effectiveAddress.value.barangay,
+        house: effectiveAddress.value.house,
+      }
+    }
+
+    await bookingsStore.createBooking(bookingPayload)
     closeDialog()
   } catch (error: any) {
     console.error('Booking submission failed:', error)
@@ -357,14 +382,14 @@ function formatBookingAddress(booking: BookingItem) {
   return [address.house, address.barangay, address.municipality, address.province].filter(Boolean).join(', ')
 }
 
+function formatAddressItem(addr: any) {
+  if (!addr) return ''
+  return [addr.house, addr.barangay, addr.municipality, addr.province].filter(Boolean).join(', ')
+}
+
 function formatActiveAddress() {
-  if (!activeAddress.value) return ''
-  return [
-    activeAddress.value.house,
-    activeAddress.value.barangay,
-    activeAddress.value.municipality,
-    activeAddress.value.province,
-  ].filter(Boolean).join(', ')
+  if (!effectiveAddress.value) return ''
+  return formatAddressItem(effectiveAddress.value)
 }
 
 function getBookingTimeline(booking: BookingItem) {
@@ -399,8 +424,8 @@ function getBookingTimeline(booking: BookingItem) {
         <button
           type="button"
           class="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 shrink-0"
-          :disabled="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0"
-          :class="(userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 ? 'cursor-not-allowed opacity-50' : ''"
+          :disabled="(userRole === 'customer' && !effectiveAddress) || loadingServices || services.length === 0"
+          :class="(userRole === 'customer' && !effectiveAddress) || loadingServices || services.length === 0 ? 'cursor-not-allowed opacity-50' : ''"
           @click="openDialog"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,8 +452,8 @@ function getBookingTimeline(booking: BookingItem) {
       </div>
 
       <!-- Address Warning Banner -->
-      <div v-if="userRole === 'customer' && !activeAddress" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
-        Please add an address in the <strong class="underline font-bold">Addresses</strong> tab and set it as active before creating a new booking.
+      <div v-if="userRole === 'customer' && !effectiveAddress" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+        Please add an address in the <strong class="underline font-bold">Addresses</strong> tab before creating a new booking.
       </div>
 
       <!-- Full-width active bookings list -->
@@ -585,11 +610,25 @@ function getBookingTimeline(booking: BookingItem) {
               </div>
             </div>
 
-            <!-- Active Address Banner -->
+            <!-- Address Selector / Banner -->
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 px-5 py-4 dark:border-emerald-900/50 dark:bg-emerald-950/40">
-              <p class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 mb-1">Active Customer Address</p>
-              <p v-if="activeAddress" class="text-sm text-emerald-900 dark:text-emerald-200 font-semibold">{{ activeAddress.label }}: {{ formatActiveAddress() }}</p>
-              <p v-else class="text-sm text-amber-800 dark:text-amber-300 font-medium">No active address selected. Please set one in the Addresses tab.</p>
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                <p class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">Delivery / Job Address</p>
+                <div v-if="userRole === 'customer' && availableAddresses.length > 1" class="w-full sm:w-auto">
+                  <select
+                    v-model="selectedAddressId"
+                    class="rounded-lg border border-emerald-300 bg-white px-3 py-1 text-xs font-medium text-emerald-900 shadow-2xs outline-none focus:border-emerald-500 dark:border-emerald-800 dark:bg-slate-900 dark:text-emerald-200"
+                  >
+                    <option v-for="addr in availableAddresses" :key="addr.id" :value="addr.id">
+                      {{ addr.label }} {{ addr.isActive ? '(Default Active)' : '' }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <p v-if="effectiveAddress" class="text-sm text-emerald-900 dark:text-emerald-200 font-semibold">
+                {{ effectiveAddress.label }}: {{ formatActiveAddress() }}
+              </p>
+              <p v-else class="text-sm text-amber-800 dark:text-amber-300 font-medium">No address found. Please add an address in the Addresses tab.</p>
             </div>
 
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -627,7 +666,13 @@ function getBookingTimeline(booking: BookingItem) {
               </div>
             </div>
 
-            <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-medium text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-300 flex items-center gap-2">
+            <div v-if="selectedService?.pricing_type === 'fixed'" class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-medium text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-300 flex items-center gap-2">
+              <svg class="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Fixed-Price package: Standard labor and materials are all included in the package price.</span>
+            </div>
+            <div v-else class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-medium text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-300 flex items-center gap-2">
               <svg class="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
@@ -666,7 +711,7 @@ function getBookingTimeline(booking: BookingItem) {
             <div>
               <label class="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="itemImage">
                 Item / Project Photo (Before Image) <span class="text-rose-500">*</span>
-                <InfoTooltip text="Attach a clear photo of the item or welding work needed (e.g., Tricycle Repair). This will also serve as the Before photo for the staff." />
+                <InfoTooltip text="Attach a clear photo of the item or vehicle (e.g. Tricycle Repair, Half Stainless Tricycle, Half Stainless Tricycle small, Top Down). This will also serve as the Before photo for the staff." />
               </label>
               <input
                 id="itemImage"
@@ -677,7 +722,7 @@ function getBookingTimeline(booking: BookingItem) {
                 @change="handleItemImageChange"
               />
               <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                Attach a photo of the specific item to be repaired or fabricated so the admin can review it before approving and staff can use it as the Before image.
+                Attach a photo of the specific item, motorcycle, or tricycle to be repaired or fabricated (e.g. Half Stainless, Top Down, Tricycle Repair). This allows staff to verify and use it directly as the Before photo.
               </p>
               <div v-if="beforeImagePreview" class="mt-3">
                 <img :src="resolveImageUrl(beforeImagePreview)" alt="Selected item preview" class="max-h-48 rounded-xl border border-slate-200 object-cover shadow-xs" />
@@ -691,7 +736,7 @@ function getBookingTimeline(booking: BookingItem) {
 
             <div class="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 justify-end">
               <button type="button" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 disabled:opacity-50 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" :disabled="isSubmitting" @click="closeDialog">Cancel</button>
-              <button type="submit" class="rounded-xl bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-sky-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 transition-all dark:bg-sky-600 dark:hover:bg-sky-500" :disabled="isSubmitting || (userRole === 'customer' && !activeAddress) || loadingServices || services.length === 0 || !formData.projectType.trim() || isDuplicateServiceActive">
+              <button type="submit" class="rounded-xl bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-sky-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 transition-all dark:bg-sky-600 dark:hover:bg-sky-500" :disabled="isSubmitting || (userRole === 'customer' && !effectiveAddress) || loadingServices || services.length === 0 || !formData.projectType.trim() || isDuplicateServiceActive">
                 <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

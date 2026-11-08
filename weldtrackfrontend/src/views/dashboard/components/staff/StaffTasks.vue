@@ -352,7 +352,9 @@ async function recordMaterialsUsage() {
     return
   }
 
-  if (inventoryStore.items.length === 0) {
+  const isFixedPricing = getTaskPricing(recordingTask.value)?.pricing_type === 'fixed'
+
+  if (!isFixedPricing && inventoryStore.items.length === 0) {
     modalStore.open({
       title: 'No inventory items',
       message: 'There are no materials available in inventory. Please ask the administrator to register materials first.',
@@ -361,28 +363,8 @@ async function recordMaterialsUsage() {
     return
   }
 
-  const hasEmptyItem = recordForm.lines.some((line) => !line.itemId)
-  if (hasEmptyItem) {
-    modalStore.open({
-      title: 'Material required',
-      message: 'Please select a valid material for each item row.',
-      variant: 'warning',
-    })
-    return
-  }
-
-  const hasInvalidQty = recordForm.lines.some((line) => !line.quantity || line.quantity <= 0)
-  if (hasInvalidQty) {
-    modalStore.open({
-      title: 'Invalid quantity',
-      message: 'Please ensure every material item has a quantity greater than 0.',
-      variant: 'warning',
-    })
-    return
-  }
-
   const validLines = recordForm.lines.filter((line) => line.itemId && line.quantity > 0)
-  if (validLines.length === 0) {
+  if (!isFixedPricing && validLines.length === 0) {
     modalStore.open({
       title: 'Materials required',
       message: 'Please add at least one valid material before submitting.',
@@ -889,6 +871,15 @@ async function confirmRemoveTask() {
 
         <div class="p-6">
           <div class="space-y-6">
+            <div v-if="getTaskPricing(recordingTask || '')?.pricing_type === 'fixed'" class="rounded-2xl border border-sky-200 bg-sky-50/80 p-5">
+              <div class="flex items-center gap-2 text-sky-900 font-bold text-sm">
+                <span>Fixed-Price Package Service</span>
+              </div>
+              <p class="text-xs text-sky-700 mt-1">
+                Labor and materials are already covered under this fixed-price service ({{ formatServicePricing(getTaskPricing(recordingTask || '')) }}). Material recording is optional for internal inventory tracking and will not increase the customer price.
+              </p>
+            </div>
+
             <div class="space-y-4">
               <div v-for="(line, index) in recordForm.lines" :key="`material-line-${index}`" class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <div class="flex items-center justify-between mb-4">
